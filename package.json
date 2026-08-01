@@ -1,0 +1,45 @@
+{
+  "name": "product-demo",
+  "version": "0.1.0",
+  "description": "Portable Agent Skill and deterministic runtime for evidence-backed product demo videos",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mehdibourahla/product-demo.git"
+  },
+  "homepage": "https://github.com/mehdibourahla/product-demo#readme",
+  "bugs": "https://github.com/mehdibourahla/product-demo/issues",
+  "keywords": ["agent-skill", "playwright", "remotion", "product-demo", "elevenlabs"],
+  "type": "module",
+  "bin": { "product-demo": "dist/src/cli.js" },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "schemas": "tsx src/export-schemas.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:e2e": "vitest run tests/e2e.test.ts --testTimeout=180000",
+    "fixture": "tsx fixtures/sanox/server.ts",
+    "product-demo": "tsx src/cli.ts",
+    "install:browsers": "playwright install chromium"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.503",
+    "@remotion/renderer": "4.0.503",
+    "playwright": "1.62.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.503",
+    "yaml": "2.9.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  },
+  "engines": { "node": ">=22" }
+}

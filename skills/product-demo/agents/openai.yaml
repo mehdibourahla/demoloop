@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product Demo"
+  short_description: "Create deterministic product demo videos"
+  default_prompt: "Use $product-demo to create an evidence-backed deterministic product demo video."

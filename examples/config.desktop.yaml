@@ -1,0 +1,14 @@
+app:
+  url: http://127.0.0.1:4173
+  healthcheck: http://127.0.0.1:4173/health
+  startCommand: npm run fixture
+  commandCwd: ..
+repository:
+  root: ../fixtures/sanox
+output:
+  directory: ../artifacts
+devices:
+  desktop:
+    width: 1440
+    height: 900
+    isMobile: false

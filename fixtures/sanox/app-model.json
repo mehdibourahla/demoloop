@@ -1,0 +1,18 @@
+{
+  "product": "SanoX Care",
+  "roles": [
+    { "id": "patient", "name": "Patient" },
+    { "id": "physician", "name": "Physician" }
+  ],
+  "routes": [
+    { "path": "/?role=patient&locale=fr", "role": "patient" },
+    { "path": "/?role=physician&locale=fr", "role": "physician" }
+  ],
+  "features": [
+    { "id": "adaptive-intake", "name": "Adaptive patient intake", "route": "/?role=patient&locale=fr", "source": "app.html" },
+    { "id": "physician-brief", "name": "Generated physician brief", "route": "/?role=physician&locale=fr", "source": "app.html" }
+  ],
+  "journeys": [
+    { "id": "patient-to-physician", "name": "Patient to physician", "actors": ["patient", "physician"], "features": ["adaptive-intake", "physician-brief"] }
+  ]
+}

@@ -1,0 +1,18 @@
+export interface SensitiveFinding { kind: string; match: string }
+
+export function assertSafeTarget(url: string, allowProduction = false): void {
+  const target = new URL(url);
+  const local = target.hostname === 'localhost' || target.hostname === '127.0.0.1' || target.hostname === '::1';
+  const nonProduction = /(^|\.)((dev|test|staging|preview)\.)/i.test(target.hostname) || /[.-](dev|test|staging|preview)[.-]/i.test(target.hostname);
+  if (!allowProduction && !local && !nonProduction) throw new Error(`Refusing production-like target ${target.origin}; set allowProduction explicitly`);
+}
+
+export function scanSensitiveText(text: string): SensitiveFinding[] {
+  const patterns: Array<[string, RegExp]> = [
+    ['secret', /\b(?:sk|pk|api)[-_](?:live|prod)?[-_]?[A-Za-z0-9]{16,}\b/gi],
+    ['email', /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi],
+    ['phone', /\b(?:\+?1[-. ]?)?\(?\d{3}\)?[-. ]\d{3}[-. ]\d{4}\b/g],
+    ['health-id', /\b[A-Z]{4}-\d{4}-\d{4}\b/g]
+  ];
+  return patterns.flatMap(([kind, pattern]) => [...text.matchAll(pattern)].map((match) => ({ kind, match: match[0] })));
+}

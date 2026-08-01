@@ -1,0 +1,15 @@
+app:
+  url: http://127.0.0.1:4173
+  healthcheck: http://127.0.0.1:4173/health
+  startCommand: npm run fixture
+  commandCwd: ..
+repository:
+  root: ../fixtures/sanox
+output:
+  directory: ../artifacts
+devices:
+  mobile:
+    width: 390
+    height: 844
+    device: iPhone 13
+    isMobile: true

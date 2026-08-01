@@ -1,0 +1,204 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "scenarioId": {
+      "type": "string"
+    },
+    "viewport": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "width",
+        "height"
+      ],
+      "additionalProperties": false
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sceneId": {
+            "type": "string"
+          },
+          "actionIndex": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "type": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "startedAtMs": {
+            "type": "number",
+            "minimum": 0
+          },
+          "endedAtMs": {
+            "type": "number",
+            "minimum": 0
+          },
+          "target": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "const": "role"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "button",
+                      "link",
+                      "textbox",
+                      "checkbox",
+                      "radio",
+                      "heading",
+                      "combobox"
+                    ]
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "by",
+                  "role",
+                  "value"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "const": "label"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "by",
+                  "value"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "const": "testId"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "by",
+                  "value"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "const": "text"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "by",
+                  "value"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "box": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "width": {
+                    "type": "number"
+                  },
+                  "height": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "width",
+                  "height"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "passed",
+              "failed",
+              "omitted"
+            ]
+          }
+        },
+        "required": [
+          "sceneId",
+          "actionIndex",
+          "type",
+          "label",
+          "actor",
+          "startedAtMs",
+          "endedAtMs",
+          "state"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "version",
+    "scenarioId",
+    "viewport",
+    "events"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SanoX Care</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #172036; background: #edf4f3; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top left, #dff6ef 0, transparent 38%), linear-gradient(145deg, #f8fbfa, #e8f1f3); }
+    header { height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 6vw; background: rgba(255,255,255,.86); border-bottom: 1px solid #d8e4e2; backdrop-filter: blur(18px); }
+    .brand { display: flex; gap: 12px; align-items: center; font-weight: 750; letter-spacing: -.02em; }
+    .mark { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: #116b5a; color: white; box-shadow: 0 8px 20px #116b5a35; }
+    .role { padding: 7px 11px; border-radius: 999px; background: #e4f3ee; color: #116b5a; font-size: 13px; font-weight: 650; }
+    main { width: min(920px, 90vw); margin: 46px auto; }
+    .eyebrow { color: #11705d; text-transform: uppercase; letter-spacing: .13em; font-size: 12px; font-weight: 800; }
+    h1 { margin: 8px 0 10px; font-size: clamp(34px, 5vw, 56px); line-height: 1.03; letter-spacing: -.045em; }
+    .lede { max-width: 620px; color: #5d687b; font-size: 18px; line-height: 1.55; margin-bottom: 30px; }
+    .card { background: rgba(255,255,255,.94); border: 1px solid #dce7e5; border-radius: 24px; padding: clamp(24px, 5vw, 42px); box-shadow: 0 24px 70px #234b4520; }
+    .grid { display: grid; gap: 20px; }
+    label, legend { font-weight: 700; font-size: 14px; color: #2f3a4c; }
+    input, select { width: 100%; margin-top: 8px; padding: 14px 16px; border: 1px solid #cbd9d6; border-radius: 12px; background: white; font: inherit; color: #182238; outline: none; }
+    input:focus, select:focus { border-color: #15947c; box-shadow: 0 0 0 4px #15947c20; }
+    fieldset { border: 0; padding: 0; margin: 0; }
+    .choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+    .choice { position: relative; }
+    .choice input { position: absolute; opacity: 0; }
+    .choice label { display: block; text-align: center; padding: 13px 8px; border: 1px solid #cfddda; border-radius: 12px; cursor: pointer; background: #fbfdfd; }
+    .choice input:checked + label { background: #daf2eb; border-color: #13816c; color: #0d6555; }
+    button { border: 0; border-radius: 12px; padding: 14px 18px; background: #116b5a; color: white; font: 700 15px inherit; cursor: pointer; box-shadow: 0 10px 24px #116b5a30; }
+    button:hover { background: #0c5a4b; }
+    .secondary { background: #eff5f4; color: #285048; box-shadow: none; }
+    .row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+    .progress { height: 7px; border-radius: 99px; background: #e2ecea; margin-bottom: 28px; overflow: hidden; }
+    .progress > div { height: 100%; background: linear-gradient(90deg,#15947c,#5ac0ab); transition: width .3s ease; }
+    .success { display: grid; place-items: center; text-align: center; min-height: 270px; }
+    .success-icon { width: 60px; height: 60px; display: grid; place-items: center; border-radius: 50%; background: #daf2eb; color: #116b5a; font-size: 28px; }
+    .brief-head { display: flex; justify-content: space-between; gap: 20px; align-items: start; }
+    .patient { display: flex; align-items: center; gap: 14px; }
+    .avatar { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: #d8e7ff; color: #34558b; font-weight: 800; }
+    .brief-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; margin-top: 26px; }
+    .panel { padding: 20px; border-radius: 16px; background: #f5f9f8; border: 1px solid #e0e9e7; }
+    .panel h2 { font-size: 15px; margin: 0 0 10px; color: #526071; }
+    .diagnosis { font-size: 20px; font-weight: 760; letter-spacing: -.02em; }
+    .muted { color: #667285; }
+    [hidden] { display: none !important; }
+    @media (max-width: 600px) { header { padding: 0 20px; } main { width: calc(100vw - 28px); margin: 24px auto; } h1 { font-size: 36px; } .lede { font-size: 16px; } .card { padding: 22px; border-radius: 20px; } .choices, .brief-grid { grid-template-columns: 1fr; } .brief-head { display: grid; } .brief-head button { width: 100%; } }
+  </style>
+</head>
+<body>
+  <header><div class="brand"><span class="mark">S+</span><span>SanoX Care</span></div><span class="role" id="role-chip"></span></header>
+  <main>
+    <section id="patient-view" data-feature="adaptive-intake">
+      <div class="eyebrow">Parcours patient</div><h1>Votre santé, clairement.</h1><p class="lede">Un questionnaire adaptatif prépare les informations essentielles avant votre consultation.</p>
+      <div class="card">
+        <div class="progress" aria-label="Progression"><div id="progress" style="width: 25%"></div></div>
+        <form id="intake-form">
+          <section id="step-1" class="grid">
+            <label>Nom complet<input name="name" autocomplete="off" /></label>
+            <label for="symptom">Symptôme principal</label><select id="symptom" name="symptom"><option value="">Sélectionner</option><option value="headache">Mal de tête</option><option value="cough">Toux</option></select>
+            <div class="row"><button type="button" id="start">Commencer</button></div>
+          </section>
+          <section id="step-2" hidden>
+            <fieldset><legend>Depuis combien de temps ?</legend><div class="choices">
+              <div class="choice"><input id="one-day" type="radio" name="duration" value="1"><label for="one-day">Un jour</label></div>
+              <div class="choice"><input id="three-days" type="radio" name="duration" value="3"><label for="three-days">Trois jours</label></div>
+              <div class="choice"><input id="week" type="radio" name="duration" value="7"><label for="week">Une semaine</label></div>
+            </div></fieldset><div class="row"><button type="button" id="continue">Continuer</button></div>
+          </section>
+          <section id="step-3" hidden>
+            <fieldset><legend>Quelle est l’intensité ?</legend><div class="choices">
+              <div class="choice"><input id="mild" type="radio" name="severity" value="mild"><label for="mild">Légère</label></div>
+              <div class="choice"><input id="moderate" type="radio" name="severity" value="moderate"><label for="moderate">Modérée</label></div>
+              <div class="choice"><input id="severe" type="radio" name="severity" value="severe"><label for="severe">Forte</label></div>
+            </div></fieldset><div class="row"><button type="submit">Envoyer au médecin</button></div>
+          </section>
+        </form>
+        <section id="success" class="success" hidden><div><div class="success-icon">✓</div><h2>Intake transmis</h2><p class="muted">Votre médecin dispose maintenant d’un brief structuré.</p></div></section>
+      </div>
+    </section>
+    <section id="physician-view" data-feature="physician-brief" hidden>
+      <div class="eyebrow">Espace clinique</div><h1>Revue du brief médecin</h1><p class="lede">Les réponses du patient sont synthétisées pour accélérer la préparation clinique.</p>
+      <div class="card"><div class="brief-head"><div class="patient"><div class="avatar">CM</div><div><strong id="patient-name">Aucun dossier</strong><div class="muted">Consultation aujourd’hui</div></div></div><button id="refresh">Actualiser le dossier</button></div>
+        <div id="brief-empty" class="panel" style="margin-top:24px">Le brief apparaîtra après l’intake patient.</div>
+        <div id="brief" class="brief-grid" hidden><div class="panel"><h2>Hypothèse clinique</h2><div class="diagnosis">Céphalée probablement bénigne</div><p class="muted">Évolution depuis 3 jours, intensité modérée, sans signal d’alarme déclaré.</p></div><div class="panel"><h2>Prochaine étape</h2><strong>Valider les signaux d’alarme</strong><p class="muted">Puis examen ciblé et plan de suivi.</p></div></div>
+      </div>
+    </section>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const role = params.get('role') || 'patient';
+    document.querySelector('#role-chip').textContent = role === 'patient' ? 'Patient' : 'Médecin';
+    document.querySelector('#patient-view').hidden = role !== 'patient';
+    document.querySelector('#physician-view').hidden = role !== 'physician';
+    const showStep = (from, to, progress) => { document.querySelector(from).hidden = true; document.querySelector(to).hidden = false; document.querySelector('#progress').style.width = progress; };
+    document.querySelector('#start').addEventListener('click', () => showStep('#step-1', '#step-2', '58%'));
+    document.querySelector('#continue').addEventListener('click', () => showStep('#step-2', '#step-3', '82%'));
+    document.querySelector('#intake-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formElement = event.currentTarget;
+      const form = new FormData(formElement);
+      const response = await fetch('/api/intake', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(Object.fromEntries(form)) });
+      if (!response.ok) throw new Error('intake failed');
+      formElement.hidden = true; document.querySelector('#success').hidden = false; document.querySelector('#progress').style.width = '100%';
+    });
+    document.querySelector('#refresh').addEventListener('click', async () => {
+      const response = await fetch('/api/brief'); const data = await response.json();
+      if (!data.name) return;
+      document.querySelector('#patient-name').textContent = data.name; document.querySelector('#brief-empty').hidden = true; document.querySelector('#brief').hidden = false;
+    });
+  </script>
+</body>
+</html>
