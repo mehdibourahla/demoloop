@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -9,7 +9,7 @@ import { installCapturedCursor } from '../src/runner.js';
 
 describe('recording cursor', () => {
   it('shows a text-free neutral cursor without a click ring', async () => {
-    const fixture = await readFile('fixtures/sanox/app.html', 'utf8');
+    const fixture = '<!doctype html><html><body><main><button>Continue</button></main></body></html>';
     const server = createServer((_request, response) => response.end(fixture));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();

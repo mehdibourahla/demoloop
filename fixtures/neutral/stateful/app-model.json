@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "product": "Workspace Items",
+  "audiences": [{ "id": "teams", "name": "Teams", "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }],
+  "actors": [{ "id": "workspace-member", "name": "Workspace member", "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }],
+  "capabilities": [{ "id": "create-item", "name": "Create an item", "shape": "stateful", "states": ["ready", "created"], "outcomes": ["item-created"], "proofSurfaces": ["item-status"], "safeActions": ["open", "create", "verify"], "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }],
+  "states": [{ "id": "ready", "name": "Ready", "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }, { "id": "created", "name": "Created", "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }],
+  "transitions": [{ "id": "create-transition", "fromState": "ready", "toState": "created", "actorId": "workspace-member", "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }],
+  "outcomes": [{ "id": "item-created", "name": "Item created", "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }],
+  "proofSurfaces": [{ "id": "item-status", "name": "Item status", "route": "/stateful", "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }],
+  "safeActions": [{ "id": "open", "type": "goto", "path": "/stateful", "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }, { "id": "create", "type": "click", "target": { "by": "role", "role": "button", "value": "Create item" }, "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }, { "id": "verify", "type": "assert", "target": { "by": "text", "value": "Item created" }, "state": "visible", "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }],
+  "journeys": [{ "id": "create-item", "name": "Create an item", "audienceIds": ["teams"], "capabilityIds": ["create-item"], "outcomeIds": ["item-created"], "steps": [{ "id": "create", "capabilityId": "create-item", "ownership": { "status": "resolved", "actorId": "workspace-member", "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }, "transitionId": "create-transition", "proofSurfaceId": "item-status", "safeActionIds": ["open", "create", "verify"] }], "evidence": [{ "type": "source", "path": "../server.ts", "line": 5 }] }]
+}

@@ -19,7 +19,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:e2e": "vitest run tests/e2e.test.ts --testTimeout=180000",
-    "fixture": "tsx fixtures/sanox/server.ts",
+    "fixture": "tsx fixtures/neutral/server.ts",
     "product-demo": "tsx src/cli.ts",
     "install:browsers": "playwright install chromium"
   },

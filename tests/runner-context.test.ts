@@ -12,14 +12,14 @@ describe('browser actor context', () => {
     const options = browserContextOptions(
       config,
       'desktop',
-      { id: 'doctor', role: 'doctor', storageState: '/tmp/doctor.json' },
+      { id: 'operator-console', label: 'Operator console', storageState: '/tmp/operator.json' },
       'en'
     );
 
     expect(options).toMatchObject({
       viewport: { width: 1440, height: 900 },
       locale: 'en',
-      storageState: '/tmp/doctor.json',
+      storageState: '/tmp/operator.json',
       colorScheme: 'light'
     });
   });

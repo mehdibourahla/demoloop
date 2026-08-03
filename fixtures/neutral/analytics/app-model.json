@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "product": "Signal Comparison",
+  "audiences": [{ "id": "reviewers", "name": "Reviewers", "evidence": [{ "type": "source", "path": "../server.ts", "line": 7 }] }],
+  "actors": [{ "id": "analysis-console", "name": "Analysis console", "evidence": [{ "type": "source", "path": "../server.ts", "line": 7 }] }],
+  "capabilities": [{ "id": "compare-signals", "name": "Compare signals", "shape": "read-only", "outcomes": ["difference-visible"], "proofSurfaces": ["comparison"], "safeActions": ["open", "filter", "verify"], "evidence": [{ "type": "source", "path": "../server.ts", "line": 7 }] }],
+  "outcomes": [{ "id": "difference-visible", "name": "Difference visible", "evidence": [{ "type": "source", "path": "../server.ts", "line": 7 }] }],
+  "proofSurfaces": [{ "id": "comparison", "name": "Comparison", "route": "/analytics", "evidence": [{ "type": "source", "path": "../server.ts", "line": 7 }] }],
+  "safeActions": [{ "id": "open", "type": "goto", "path": "/analytics", "evidence": [{ "type": "source", "path": "../server.ts", "line": 7 }] }, { "id": "filter", "type": "select", "target": { "by": "label", "value": "Window" }, "value": "week", "evidence": [{ "type": "source", "path": "../server.ts", "line": 7 }] }, { "id": "verify", "type": "assert", "target": { "by": "text", "value": "42%" }, "state": "visible", "evidence": [{ "type": "source", "path": "../server.ts", "line": 7 }] }],
+  "journeys": [{ "id": "compare-signals", "name": "Compare signals", "audienceIds": ["reviewers"], "capabilityIds": ["compare-signals"], "outcomeIds": ["difference-visible"], "steps": [{ "id": "compare", "capabilityId": "compare-signals", "ownership": { "status": "resolved", "actorId": "analysis-console", "evidence": [{ "type": "source", "path": "../server.ts", "line": 7 }] }, "proofSurfaceId": "comparison", "safeActionIds": ["open", "filter", "verify"] }], "evidence": [{ "type": "source", "path": "../server.ts", "line": 7 }] }]
+}

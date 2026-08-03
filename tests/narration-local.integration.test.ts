@@ -16,7 +16,7 @@ describe('macOS narration', () => {
 
     const result = await provider.synthesize({
       id: 'intro',
-      text: 'SanoX prepares the clinical context before the consultation begins.',
+      text: 'The workspace prepares the context before the review begins.',
       locale: 'en',
       outputPath
     });

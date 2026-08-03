@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "product": "Runtime Check",
+  "audiences": [{ "id": "maintainers", "name": "Maintainers", "evidence": [{ "type": "source", "path": "../server.ts", "line": 8 }] }],
+  "actors": [{ "id": "runtime-console", "name": "Runtime console", "evidence": [{ "type": "source", "path": "../server.ts", "line": 8 }] }],
+  "capabilities": [{ "id": "run-check", "name": "Run a check", "shape": "operational", "outcomes": ["health-visible"], "proofSurfaces": ["check-output"], "safeActions": ["open", "run", "verify"], "evidence": [{ "type": "source", "path": "../server.ts", "line": 8 }] }],
+  "outcomes": [{ "id": "health-visible", "name": "Health visible", "evidence": [{ "type": "source", "path": "../server.ts", "line": 8 }] }],
+  "proofSurfaces": [{ "id": "check-output", "name": "Check output", "route": "/operations", "evidence": [{ "type": "source", "path": "../server.ts", "line": 8 }] }],
+  "safeActions": [{ "id": "open", "type": "goto", "path": "/operations", "evidence": [{ "type": "source", "path": "../server.ts", "line": 8 }] }, { "id": "run", "type": "click", "target": { "by": "role", "role": "button", "value": "Run check" }, "evidence": [{ "type": "source", "path": "../server.ts", "line": 8 }] }, { "id": "verify", "type": "assert", "target": { "by": "text", "value": "Check passed" }, "state": "visible", "evidence": [{ "type": "source", "path": "../server.ts", "line": 8 }] }],
+  "journeys": [{ "id": "run-check", "name": "Run a check", "audienceIds": ["maintainers"], "capabilityIds": ["run-check"], "outcomeIds": ["health-visible"], "steps": [{ "id": "run", "capabilityId": "run-check", "ownership": { "status": "resolved", "actorId": "runtime-console", "evidence": [{ "type": "source", "path": "../server.ts", "line": 8 }] }, "proofSurfaceId": "check-output", "safeActionIds": ["open", "run", "verify"] }], "evidence": [{ "type": "source", "path": "../server.ts", "line": 8 }] }]
+}

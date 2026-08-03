@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "product": "Route Catalog",
+  "proofSurfaces": [
+    { "id": "overview", "name": "Overview", "route": "/route-only/overview", "evidence": [{ "type": "source", "path": "../server.ts", "line": 10 }] },
+    { "id": "activity", "name": "Activity", "route": "/route-only/activity", "evidence": [{ "type": "source", "path": "../server.ts", "line": 10 }] }
+  ]
+}

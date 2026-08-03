@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { discoverProduct } from '../src/discovery.js';
-import { planScenario } from '../src/planner.js';
+import { planDemo } from '../src/planner.js';
 import { executeScenario } from '../src/runner.js';
 import { ConfigSchema, ExecutionReportSchema, ScenarioSchema, TimelineSchema } from '../src/schemas.js';
 
@@ -19,17 +19,19 @@ async function waitForServer(): Promise<void> {
 }
 
 beforeAll(async () => {
-  server = spawn(process.execPath, ['--import', 'tsx', 'fixtures/sanox/server.ts'], { cwd: resolve('.'), stdio: 'ignore' });
+  server = spawn(process.execPath, ['--import', 'tsx', 'fixtures/neutral/server.ts'], { cwd: resolve('.'), stdio: 'ignore' });
   await waitForServer();
 });
 
 afterAll(() => server?.kill('SIGTERM'));
 
 describe('deterministic scenario runner', () => {
-  test('passes two consecutive rehearsals across isolated patient and physician contexts', async () => {
+  test('passes two consecutive rehearsals across isolated handoff contexts', async () => {
     const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-rehearse-'));
-    const model = await discoverProduct(resolve('fixtures/sanox'));
-    const planned = planScenario(model, { mode: 'journey', journey: 'patient-to-physician', locale: 'fr' });
+    const model = await discoverProduct(resolve('fixtures/neutral/handoff'));
+    const result = planDemo(model, { mode: 'journey', journeyId: 'deliver-item', locale: 'en' });
+    if (result.status !== 'planned') throw new Error('Expected planned handoff');
+    const planned = result.outputs[0];
     const scenario = ScenarioSchema.parse({ ...planned, scenes: planned.scenes.map((scene) => ({ ...scene, actions: scene.actions.map((action) => ['click', 'fill', 'select'].includes(action.type) ? { ...action, timing: { cursorDurationMs: 300, settleBeforeMs: 150, pauseAfterMs: 700, ...(action.type === 'fill' ? { keystrokeDelayMs: 60 } : {}) } } : action) })) });
     const config = ConfigSchema.parse({ app: { url: 'http://127.0.0.1:4173' } });
     const report = ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'rehearse', outputDirectory, device: 'desktop' }));
@@ -39,15 +41,17 @@ describe('deterministic scenario runner', () => {
     expect(report.failedRequests).toEqual([]);
     expect(report.scenes.every((scene) => scene.status === 'passed')).toBe(true);
     const timeline = TimelineSchema.parse(JSON.parse(await readFile(report.artifacts.timeline, 'utf8')));
-    expect(new Set(timeline.events.map((event) => event.actor))).toEqual(new Set(['patient', 'physician']));
+    expect(new Set(timeline.events.map((event) => event.actor))).toEqual(new Set(['origin-context', 'destination-context']));
   }, 60_000);
 
   test('records real scene videos only with a matching two-pass receipt', async () => {
     const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-record-'));
     const rehearsalDirectory = join(outputDirectory, 'rehearsal');
     const recordingDirectory = join(outputDirectory, 'recording');
-    const model = await discoverProduct(resolve('fixtures/sanox'));
-    const planned = planScenario(model, { mode: 'journey', journey: 'patient-to-physician', locale: 'fr' });
+    const model = await discoverProduct(resolve('fixtures/neutral/handoff'));
+    const result = planDemo(model, { mode: 'journey', journeyId: 'deliver-item', locale: 'en' });
+    if (result.status !== 'planned') throw new Error('Expected planned handoff');
+    const planned = result.outputs[0];
     const scenario = ScenarioSchema.parse({ ...planned, scenes: planned.scenes.map((scene) => ({ ...scene, actions: scene.actions.map((action) => ['click', 'fill', 'select'].includes(action.type) ? { ...action, timing: { cursorDurationMs: 300, settleBeforeMs: 150, pauseAfterMs: 700, ...(action.type === 'fill' ? { keystrokeDelayMs: 60 } : {}) } } : action) })) });
     const config = ConfigSchema.parse({ app: { url: 'http://127.0.0.1:4173' } });
     const rehearsal = ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'rehearse', outputDirectory: rehearsalDirectory, device: 'desktop' }));

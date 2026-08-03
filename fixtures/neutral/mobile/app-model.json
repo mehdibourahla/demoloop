@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "product": "Quick Capture",
+  "audiences": [{ "id": "on-the-go", "name": "On-the-go users", "evidence": [{ "type": "source", "path": "../server.ts", "line": 9 }] }],
+  "actors": [{ "id": "mobile-context", "name": "Mobile context", "evidence": [{ "type": "source", "path": "../server.ts", "line": 9 }] }],
+  "capabilities": [{ "id": "add-entry", "name": "Add an entry", "shape": "stateful", "outcomes": ["entry-added"], "proofSurfaces": ["entry-status"], "safeActions": ["open", "add", "verify"], "evidence": [{ "type": "source", "path": "../server.ts", "line": 9 }] }],
+  "outcomes": [{ "id": "entry-added", "name": "Entry added", "evidence": [{ "type": "source", "path": "../server.ts", "line": 9 }] }],
+  "proofSurfaces": [{ "id": "entry-status", "name": "Entry status", "route": "/mobile", "evidence": [{ "type": "source", "path": "../server.ts", "line": 9 }] }],
+  "safeActions": [{ "id": "open", "type": "goto", "path": "/mobile", "evidence": [{ "type": "source", "path": "../server.ts", "line": 9 }] }, { "id": "add", "type": "click", "target": { "by": "role", "role": "button", "value": "Add entry" }, "evidence": [{ "type": "source", "path": "../server.ts", "line": 9 }] }, { "id": "verify", "type": "assert", "target": { "by": "text", "value": "Entry added" }, "state": "visible", "evidence": [{ "type": "source", "path": "../server.ts", "line": 9 }] }],
+  "journeys": [{ "id": "add-entry", "name": "Add an entry", "audienceIds": ["on-the-go"], "capabilityIds": ["add-entry"], "outcomeIds": ["entry-added"], "steps": [{ "id": "add", "capabilityId": "add-entry", "ownership": { "status": "resolved", "actorId": "mobile-context", "evidence": [{ "type": "source", "path": "../server.ts", "line": 9 }] }, "proofSurfaceId": "entry-status", "safeActionIds": ["open", "add", "verify"] }], "evidence": [{ "type": "source", "path": "../server.ts", "line": 9 }] }]
+}
