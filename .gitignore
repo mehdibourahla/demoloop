@@ -4,4 +4,5 @@ artifacts/
 test-results/
 playwright-report/
 docs/superpowers/
+.worktrees/
 .DS_Store
