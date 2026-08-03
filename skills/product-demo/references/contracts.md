@@ -1,20 +1,34 @@
 # Runtime contracts
 
-The pipeline is `repository + app + request -> product model -> scenario YAML -> two-pass receipt -> raw scenes + timeline -> MP4 -> reports`.
+The pipeline is `repository + app + request -> product model -> plan result -> scenarios -> two-pass receipt -> raw scenes + timeline -> MP4 -> deterministic report -> Watch review -> final report`.
 
-Artifacts:
+## Product and planning
 
-- `product-model.json`: roles, routes, features, journeys, source evidence, runtime evidence, readiness.
-- scenario YAML: preconditions, actors, scenes, semantic actions, assertions, annotations, narration, timing, branding.
-- `execution-report.json`: digest, pass count, scene states, console/request failures, and artifact paths.
-- `timeline.json`: action timestamps, labels, actors, targets, bounding boxes, and state.
-- raw scene WebMs, Playwright traces, and final screenshots.
-- normalized desktop/mobile MP4 and `quality-report.json`.
+- `product-model.json` stores audiences, actors and sessions, capabilities, journeys, states, transitions, relationships, outcomes, proof surfaces, safe actions, async behavior, and evidence.
+- Evidence is source, runtime observation, or explicit user confirmation. Never replace unresolved actor ownership or behavior with a guess.
+- Planning returns `planned` or `needs-authoring`. Route-only discovery cannot become a public scenario.
+- Full planning creates a short public master, actor journey clips, coverage, and explicit omissions.
+- Scene purposes are hook, context, interaction, exploration, state-change, handoff, result, proof, montage, and close.
 
-Recording accepts only a passing receipt with at least two consecutive rehearsals and the exact current scenario SHA-256 digest. The deterministic runner owns contexts, locators, waits, actions, capture, and evidence. The agent may only edit between executions.
+## Capture and presentation
 
-The planning agent owns presentation pacing. It may set `timing.cursorDurationMs`, `timing.settleBeforeMs`, `timing.keystrokeDelayMs`, and `timing.pauseAfterMs` on each action after considering narration, cursor distance, action meaning, and UI transition weight. These values are immutable during the final take. Manifests without them use conservative runtime defaults; `pauseAfterMs` remains supported for compatibility.
+- Recording accepts only a passing two-rehearsal receipt for the exact scenario digest. Presentation and audio changes invalidate the digest.
+- The deterministic runner owns contexts, semantic locators, waits, actions, cursor motion, capture, and evidence. The agent edits only between runs.
+- `timing` owns cursor travel, settling, keystroke delay, and post-action dwell. Presentation owns ROI, camera, loading treatment, transition weight, caption placement, opening, closing, and actor transitions.
+- Use separate browser contexts for actors. Never round-robin actors or merge distinct sessions.
+- Render one caption system only. Do not show action names, click circles, or capture-time chapter/brand overlays.
 
-Use multiple Playwright contexts for actors with separate sessions. Prefer semantic state waits and assertions; do not add arbitrary sleeps to repair timing. Human presentation pauses belong to action timing and only run during recording.
+## Audio
 
-Quality gates cover scene/assertion success, console, failed requests, locator state, duration, viewport, animated cursor configuration, dead time, annotation placement, sensitive text, narration synchronization status, H.264, yuv420p, and omitted scenes.
+- `silent`: no audio stream.
+- `music`: validated local asset with explicit level and fades.
+- `voiceover`: configured narration provider.
+- `voiceover-and-music`: both, with music kept subordinate.
+
+ElevenLabs reads its key from `ELEVENLABS_API_KEY`; never put secrets in scenarios or source control. Generated audio remains local and content-addressed.
+
+## Quality
+
+`quality-report.json` separates technical checks, deterministic editorial checks, and the Watch agent review. Deterministic analysis measures encoding, viewport, audio policy, sensitive information, distinct/discarded frames, static spans, hook, close, product dominance, ROI obstruction, and montage ratio.
+
+Before Watch, status is `pending-agent-review` unless deterministic checks already reject the output. Watch writes a schema-valid `editorial-review.json`; `finalize` accepts only the actual absolute MP4, an accept verdict, score at least 7, complete frame inspection, and a usable transcript for voiced output.

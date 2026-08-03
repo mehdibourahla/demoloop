@@ -6,11 +6,12 @@ import { pathToFileURL } from 'node:url';
 import YAML from 'yaml';
 import { discoverProduct } from './discovery.js';
 import { evaluateDemo } from './evaluate.js';
+import { finalizeQuality } from './finalize.js';
 import { planDemo, type PlanOptions } from './planner.js';
 import { renderDemo } from './render.js';
 import { executeScenario } from './runner.js';
 import { ElevenLabsNarrationProvider, MacOSNarrationProvider } from './narration.js';
-import { ConfigSchema, ExecutionReportSchema, ProductModelSchema, QualityReportSchema, ScenarioSchema, type DemoConfig, type Scenario } from './schemas.js';
+import { ConfigSchema, EditorialReviewSchema, ExecutionReportSchema, ProductModelSchema, QualityReportSchema, ScenarioSchema, type DemoConfig, type Scenario } from './schemas.js';
 
 const help = `product-demo <command> [scenario] [options]
 
@@ -21,6 +22,7 @@ Commands:
   record <scenario>                Capture Playwright screencasts from a valid receipt
   render <scenario>                Compose and normalize an MP4 with Remotion and FFmpeg
   evaluate <scenario>              Write the machine-readable quality report
+  finalize <scenario>              Apply a Watch editorial review to a quality report
   run <scenario>                   Rehearse, record, render, and evaluate
 
 Options: --config <path> --device <desktop|mobile> --locale <locale> --audience <name> --duration-seconds <number> --audio <silent|music|voiceover|voiceover-and-music> --output <path>`;
@@ -114,7 +116,7 @@ async function record(config: DemoConfig, scenario: Scenario, device: string, re
 export async function runCli(args: string[]): Promise<number> {
   const command = args[0] ?? 'help';
   if (command === 'help' || command === '--help' || command === '-h') { console.log(help); return 0; }
-  const supported = new Set(['discover', 'plan', 'rehearse', 'record', 'render', 'evaluate', 'run']);
+  const supported = new Set(['discover', 'plan', 'rehearse', 'record', 'render', 'evaluate', 'finalize', 'run']);
   if (!supported.has(command)) throw new Error(`Unknown command: ${command}`);
   const config = await loadConfig(flag(args, 'config', 'product-demo.config.yaml')!);
   const device = flag(args, 'device', 'desktop')!;
@@ -168,6 +170,20 @@ export async function runCli(args: string[]): Promise<number> {
   const loaded = await loadScenario(reference);
   const scenario = scenarioForArgs(loaded.scenario, args);
   const paths = pathsFor(config, scenario, device);
+
+  if (command === 'finalize') {
+    const reviewPath = flag(args, 'review');
+    if (!reviewPath) throw new Error('finalize requires --review <absolute-json-path>');
+    const qualityPath = flag(args, 'quality', paths.quality)!;
+    const videoPath = flag(args, 'video', join(paths.render, `${scenario.id}-${device}.mp4`))!;
+    const quality = QualityReportSchema.parse(JSON.parse(await readFile(qualityPath, 'utf8')));
+    const review = EditorialReviewSchema.parse(JSON.parse(await readFile(resolve(reviewPath), 'utf8')));
+    const finalized = finalizeQuality(quality, review, { videoPath: resolve(videoPath), audioPolicy: scenario.audio.policy });
+    const destination = output ?? qualityPath;
+    await writeFile(destination, JSON.stringify(finalized, null, 2));
+    console.log(destination);
+    return finalized.passed ? 0 : 1;
+  }
 
   if (command === 'rehearse') {
     const report = await rehearse(config, scenario, device, output);

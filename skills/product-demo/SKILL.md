@@ -1,51 +1,63 @@
 ---
 name: product-demo
-description: Use when creating, updating, or evaluating evidence-backed product demos from a software repository and running web application, including full sweeps, feature clips, role journeys, release demos, mobile recordings, and localized videos.
+description: Use when creating, updating, or evaluating evidence-backed product demo videos from a software repository and running web application, including full, feature, actor, release, montage, mobile, localized, silent, music, or voiceover outputs.
 ---
 
 # Product Demo
 
-Create demos as versioned executable scenarios. Permit agent reasoning during discovery, planning, rehearsal, and repair. Never permit agent reasoning to choose actions during the final take.
+Create a coherent product story from evidence, then compile it into a deterministic final take. Let the agent choose the story, camera, pacing, cursor timing, and audio treatment during planning; never let it improvise actions while recording.
 
-## Required workflow
+For production setup, install Watch with `npx skills add bradautomates/claude-video -g` and verify `watch` appears in `npx skills list -g`.
 
-1. Read `references/contracts.md`. Read `references/installation.md` only when setup is incomplete. Read `references/adapters.md` only when voiceover, remote browsers, Playwright MCP, or Chrome DevTools MCP is requested.
-2. Confirm the repository root, application URL, requested mode, audience, device, locale, duration, narration, and brand. Infer missing presentation options conservatively; never infer permission to access production.
-3. Run `product-demo discover`. Inspect `product-model.json`. Require source evidence for every feature and runtime evidence or explicit user confirmation before setting `demoReady`.
-4. Run `product-demo plan` with the requested mode. Review the YAML manifest, source evidence, scene coverage, synthetic data, and actor boundaries. Keep semantic locators only: role, label, test ID, then text. Choose presentation timing before rehearsal and lock exact values into each action's `timing` object. Optimize for comprehension rather than minimum duration: use narration length, pointer distance, action meaning, and transition weight. Typical ranges are 350–700 ms cursor travel, 140–240 ms settling, 55–80 ms per typed character, 700–1,000 ms ordinary dwell, and 1,100–1,800 ms after meaningful state changes.
-5. Run `product-demo rehearse <scenario>`. On failure, use trace, ARIA snapshot, screenshot, console, request, and report evidence to repair the manifest or application. Rerun until two consecutive passes produce a receipt for the exact scenario digest.
-6. Run `product-demo record <scenario>`. Do not edit the scenario, inject actions, or use an LLM while recording. Any edit invalidates the receipt and requires rehearsal again.
-7. Run `product-demo render <scenario>` and `product-demo evaluate <scenario>`. Preserve raw WebM files even when rendering fails. Inspect the MP4 and report; repair and repeat if any gate fails.
-8. Report output paths, omitted scenes, failures, sensitive findings, device, locale, duration, encoding, and coverage. Never describe a partial result as complete.
+## Workflow
 
-Use `product-demo run <scenario>` only after the manifest exists; it performs steps 5–7 without an agent-controlled final take.
+1. Read `references/contracts.md`. If setup is incomplete, read `references/installation.md`. For voiceover or browser adapters, read `references/adapters.md`.
+2. Confirm repository, app URL, output type, audience, device, locale, duration, audio policy, and brand. Never infer production access.
+3. Run `product-demo discover`. Treat routes as candidate proof surfaces, not a story. Every actor, capability, journey, transition, outcome, and safe action needs evidence.
+4. Run `product-demo plan`. If it returns `needs-authoring`, report the known facts, unresolved decisions, scene briefs, and missing runtime evidence; do not invent a route slideshow. For full mode, preserve the master, journey clips, coverage, and omissions.
+5. Review scene purposes and causal continuity. Lock semantic actions and natural timing before capture. Use 350–700 ms cursor travel, 140–240 ms settling, 55–80 ms keystrokes, 700–1,000 ms ordinary dwell, and 1,100–1,800 ms after meaningful state changes as starting ranges, then adjust to the interface.
+6. Run `product-demo rehearse <scenario>` until the exact digest passes twice. Repair only between runs.
+7. Run `product-demo record <scenario>`. Do not edit the scenario or choose new actions during the final take.
+8. Run `product-demo render <scenario>` and `product-demo evaluate <scenario>`. Preserve raw media. A deterministic pass is not final acceptance.
+9. Run Watch against the actual absolute MP4: `/watch <absolute-video-path>`. Use balanced detail by default. Add `--resolution 1024` when interface text must be evaluated. Use `--no-whisper` only when the video is intentionally silent or has no audio stream. Run focused timestamp ranges when the first scan exposes a questionable section.
+10. Inspect every extracted frame. Write `editorial-review.json` matching `schemas/editorial-review.schema.json`, then run `product-demo finalize <scenario> --video <absolute-video-path> --review <absolute-review-json-path>`. Repair and repeat after rejection.
 
-## Modes
+The review must contain:
 
-- Full sweep: plan a short master narrative plus individual journey clips and a coverage report. Do not create one long undifferentiated recording.
-- Named scenario or role journey: select a discovered journey and all required actors.
-- Feature: include only the feature's preconditions, action, result, and proof.
-- Release diff: compare version control evidence, then demonstrate only runtime-confirmed changed behavior.
+- Score out of 10.
+- Visually distinct versus discarded frame count.
+- Hook assessment.
+- Narrative continuity.
+- Static or repetitive sections.
+- Readability.
+- Cursor and attention guidance.
+- Overlay obstruction.
+- Transition quality.
+- Audio treatment.
+- Outcome and closing quality.
+- Timestamped defects.
+- Final accept or reject verdict.
 
-## Safety gates
+A public-facing video below 7/10 must be rejected and returned to planning or editing. A technical pass cannot override an editorial rejection. The agent must not claim an editorial review occurred when Watch was not run; a missing review remains `pending-agent-review`. A voiced video cannot pass when transcription was required but unavailable.
 
-- Refuse production-looking hosts by default. Require explicit `allowProduction` configuration and user authority to override.
-- Prefer detected seeds, fixtures, and demo accounts. Use synthetic people and health data by default.
-- Run reset and seed commands before each rehearsal and recording pass.
-- Keep all files local. Never upload source, traces, screenshots, audio, or video unless the user explicitly requests a named destination.
-- Fail on assertions, console errors, failed requests, stale receipts, privacy findings, missing raw media, or invalid encoding. Record omitted scenes and reasons.
+## Output choices
 
-## Command examples
+| Request | Output |
+|---|---|
+| Full | Short public master, journey clips, coverage, omissions |
+| Actor or journey | One causally complete journey |
+| Feature | Preconditions, interaction, observable result, proof |
+| Release | Only evidence-backed changed behavior |
+| Montage | Intentionally montage-shaped output; never a fallback |
 
-```bash
-product-demo discover
-product-demo plan --mode full --audience investor --duration 5m
-product-demo rehearse patient-to-physician
-product-demo record patient-to-physician --device mobile --locale fr
-product-demo render patient-to-physician --device mobile
-product-demo evaluate patient-to-physician --device mobile
-product-demo run patient-to-physician --device mobile --locale fr --narration captions
-product-demo run patient-to-physician --device desktop --narration voiceover
-```
+Use one caption mechanism. Keep the product viewport dominant, preserve small type, show a cursor without click circles or action labels, and ensure overlays avoid the region of interest. Make silence, local music, voiceover, or voiceover-plus-music explicit.
 
-For a repository checkout where the CLI is not installed globally, use `npm run product-demo -- <command>` or `node skills/product-demo/scripts/product-demo.mjs <command>`.
+## Safety and completion
+
+- Use synthetic data and non-production hosts by default.
+- Reset and seed before each pass when commands exist.
+- Keep artifacts local unless the user names an upload destination.
+- Reject assertion failures, console errors, failed requests, stale receipts, privacy findings, missing media, invalid encoding, obstructed UI, repeated static sections, incomplete outcome, or failed Watch review.
+- Report output paths, coverage, omissions, device, locale, duration, audio policy, deterministic status, Watch score, defects, and verdict.
+
+For a checkout without a global CLI, run `npm run product-demo -- <command>` or `node skills/product-demo/scripts/product-demo.mjs <command>`.
