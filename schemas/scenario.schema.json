@@ -194,6 +194,14 @@
               "close"
             ]
           },
+          "capabilityId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "proofSurfaceId": {
+            "type": "string",
+            "minLength": 1
+          },
           "actor": {
             "type": "string",
             "minLength": 1

@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url';
 import YAML from 'yaml';
 import { discoverProduct } from './discovery.js';
 import { evaluateDemo } from './evaluate.js';
-import { planScenario } from './planner.js';
+import { planDemo, type PlanOptions } from './planner.js';
 import { renderDemo } from './render.js';
 import { executeScenario } from './runner.js';
 import { ElevenLabsNarrationProvider, MacOSNarrationProvider } from './narration.js';
@@ -23,7 +23,7 @@ Commands:
   evaluate <scenario>              Write the machine-readable quality report
   run <scenario>                   Rehearse, record, render, and evaluate
 
-Options: --config <path> --device <desktop|mobile> --locale <locale> --audience <name> --duration <value> --narration <none|captions|voiceover> --output <path>`;
+Options: --config <path> --device <desktop|mobile> --locale <locale> --audience <name> --duration-seconds <number> --audio <silent|music|voiceover|voiceover-and-music> --output <path>`;
 
 function flag(args: string[], name: string, fallback?: string): string | undefined {
   const index = args.indexOf(`--${name}`);
@@ -72,7 +72,15 @@ async function ensureApp(config: DemoConfig): Promise<() => void> {
 }
 
 function scenarioForArgs(scenario: Scenario, args: string[]): Scenario {
-  return ScenarioSchema.parse({ ...scenario, locale: flag(args, 'locale', scenario.locale), audience: flag(args, 'audience', scenario.audience), duration: flag(args, 'duration', scenario.duration), narration: flag(args, 'narration', scenario.narration) });
+  const duration = flag(args, 'duration-seconds');
+  const audio = flag(args, 'audio');
+  return ScenarioSchema.parse({
+    ...scenario,
+    locale: flag(args, 'locale', scenario.locale),
+    audience: flag(args, 'audience', scenario.audience),
+    requestedDurationSeconds: duration ? Number(duration) : scenario.requestedDurationSeconds,
+    audio: audio ? { ...scenario.audio, policy: audio } : scenario.audio
+  });
 }
 
 function pathsFor(config: DemoConfig, scenario: Scenario, device: string) {
@@ -81,7 +89,7 @@ function pathsFor(config: DemoConfig, scenario: Scenario, device: string) {
 }
 
 export function narrationProvider(config: DemoConfig, scenario: Scenario) {
-  if (scenario.narration !== 'voiceover') return undefined;
+  if (scenario.audio.policy !== 'voiceover' && scenario.audio.policy !== 'voiceover-and-music') return undefined;
   if (config.narration.provider === 'macos') return new MacOSNarrationProvider(config.narration.macos);
   if (config.narration.provider !== 'elevenlabs') throw new Error('Voiceover requires a configured narration provider');
   const settings = config.narration.elevenlabs;
@@ -127,11 +135,30 @@ export async function runCli(args: string[]): Promise<number> {
   if (command === 'plan') {
     const modelPath = flag(args, 'model', join(config.output.directory, 'product-model.json'))!;
     const model = ProductModelSchema.parse(JSON.parse(await readFile(modelPath, 'utf8')));
-    const scenario = planScenario(model, { mode: flag(args, 'mode', 'full') as 'full', journey: flag(args, 'journey', 'patient-to-physician'), feature: flag(args, 'feature'), role: flag(args, 'role'), releaseFeatures: flag(args, 'features')?.split(',').filter(Boolean), locale: flag(args, 'locale', 'en'), audience: flag(args, 'audience', 'general'), duration: flag(args, 'duration'), narration: flag(args, 'narration', 'none') as 'none', baseUrl: config.app.url });
-    const destination = output ?? resolve('scenarios', `${scenario.id}.yaml`);
-    await mkdir(dirname(destination), { recursive: true });
-    await writeFile(destination, YAML.stringify(scenario));
-    if (flag(args, 'mode', 'full') === 'full') await writeFile(join(dirname(destination), `${scenario.id}.coverage.json`), JSON.stringify({ master: scenario.id, journeys: model.journeys, features: model.features.map(({ id, name, demoReady }) => ({ id, name, demoReady })) }, null, 2));
+    const mode = flag(args, 'mode', 'full') as PlanOptions['mode'];
+    const duration = flag(args, 'duration-seconds');
+    const audioPolicy = flag(args, 'audio', 'silent') as Scenario['audio']['policy'];
+    const result = planDemo(model, {
+      mode,
+      journeyId: flag(args, 'journey'),
+      capabilityId: flag(args, 'capability'),
+      actorId: flag(args, 'actor'),
+      releaseCapabilityIds: flag(args, 'capabilities')?.split(',').filter(Boolean),
+      locale: flag(args, 'locale', 'en'), audience: flag(args, 'audience'), requestedDurationSeconds: duration ? Number(duration) : undefined,
+      audio: { policy: audioPolicy }
+    });
+    const destination = output ?? join(config.output.directory, 'plan');
+    await mkdir(destination, { recursive: true });
+    if (result.status === 'needs-authoring') {
+      const path = join(destination, 'needs-authoring.json');
+      await writeFile(path, JSON.stringify(result, null, 2));
+      console.log(path);
+      return 2;
+    }
+    for (const scenario of result.outputs) await writeFile(join(destination, `${scenario.id}.yaml`), YAML.stringify(scenario));
+    await writeFile(join(destination, 'coverage-report.json'), JSON.stringify(result.coverage, null, 2));
+    await writeFile(join(destination, 'omissions.json'), JSON.stringify(result.omissions, null, 2));
+    await writeFile(join(destination, 'plan-result.json'), JSON.stringify(result, null, 2));
     console.log(destination);
     return 0;
   }

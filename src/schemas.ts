@@ -113,6 +113,7 @@ export const ScenarioSchema = z.object({
   actors: z.array(z.object({ id: z.string().min(1), label: z.string().min(1), storageState: z.string().min(1).optional() })).min(1),
   scenes: z.array(z.object({
     id: z.string().regex(/^[a-z0-9-]+$/), title: z.string().min(1), description: z.string().min(1).optional(), purpose: ScenePurposeSchema,
+    capabilityId: z.string().min(1).optional(), proofSurfaceId: z.string().min(1).optional(),
     actor: z.string().min(1), causalLink: z.object({ fromSceneId: z.string().min(1), relationshipId: z.string().min(1).optional(), transitionId: z.string().min(1).optional(), evidence: EvidenceArraySchema }).optional(),
     presentation: ScenePresentationSchema, actions: z.array(ActionSchema).min(1)
   })).min(1)
