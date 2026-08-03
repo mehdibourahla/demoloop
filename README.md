@@ -1,69 +1,46 @@
 # Product Demo
 
-Turn a software repository and a running web app into a polished, evidence-backed product video.
+Turn a software repository and running web app into evidence-backed product videos with natural cursor movement, deliberate pacing, optional voiceover, and an editorial acceptance gate.
 
-`product-demo` gives an LLM agent room to discover the product, choose the story, and set natural pacing. It then locks that plan into YAML and executes the final take deterministically with Playwright, Remotion, and FFmpeg. The result has a smooth visible cursor, no click circles or action labels, optional ElevenLabs voiceover, and machine-readable quality evidence.
+The LLM agent decides what story to tell and how to present it. The CLI locks that plan, rehearses it twice, and records the final take deterministically. Videos never show action labels, typing labels, click circles, or other automation diagnostics.
 
-## What it does
+## What it produces
 
-1. **Discovers** routes, roles, features, tests, fixtures, and runtime evidence.
-2. **Plans** a versioned scenario with semantic locators and exact cursor, typing, and pause timing selected by the agent.
-3. **Rehearses** the scenario twice and issues a receipt tied to its content digest.
-4. **Records** the approved scenario without LLM decisions during the final take.
-5. **Renders** branded desktop or mobile H.264 video, with captions or ElevenLabs narration.
-6. **Evaluates** assertions, browser errors, privacy findings, cursor visibility, audio, duration, viewport, and encoding.
+- A product model with evidence for audiences, actors, capabilities, journeys, state, relationships, outcomes, proof surfaces, and safe actions.
+- Either a structured `needs-authoring` result or executable scenario manifests.
+- A short public master plus actor journey clips, coverage, and omissions in full mode.
+- Desktop or mobile H.264 MP4s with a smooth visible cursor and explicit silent, music, voiceover, or voiceover-plus-music treatment.
+- Separate technical, deterministic editorial, and Watch agent-review reports.
 
-The repository includes a small SanoX Care fixture so you can run the complete pipeline without another application.
+Routes alone are never converted into a slideshow. Unresolved actors and missing proof remain unresolved until evidence or the user settles them.
 
 ## Requirements
 
-- Node.js 22 or newer
-- FFmpeg and `ffprobe` on `PATH`
-- Chromium installed through Playwright
-
-On macOS, FFmpeg can be installed with `brew install ffmpeg`.
-
-## Quick start (no API key)
+- Node.js 22+
+- FFmpeg and `ffprobe`
+- Playwright Chromium
 
 ```bash
-git clone https://github.com/mehdibourahla/product-demo.git
-cd product-demo
 npm ci
 npm run install:browsers
-npm run product-demo -- run patient-to-physician \
-  --device desktop \
-  --narration captions
+npm run build
 ```
 
-This starts the included fixture, rehearses it twice, records the journey, renders the MP4, and writes a quality report. Outputs are created under:
+## Try the neutral fixture
 
-```text
-artifacts/patient-to-physician/desktop/
-├── rehearsal/execution-report.json
-├── recording/raw.webm
-├── recording/timeline.json
-├── render/patient-to-physician-desktop.mp4
-└── quality-report.json
-```
-
-Try the mobile layout by changing `--device desktop` to `--device mobile`.
-
-## Add ElevenLabs voiceover
-
-Keep the API key in your environment—never put it in YAML or commit it:
+The included fixtures cover stateful, cross-context handoff, analytics, operations, mobile, and route-only product shapes.
 
 ```bash
-export ELEVENLABS_API_KEY='your-api-key'
-npm run product-demo -- run patient-to-physician \
-  --device desktop \
-  --narration voiceover
+npm run fixture
+# In another terminal:
+npm run product-demo -- discover
+npm run product-demo -- plan --mode journey --journey deliver-item
+npm run product-demo -- run artifacts/plan/deliver-item.yaml --device desktop
 ```
 
-The included configuration selects ElevenLabs' multilingual model and a sample voice ID. Change `narration.elevenlabs.voiceId` in `product-demo.config.yaml` to use another voice. Audio is cached by provider, voice, model, format, locale, and text under `artifacts/.narration-cache`, so identical reruns do not consume credits again.
+`run` intentionally exits non-zero after rendering because a final video is not accepted until the Agent Skill completes its Watch review. The output remains available under `artifacts/deliver-item/desktop/`.
 
-Only scene narration text is sent to ElevenLabs. Source code, screenshots, traces, and video remain local.
-
-## Use it with your app
+## Use it with your application
 
 Edit `product-demo.config.yaml`:
 
@@ -85,79 +62,84 @@ runtime:
   headless: true
 narration:
   provider: none
-upload:
-  enabled: false
 ```
 
-Then discover the application and create a scenario:
+Then discover and plan:
 
 ```bash
 npm run product-demo -- discover
-npm run product-demo -- plan --mode full \
-  --audience customer \
-  --duration 2m \
-  --narration captions
+npm run product-demo -- plan --mode full --audience customer --duration-seconds 120 --audio silent
 ```
 
-Review the generated YAML before recording. Targets use durable semantic locators (`role`, `label`, `testId`, or `text`), and the agent can set exact timing per action:
+Planning modes are `full`, `journey`, `feature`, `actor`, and `release`. A planned scene declares its purpose, actor, semantic actions, presentation controls, and optional region of interest. Cursor and typing timing live in each action’s `timing` object and are part of the rehearsal digest.
+
+## Audio
+
+Audio is explicit and independent from captions:
+
+| Policy | Behavior |
+|---|---|
+| `silent` | No audio stream |
+| `music` | Validated local music asset with level and fades |
+| `voiceover` | Narration from the configured provider |
+| `voiceover-and-music` | Narration with subordinate local music |
+
+For ElevenLabs, keep the key in the environment and configure a voice ID:
+
+```bash
+export ELEVENLABS_API_KEY='your-key'
+```
 
 ```yaml
-- title: Submit the intake
-  type: click
-  target:
-    by: role
-    role: button
-    value: Submit
-  timing:
-    cursorDurationMs: 550
-    settleBeforeMs: 200
-    pauseAfterMs: 1400
+narration:
+  provider: elevenlabs
+  elevenlabs:
+    voiceId: your-voice-id
+    modelId: eleven_multilingual_v2
+    outputFormat: mp3_44100_128
+    apiKeyEnv: ELEVENLABS_API_KEY
 ```
 
-The final recording follows those values exactly. If the scenario changes, its rehearsal receipt becomes invalid and it must be rehearsed again.
+Only narration text is sent to ElevenLabs. Audio is cached locally by content and provider settings. Never put the key in YAML or source control.
 
 ## Commands
 
 | Command | Purpose |
-| --- | --- |
+|---|---|
 | `discover` | Build an evidence-backed product model |
-| `plan --mode full` | Generate a scenario and coverage report |
-| `rehearse <scenario>` | Require two consecutive deterministic passes |
-| `record <scenario>` | Capture a scenario with a valid rehearsal receipt |
-| `render <scenario>` | Compose and normalize an MP4 |
-| `evaluate <scenario>` | Produce the quality report |
-| `run <scenario>` | Rehearse, record, render, and evaluate in one command |
+| `plan` | Produce scenarios or `needs-authoring` |
+| `rehearse` | Require two consecutive deterministic passes |
+| `record` | Capture using an exact rehearsal receipt |
+| `render` | Compose and normalize the MP4 |
+| `evaluate` | Run technical and deterministic editorial checks |
+| `finalize` | Apply a validated Watch editorial review |
+| `run` | Rehearse, record, render, and evaluate |
 
-Run `npm run product-demo -- help` for all options.
+Run `npm run product-demo -- help` for flags.
 
-## Install as an Agent Skill
+## Agent Skill and mandatory video review
 
-The portable skill is in `skills/product-demo`. Symlink it into any supported skill directory:
+The portable skill lives at `skills/product-demo`. Symlink or copy it into `.agents/skills/product-demo`, `.codex/skills/product-demo`, or `.claude/skills/product-demo` and keep the built CLI checkout available through `PRODUCT_DEMO_CLI` when needed.
+
+The production agent environment also requires Claude Video:
 
 ```bash
-# Cross-agent installation
-mkdir -p ~/.agents/skills
-ln -s "$PWD/skills/product-demo" ~/.agents/skills/product-demo
-
-# Or install for Codex only
-mkdir -p ~/.codex/skills
-ln -s "$PWD/skills/product-demo" ~/.codex/skills/product-demo
-
-# Or install for Claude Code only
-mkdir -p ~/.claude/skills
-ln -s "$PWD/skills/product-demo" ~/.claude/skills/product-demo
+npx skills add bradautomates/claude-video -g
+npx skills list -g
 ```
 
-Build the runtime with `npm run build`. When the skill and runtime checkout are in different locations, set `PRODUCT_DEMO_CLI` to the absolute path of `dist/src/cli.js`.
+Verify that `watch` is discoverable. After every final render, the Agent Skill runs Watch on the actual absolute MP4, inspects every extracted frame, writes `editorial-review.json`, and finalizes the quality report. Public video below 7/10 is rejected. If Watch did not run, the truthful state is `pending-agent-review`.
 
-## Safety and reproducibility
+The generic CLI does not import or require third-party Agent Skills. This separation keeps it usable in ordinary automation while the richer Agent Skill workflow enforces editorial review.
 
-- Production-looking hosts are refused unless `allowProduction` is explicitly enabled.
-- Synthetic data is the default, and reset/seed commands run before every pass.
-- Common secret and personal-data patterns are scanned before a demo passes evaluation.
-- Raw recordings are preserved if rendering fails.
-- Uploading is disabled; nothing is published automatically.
-- LLM reasoning is allowed while planning and repairing, never during the final take.
+## Safety
+
+- Production-looking hosts are refused unless explicitly allowed.
+- Synthetic data is the default; reset and seed commands run before passes when configured.
+- Secrets and personal-data patterns fail evaluation.
+- Raw recordings survive render failures.
+- Nothing uploads automatically.
+- LLM reasoning is allowed during discovery, planning, and repair—never during the final take.
 
 ## Development
 
@@ -168,7 +150,7 @@ npm run build
 npm run schemas
 ```
 
-For contracts and internals, see [the architecture](docs/architecture.md) and [skill references](skills/product-demo/references/contracts.md).
+See [architecture](docs/architecture.md), [skill workflow](skills/product-demo/SKILL.md), and [runtime contracts](skills/product-demo/references/contracts.md).
 
 ## License
 

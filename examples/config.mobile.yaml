@@ -4,7 +4,7 @@ app:
   startCommand: npm run fixture
   commandCwd: ..
 repository:
-  root: ../fixtures/sanox
+  root: ../fixtures/neutral/handoff
 output:
   directory: ../artifacts
 devices:

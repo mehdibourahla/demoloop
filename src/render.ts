@@ -67,7 +67,11 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
   const remotionPath = join(options.outputDirectory, 'remotion.mp4');
   await renderMedia({ composition, serveUrl, codec: 'h264', pixelFormat: 'yuv420p', outputLocation: remotionPath, inputProps, browserExecutable: chromium.executablePath(), overwrite: true, logLevel: 'error', crf: 20, concurrency: 2 });
   const finalPath = join(options.outputDirectory, `${options.scenario.id}-${options.device}.mp4`);
-  await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-i', remotionPath, '-map', '0:v:0', '-map', '0:a?', '-vf', 'scale=in_range=full:out_range=tv,format=yuv420p', '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-color_range', 'tv', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', finalPath]);
+  const normalization = ['-y', '-loglevel', 'error', '-i', remotionPath, '-map', '0:v:0'];
+  if (options.scenario.audio.policy === 'silent') normalization.push('-an');
+  else normalization.push('-map', '0:a:0', '-c:a', 'aac', '-b:a', '192k');
+  normalization.push('-vf', 'scale=in_range=full:out_range=tv,format=yuv420p', '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-color_range', 'tv', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', finalPath);
+  await execFileAsync('ffmpeg', normalization);
   await writeFile(join(options.outputDirectory, 'presentation-metadata.json'), JSON.stringify({
     version: 1,
     video: finalPath,

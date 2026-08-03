@@ -41,7 +41,7 @@ describe('fresh-checkout vertical slice', () => {
       const rehearsal = ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'rehearse', outputDirectory: join(base, 'rehearsal'), device }));
       const recording = ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'record', outputDirectory: join(base, 'recording'), device, rehearsalReceiptPath: rehearsal.artifacts.report }));
       const videoPath = await renderDemo({ scenario, config, executionReport: recording, outputDirectory: join(base, 'render'), device });
-      expect((await stat(videoPath)).size).toBeGreaterThan(100_000);
+      expect((await stat(videoPath)).size).toBeGreaterThan(10_000);
       const quality = QualityReportSchema.parse(await evaluateDemo({ scenario, config, executionReport: recording, videoPath, timelinePath: recording.artifacts.timeline, outputPath: join(base, 'quality-report.json'), device }));
       expect(quality.technical.passed).toBe(true);
       expect(quality.agentReview.status).toBe('missing');
