@@ -13,6 +13,17 @@ export interface PlanOptions {
   audio?: Scenario['audio'];
 }
 
+function presentation(overrides: Partial<Scenario['scenes'][number]['presentation']> = {}): Scenario['scenes'][number]['presentation'] {
+  return {
+    maxStaticHoldMs: 3_000,
+    camera: { type: 'none' },
+    loading: 'cut',
+    transitionWeight: 'light',
+    caption: { mode: 'none' },
+    ...overrides,
+  };
+}
+
 function title(value: string): string {
   return value.replace(/[-_]+/g, ' ').replace(/^./, (character) => character.toUpperCase());
 }
@@ -74,8 +85,8 @@ function scenarioForJourney(model: ProductModel, journey: ProductModel['journeys
   if (outputType === 'public-master') {
     const first = resolved[0];
     const goto = first.actions.find((action) => action.type === 'goto');
-    scenes.push({ id: 'opening-hook', title: model.product, description: journey.name, purpose: 'hook', actor: first.actorId, presentation: { opening: 'product-promise', maxStaticHoldMs: 1_800, caption: { mode: 'none' } }, actions: goto ? [goto] : [{ type: 'screenshot', name: 'opening-hook' }] });
-    scenes.push({ id: 'usage-context', title: journey.name, purpose: 'context', actor: first.actorId, presentation: { maxStaticHoldMs: 1_500, caption: { mode: 'lower-third', safeArea: 'bottom' } }, actions: [{ type: 'screenshot', name: 'usage-context' }] });
+    scenes.push({ id: 'opening-hook', title: model.product, description: journey.name, purpose: 'hook', actor: first.actorId, presentation: presentation({ opening: 'product-promise', maxStaticHoldMs: 1_800 }), actions: goto ? [goto] : [{ type: 'screenshot', name: 'opening-hook' }] });
+    scenes.push({ id: 'usage-context', title: journey.name, purpose: 'context', actor: first.actorId, presentation: presentation({ maxStaticHoldMs: 1_500, caption: { mode: 'lower-third', safeArea: 'bottom' } }), actions: [{ type: 'screenshot', name: 'usage-context' }] });
   }
   resolved.forEach((item, index) => {
     const previous = resolved[index - 1];
@@ -87,13 +98,13 @@ function scenarioForJourney(model: ProductModel, journey: ProductModel['journeys
       id: item.step.id, title: item.capability.name, purpose, capabilityId: item.capability.id, proofSurfaceId: item.step.proofSurfaceId,
       actor: item.actorId,
       causalLink: actorChanged ? { fromSceneId: previous.step.id, relationshipId: relationship?.id, transitionId: item.step.transitionId, evidence: relationship?.evidence ?? item.step.ownership.evidence } : undefined,
-      presentation: { maxStaticHoldMs: 3_000, loading: 'cut', transitionWeight: actorChanged ? 'major' : purpose === 'proof' ? 'meaningful' : 'light', caption: { mode: 'none' }, actorTransition: actorChanged ? 'split-causality' : undefined },
+      presentation: presentation({ transitionWeight: actorChanged ? 'major' : purpose === 'proof' ? 'meaningful' : 'light', actorTransition: actorChanged ? 'split-causality' : undefined }),
       actions: outputType === 'public-master' ? item.actions.filter((action) => action.type !== 'goto') : item.actions
     });
   });
   if (outputType === 'public-master') {
     const last = resolved.at(-1)!;
-    scenes.push({ id: 'deliberate-close', title: model.product, description: model.outcomes.find((outcome) => journey.outcomeIds.includes(outcome.id))?.name, purpose: 'close', actor: last.actorId, presentation: { closing: 'call-to-action', maxStaticHoldMs: 2_000, caption: { mode: 'lower-third', safeArea: 'bottom' } }, actions: [{ type: 'screenshot', name: 'deliberate-close' }] });
+    scenes.push({ id: 'deliberate-close', title: model.product, description: model.outcomes.find((outcome) => journey.outcomeIds.includes(outcome.id))?.name, purpose: 'close', actor: last.actorId, presentation: presentation({ closing: 'call-to-action', maxStaticHoldMs: 2_000, caption: { mode: 'lower-third', safeArea: 'bottom' } }), actions: [{ type: 'screenshot', name: 'deliberate-close' }] });
   }
   const scenario = ScenarioSchema.parse({
     version: 2, id: outputType === 'public-master' ? `${journey.id}-master` : journey.id, title: journey.name, outputType,

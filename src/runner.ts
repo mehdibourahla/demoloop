@@ -226,8 +226,6 @@ async function runPass(options: ExecuteOptions, pass: number) {
       if (options.mode === 'record' && !failed) {
         await page.screencast.start({ path: rawPath, size: { width: options.config.devices[options.device].width, height: options.config.devices[options.device].height }, quality: 90 });
         recordingStarted = true;
-        await page.screencast.showChapter(scene.title, { description: scene.description, duration: 1_200 });
-        await page.screencast.showOverlay(`<div style="position:fixed;top:20px;left:20px;padding:8px 12px;border-radius:999px;background:${options.scenario.branding.primary};color:white;font:700 14px system-ui;box-shadow:0 8px 24px #0003">${options.scenario.branding.name}</div>`, { duration: 1_200 });
       }
       for (const [phaseIndex, sourceAction] of phases.capture.entries()) {
         if (failed) break;
@@ -241,7 +239,7 @@ async function runPass(options: ExecuteOptions, pass: number) {
           if (options.mode === 'record' && sourceAction.type === 'goto') await ensureCapturedCursor(page, options.scenario.branding.primary);
           cursors.set(scene.actor, cursor);
           if (screenshotPath && screenshotName) rawArtifacts[`evidence-${scene.id}-${screenshotName}`] = screenshotPath;
-          if (options.mode === 'record') await page.waitForTimeout(sourceAction.timing?.pauseAfterMs ?? sourceAction.pauseAfterMs ?? actionDelay(sourceAction.type, sourceAction.type === 'fill' ? sourceAction.text : ''));
+          if (options.mode === 'record') await page.waitForTimeout(sourceAction.timing?.pauseAfterMs ?? actionDelay(sourceAction.type, sourceAction.type === 'fill' ? sourceAction.text : ''));
           events.push({ sceneId: scene.id, actionIndex, type: sourceAction.type, label: sourceAction.title ?? sourceAction.type, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, target: 'target' in sourceAction ? sourceAction.target : undefined, box, state: 'passed' });
         } catch (error) {
           failed = error instanceof Error ? error.message : String(error);
@@ -296,8 +294,8 @@ export async function executeScenario(options: ExecuteOptions): Promise<unknown>
   const profile = options.config.devices[options.device];
   const timelinePath = join(options.outputDirectory, 'timeline.json');
   const reportPath = join(options.outputDirectory, 'execution-report.json');
-  await writeFile(timelinePath, JSON.stringify(TimelineSchema.parse({ version: 1, scenarioId: options.scenario.id, viewport: { width: profile.width, height: profile.height }, events: result.events }), null, 2));
-  const report = ExecutionReportSchema.parse({ version: 1, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, failedRequests: result.failedRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
+  await writeFile(timelinePath, JSON.stringify(TimelineSchema.parse({ version: 2, scenarioId: options.scenario.id, viewport: { width: profile.width, height: profile.height }, events: result.events }), null, 2));
+  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, failedRequests: result.failedRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
   await writeFile(reportPath, JSON.stringify(report, null, 2));
   return report;
 }

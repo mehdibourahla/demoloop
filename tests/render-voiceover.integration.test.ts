@@ -15,9 +15,9 @@ describe('voiceover rendering', () => {
     const raw = join(directory, 'raw-intro.webm');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=white:s=320x240:d=2', '-c:v', 'libvpx-vp9', raw]);
     const scenario = ScenarioSchema.parse({
-      version: 1, id: 'voiceover-proof', title: 'Voiceover proof', locale: 'en', narration: 'voiceover',
-      actors: [{ id: 'user', role: 'user' }],
-      scenes: [{ id: 'intro', title: 'Welcome', description: 'A concise narrated scene', actor: 'user', actions: [{ type: 'goto', path: '/' }] }]
+      version: 2, id: 'voiceover-proof', title: 'Voiceover proof', outputType: 'feature-clip', audience: 'operators', locale: 'en', audio: { policy: 'voiceover' },
+      actors: [{ id: 'user', label: 'Operator' }],
+      scenes: [{ id: 'intro', title: 'Welcome', description: 'A concise narrated scene', purpose: 'hook', actor: 'user', presentation: { maxStaticHoldMs: 3_000, camera: { type: 'none' }, loading: 'cut', transitionWeight: 'light', caption: { mode: 'none' } }, actions: [{ type: 'goto', path: '/' }] }]
     });
     const config = ConfigSchema.parse({ app: { url: 'http://127.0.0.1:4173' }, devices: { test: { width: 320, height: 240 } } });
     const video = await renderDemo({

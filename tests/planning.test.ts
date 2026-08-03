@@ -29,7 +29,7 @@ function model(overrides: Partial<ProductModel> = {}): ProductModel {
 
 describe('capability-aware planning', () => {
   test('returns needs-authoring when actor ownership is unresolved', () => {
-    const unresolved = model({ journeys: [{ id: 'review-signal', name: 'Review signal', audienceIds: ['reviewers'], capabilityIds: ['find-signal'], outcomeIds: ['signal-visible'], steps: [{ id: 'inspect', capabilityId: 'find-signal', ownership: { status: 'unresolved', reason: 'Session evidence missing' }, safeActionIds: ['filter'] }], evidence: [source] }] });
+    const unresolved = model({ journeys: [{ id: 'review-signal', name: 'Review signal', audienceIds: ['reviewers'], capabilityIds: ['find-signal'], outcomeIds: ['signal-visible'], steps: [{ id: 'inspect', capabilityId: 'find-signal', ownership: { status: 'unresolved', reason: 'Session evidence missing', evidence: [] }, safeActionIds: ['filter'] }], evidence: [source] }] });
 
     const result = planDemo(unresolved, { mode: 'journey', journeyId: 'review-signal' });
 
