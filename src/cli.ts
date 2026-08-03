@@ -9,7 +9,7 @@ import { evaluateDemo } from './evaluate.js';
 import { planScenario } from './planner.js';
 import { renderDemo } from './render.js';
 import { executeScenario } from './runner.js';
-import { ElevenLabsNarrationProvider } from './narration.js';
+import { ElevenLabsNarrationProvider, MacOSNarrationProvider } from './narration.js';
 import { ConfigSchema, ExecutionReportSchema, ProductModelSchema, QualityReportSchema, ScenarioSchema, type DemoConfig, type Scenario } from './schemas.js';
 
 const help = `product-demo <command> [scenario] [options]
@@ -80,9 +80,10 @@ function pathsFor(config: DemoConfig, scenario: Scenario, device: string) {
   return { base, rehearsal: join(base, 'rehearsal'), recording: join(base, 'recording'), render: join(base, 'render'), quality: join(base, 'quality-report.json') };
 }
 
-function narrationProvider(config: DemoConfig, scenario: Scenario) {
+export function narrationProvider(config: DemoConfig, scenario: Scenario) {
   if (scenario.narration !== 'voiceover') return undefined;
-  if (config.narration.provider !== 'elevenlabs') throw new Error('Voiceover requires narration.provider: elevenlabs');
+  if (config.narration.provider === 'macos') return new MacOSNarrationProvider(config.narration.macos);
+  if (config.narration.provider !== 'elevenlabs') throw new Error('Voiceover requires a configured narration provider');
   const settings = config.narration.elevenlabs;
   return new ElevenLabsNarrationProvider({
     apiKey: process.env[settings.apiKeyEnv] ?? '', voiceId: settings.voiceId ?? '', modelId: settings.modelId,

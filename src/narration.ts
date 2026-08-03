@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { copyFile, mkdir, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, stat, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 import type { NarrationProvider, NarrationSegment } from './adapters.js';
@@ -14,6 +14,10 @@ export interface ElevenLabsNarrationOptions {
   modelId?: string;
   outputFormat?: string;
   baseUrl?: string;
+}
+
+export interface MacOSNarrationOptions {
+  voice: string;
 }
 
 async function audioDuration(path: string): Promise<number> {
@@ -56,6 +60,24 @@ export class ElevenLabsNarrationProvider implements NarrationProvider {
     }
     await mkdir(dirname(segment.outputPath), { recursive: true });
     if (cachedPath !== segment.outputPath) await copyFile(cachedPath, segment.outputPath);
+    return { path: segment.outputPath, durationSeconds: await audioDuration(segment.outputPath) };
+  }
+}
+
+export class MacOSNarrationProvider implements NarrationProvider {
+  constructor(private readonly options: MacOSNarrationOptions) {
+    if (!options.voice) throw new Error('narration.macos.voice is required for local voiceover');
+  }
+
+  async synthesize(segment: NarrationSegment): Promise<{ path: string; durationSeconds: number }> {
+    await mkdir(dirname(segment.outputPath), { recursive: true });
+    const sourcePath = `${segment.outputPath}.aiff`;
+    try {
+      await execFileAsync('say', ['-v', this.options.voice, '-o', sourcePath, segment.text]);
+      await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-i', sourcePath, '-c:a', 'libmp3lame', '-b:a', '192k', segment.outputPath]);
+    } finally {
+      await unlink(sourcePath).catch(() => undefined);
+    }
     return { path: segment.outputPath, durationSeconds: await audioDuration(segment.outputPath) };
   }
 }

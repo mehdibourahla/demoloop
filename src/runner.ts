@@ -64,6 +64,53 @@ export async function installCapturedCursor(page: Page, primary: string): Promis
   await page.evaluate(script);
 }
 
+export function textRedactionScript(pairs: Array<{ source: string; replacement: string }>): string {
+  return `(() => {
+    const pairs = ${JSON.stringify(pairs)};
+    const redactNode = (root) => {
+      const redactText = (node) => {
+        let value = node.data;
+        for (const pair of pairs) value = value.split(pair.source).join(pair.replacement);
+        if (value !== node.data) node.data = value;
+      };
+      if (root.nodeType === Node.TEXT_NODE) redactText(root);
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      let node = walker.nextNode();
+      while (node) {
+        redactText(node);
+        node = walker.nextNode();
+      }
+    };
+    const start = () => {
+      redactNode(document);
+      new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.type === 'characterData') redactNode(mutation.target);
+          for (const node of mutation.addedNodes) redactNode(node);
+        }
+      }).observe(document, { childList: true, characterData: true, subtree: true });
+    };
+    if (document.documentElement) start();
+    else document.addEventListener('DOMContentLoaded', start, { once: true });
+  })()`;
+}
+
+export async function installTextRedactions(
+  page: Page,
+  redactions: DemoConfig['privacy']['redactions'],
+  environment: Record<string, string | undefined> = process.env
+): Promise<void> {
+  if (redactions.length === 0) return;
+  const pairs = redactions.map(({ sourceEnv, replacement }) => {
+    const source = environment[sourceEnv];
+    if (!source) throw new Error(`Missing capture redaction environment variable ${sourceEnv}`);
+    return { source, replacement };
+  });
+  const script = textRedactionScript(pairs);
+  await page.addInitScript(script);
+  await page.evaluate(script);
+}
+
 async function ensureCapturedCursor(page: Page, primary: string): Promise<void> {
   await page.evaluate(capturedCursorScript(primary));
 }
@@ -114,11 +161,18 @@ async function executeAction(page: Page, action: Action, human = false, cursor: 
   return { box, cursor };
 }
 
-function contextOptions(config: DemoConfig, deviceName: string) {
+export function browserContextOptions(config: DemoConfig, deviceName: string, actor: Scenario['actors'][number], locale: string) {
   const profile = config.devices[deviceName];
   if (!profile) throw new Error(`Unknown device profile ${deviceName}`);
   const descriptor = profile.device ? devices[profile.device] : undefined;
-  return { ...descriptor, viewport: { width: profile.width, height: profile.height }, locale: 'fr-CA', colorScheme: 'light' as const };
+  return { ...descriptor, viewport: { width: profile.width, height: profile.height }, locale, colorScheme: 'light' as const, storageState: actor.storageState };
+}
+
+export function sceneActionPhases(mode: ExecuteOptions['mode'], actions: Action[]): { preload: Action[]; capture: Action[]; captureOffset: number } {
+  if (mode === 'record' && actions[0]?.type === 'goto') {
+    return { preload: [actions[0]], capture: actions.slice(1), captureOffset: 1 };
+  }
+  return { preload: [], capture: actions, captureOffset: 0 };
 }
 
 async function runPass(options: ExecuteOptions, pass: number) {
@@ -137,9 +191,10 @@ async function runPass(options: ExecuteOptions, pass: number) {
   const cursors = new Map<string, Point>();
   try {
     for (const actor of options.scenario.actors) {
-      const context = await browser.newContext(contextOptions(options.config, options.device));
+      const context = await browser.newContext(browserContextOptions(options.config, options.device, actor, options.scenario.locale));
       if (options.mode === 'record') await context.tracing.start({ screenshots: false, snapshots: true, sources: true });
       const page = await context.newPage();
+      await installTextRedactions(page, options.config.privacy.redactions);
       if (options.mode === 'record') await installCapturedCursor(page, options.scenario.branding.primary);
       page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
       page.on('requestfailed', (request) => failedRequests.push({ url: request.url(), error: request.failure()?.errorText }));
@@ -151,13 +206,32 @@ async function runPass(options: ExecuteOptions, pass: number) {
       const page = pages.get(scene.actor);
       if (!page) throw new Error(`Actor ${scene.actor} has no browser context`);
       let failed: string | undefined;
+      let recordingStarted = false;
       const rawPath = join(options.outputDirectory, `raw-${scene.id}.webm`);
-      if (options.mode === 'record') {
+      const phases = sceneActionPhases(options.mode, scene.actions);
+      for (const [actionIndex, sourceAction] of phases.preload.entries()) {
+        const action = sourceAction.type === 'goto' ? { ...sourceAction, path: new URL(sourceAction.path, options.config.app.url).toString() } : sourceAction;
+        const startedAtMs = performance.now() - passStart;
+        try {
+          const { box, cursor } = await executeAction(page, action, false, cursors.get(scene.actor));
+          if (sourceAction.type === 'goto') await ensureCapturedCursor(page, options.scenario.branding.primary);
+          cursors.set(scene.actor, cursor);
+          events.push({ sceneId: scene.id, actionIndex, type: sourceAction.type, label: sourceAction.title ?? sourceAction.type, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, target: 'target' in sourceAction ? sourceAction.target : undefined, box, state: 'passed' });
+        } catch (error) {
+          failed = error instanceof Error ? error.message : String(error);
+          events.push({ sceneId: scene.id, actionIndex, type: sourceAction.type, label: sourceAction.title ?? sourceAction.type, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, target: 'target' in sourceAction ? sourceAction.target : undefined, state: 'failed' });
+          break;
+        }
+      }
+      if (options.mode === 'record' && !failed) {
         await page.screencast.start({ path: rawPath, size: { width: options.config.devices[options.device].width, height: options.config.devices[options.device].height }, quality: 90 });
+        recordingStarted = true;
         await page.screencast.showChapter(scene.title, { description: scene.description, duration: 1_200 });
         await page.screencast.showOverlay(`<div style="position:fixed;top:20px;left:20px;padding:8px 12px;border-radius:999px;background:${options.scenario.branding.primary};color:white;font:700 14px system-ui;box-shadow:0 8px 24px #0003">${options.scenario.branding.name}</div>`, { duration: 1_200 });
       }
-      for (const [actionIndex, sourceAction] of scene.actions.entries()) {
+      for (const [phaseIndex, sourceAction] of phases.capture.entries()) {
+        if (failed) break;
+        const actionIndex = phaseIndex + phases.captureOffset;
         const action = sourceAction.type === 'goto' ? { ...sourceAction, path: new URL(sourceAction.path, options.config.app.url).toString() } : sourceAction;
         const startedAtMs = performance.now() - passStart;
         try {
@@ -175,7 +249,7 @@ async function runPass(options: ExecuteOptions, pass: number) {
           break;
         }
       }
-      if (options.mode === 'record') {
+      if (recordingStarted) {
         await page.screencast.stop();
         rawArtifacts[`raw-${scene.id}`] = rawPath;
         const screenshotPath = join(options.outputDirectory, `final-${scene.id}.png`);

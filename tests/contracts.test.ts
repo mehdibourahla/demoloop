@@ -40,4 +40,13 @@ describe('data contracts', () => {
     expect(config.runtime.rehearsalPasses).toBe(2);
     expect(config.upload.enabled).toBe(false);
   });
+
+  test('accepts macOS-local narration without an API key', () => {
+    const config = ConfigSchema.parse({
+      app: { url: 'http://127.0.0.1:3005' },
+      narration: { provider: 'macos', macos: { voice: 'Samantha' } }
+    });
+
+    expect(config.narration).toMatchObject({ provider: 'macos', macos: { voice: 'Samantha' } });
+  });
 });
