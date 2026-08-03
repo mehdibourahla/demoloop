@@ -18,12 +18,18 @@ const Scene: React.FC<{ clip: DemoVideoProps['clips'][number] }> = ({ clip }) =>
   const { width, height } = useVideoConfig();
   const introFrames = clip.presentation.transitionWeight === 'major' ? 18 : clip.presentation.transitionWeight === 'meaningful' ? 10 : 5;
   const intro = interpolate(frame, [0, introFrames], [0.985, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const cameraScale = clip.presentation.camera.type === 'zoom' ? clip.presentation.camera.scale ?? 1.15 : 1;
+  const target = clip.presentation.camera.to;
+  const cameraScale = clip.presentation.camera.type === 'zoom'
+    ? clip.presentation.camera.scale ?? 1.15
+    : clip.presentation.camera.type === 'crop' && target
+      ? Math.min(3, Math.max(1 / target.width, 1 / target.height))
+      : clip.presentation.camera.type === 'pan' ? 1.04 : 1;
   const scale = interpolate(frame, [0, Math.max(1, clip.durationInFrames - 1)], [intro, cameraScale], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const transformOrigin = target ? `${(target.x + target.width / 2) * 100}% ${(target.y + target.height / 2) * 100}%` : 'center';
   const captionTop = clip.presentation.caption.safeArea === 'top';
   return <AbsoluteFill style={{ background: clip.presentation.caption.mode === 'none' ? '#000' : '#07111f', overflow: 'hidden' }}>
     {clip.audioSrc ? <Html5Audio src={staticFile(clip.audioSrc)} volume={1} /> : null}
-    <OffthreadVideo muted src={staticFile(clip.src)} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale})`, transformOrigin: 'center', background: '#07111f' }} />
+    <OffthreadVideo muted src={staticFile(clip.src)} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale})`, transformOrigin, background: '#07111f' }} />
     {clip.presentation.caption.mode === 'lower-third' ? <div style={{ position: 'absolute', left: width * 0.04, right: width * 0.2, top: captionTop ? height * 0.035 : undefined, bottom: captionTop ? undefined : height * 0.035, padding: `${Math.max(10, height * 0.014)}px ${Math.max(14, width * 0.014)}px`, borderRadius: 14, color: 'white', background: '#06101dda', borderLeft: `6px solid ${clip.purpose === 'proof' || clip.purpose === 'result' ? '#34d399' : clip.presentation.transitionWeight === 'major' ? '#f59e0b' : '#60a5fa'}`, fontFamily: 'Inter, system-ui, sans-serif', boxShadow: '0 12px 40px #0007' }}>
       <div style={{ fontSize: Math.max(19, width * 0.018), fontWeight: 760, lineHeight: 1.1 }}>{clip.title}</div>
       {clip.description ? <div style={{ marginTop: 5, color: '#d7e1ec', fontSize: Math.max(12, width * 0.011), lineHeight: 1.25 }}>{clip.description}</div> : null}

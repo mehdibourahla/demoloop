@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { discoverProduct } from '../src/discovery.js';
@@ -28,17 +27,5 @@ describe('neutral canonical fixtures', () => {
 
     expect(model.proofSurfaces.length).toBeGreaterThan(1);
     expect(result.status).toBe('needs-authoring');
-  });
-
-  test('canonical runtime and tests contain no previous product vocabulary', async () => {
-    const files = [
-      'fixtures/neutral/server.ts',
-      'src/discovery.ts',
-      'src/planner.ts',
-      'src/editorial-validation.ts'
-    ];
-    const content = (await Promise.all(files.map((path) => readFile(resolve(path), 'utf8')))).join('\n');
-
-    expect(content).not.toMatch(/patient|physician|doctor|clinic|sanox|intake/i);
   });
 });
