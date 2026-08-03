@@ -4,7 +4,7 @@
   "properties": {
     "version": {
       "type": "number",
-      "const": 1
+      "const": 2
     },
     "id": {
       "type": "string",
@@ -14,25 +14,83 @@
       "type": "string",
       "minLength": 1
     },
+    "outputType": {
+      "type": "string",
+      "enum": [
+        "public-master",
+        "actor-journey",
+        "feature-clip",
+        "release-demo",
+        "montage"
+      ]
+    },
     "audience": {
-      "default": "general",
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "locale": {
       "default": "en",
-      "type": "string"
-    },
-    "duration": {
-      "type": "string"
-    },
-    "narration": {
-      "default": "none",
       "type": "string",
-      "enum": [
-        "none",
-        "captions",
-        "voiceover"
-      ]
+      "minLength": 2
+    },
+    "requestedDurationSeconds": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "audio": {
+      "default": {
+        "policy": "silent"
+      },
+      "type": "object",
+      "properties": {
+        "policy": {
+          "type": "string",
+          "enum": [
+            "silent",
+            "music",
+            "voiceover",
+            "voiceover-and-music"
+          ]
+        },
+        "music": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "level": {
+              "default": 0.2,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "fadeInMs": {
+              "default": 500,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "fadeOutMs": {
+              "default": 500,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            }
+          },
+          "required": [
+            "path",
+            "level",
+            "fadeInMs",
+            "fadeOutMs"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "policy"
+      ],
+      "additionalProperties": false
     },
     "branding": {
       "default": {
@@ -43,16 +101,16 @@
       "type": "object",
       "properties": {
         "name": {
-          "default": "Product Demo",
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "primary": {
-          "default": "#2563eb",
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "background": {
-          "default": "#08111f",
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "required": [
@@ -67,10 +125,12 @@
       "type": "object",
       "properties": {
         "resetCommand": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "seedCommand": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false
@@ -82,18 +142,21 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
-          "role": {
-            "type": "string"
+          "label": {
+            "type": "string",
+            "minLength": 1
           },
           "storageState": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           }
         },
         "required": [
           "id",
-          "role"
+          "label"
         ],
         "additionalProperties": false
       }
@@ -105,16 +168,347 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "hook",
+              "context",
+              "interaction",
+              "exploration",
+              "state-change",
+              "handoff",
+              "result",
+              "proof",
+              "montage",
+              "close"
+            ]
           },
           "actor": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
+          },
+          "causalLink": {
+            "type": "object",
+            "properties": {
+              "fromSceneId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "relationshipId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "transitionId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidence": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "source"
+                        },
+                        "path": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "line": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "detail": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "path"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "runtime"
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "observedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "screenshot": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ariaSnapshot": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "detail": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "url",
+                        "observedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "user"
+                        },
+                        "confirmedBy": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "confirmedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "detail": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "confirmedBy",
+                        "confirmedAt",
+                        "detail"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "fromSceneId",
+              "evidence"
+            ],
+            "additionalProperties": false
+          },
+          "presentation": {
+            "default": {
+              "maxStaticHoldMs": 3000,
+              "camera": {
+                "type": "none"
+              },
+              "loading": "cut",
+              "transitionWeight": "light",
+              "caption": {
+                "mode": "none"
+              }
+            },
+            "type": "object",
+            "properties": {
+              "maxStaticHoldMs": {
+                "default": 3000,
+                "type": "integer",
+                "minimum": 250,
+                "maximum": 15000
+              },
+              "regionOfInterest": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "width": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1
+                  },
+                  "height": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "width",
+                  "height"
+                ],
+                "additionalProperties": false
+              },
+              "camera": {
+                "default": {
+                  "type": "none"
+                },
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "crop",
+                      "pan",
+                      "zoom"
+                    ]
+                  },
+                  "scale": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 3
+                  },
+                  "to": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "y": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "width": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 1
+                      },
+                      "height": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y",
+                      "width",
+                      "height"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              "loading": {
+                "default": "cut",
+                "type": "string",
+                "enum": [
+                  "preserve",
+                  "cut",
+                  "accelerate"
+                ]
+              },
+              "transitionWeight": {
+                "default": "light",
+                "type": "string",
+                "enum": [
+                  "light",
+                  "meaningful",
+                  "major"
+                ]
+              },
+              "caption": {
+                "default": {
+                  "mode": "none"
+                },
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "lower-third"
+                    ]
+                  },
+                  "safeArea": {
+                    "type": "string",
+                    "enum": [
+                      "top",
+                      "bottom",
+                      "left",
+                      "right"
+                    ]
+                  }
+                },
+                "required": [
+                  "mode"
+                ],
+                "additionalProperties": false
+              },
+              "opening": {
+                "type": "string",
+                "enum": [
+                  "product-promise",
+                  "context-card",
+                  "none"
+                ]
+              },
+              "closing": {
+                "type": "string",
+                "enum": [
+                  "call-to-action",
+                  "outcome-recap",
+                  "none"
+                ]
+              },
+              "actorTransition": {
+                "type": "string",
+                "enum": [
+                  "cut",
+                  "context-card",
+                  "split-causality"
+                ]
+              }
+            },
+            "required": [
+              "maxStaticHoldMs",
+              "camera",
+              "loading",
+              "transitionWeight",
+              "caption"
+            ],
+            "additionalProperties": false
           },
           "actions": {
             "minItems": 1,
@@ -125,17 +519,12 @@
                   "type": "object",
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "narration": {
-                      "type": "string"
-                    },
-                    "annotation": {
-                      "type": "string"
-                    },
-                    "pauseAfterMs": {
-                      "type": "number",
-                      "minimum": 0
+                      "type": "string",
+                      "minLength": 1
                     },
                     "timing": {
                       "type": "object",
@@ -168,7 +557,8 @@
                       "const": "goto"
                     },
                     "path": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     }
                   },
                   "required": [
@@ -181,17 +571,12 @@
                   "type": "object",
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "narration": {
-                      "type": "string"
-                    },
-                    "annotation": {
-                      "type": "string"
-                    },
-                    "pauseAfterMs": {
-                      "type": "number",
-                      "minimum": 0
+                      "type": "string",
+                      "minLength": 1
                     },
                     "timing": {
                       "type": "object",
@@ -241,11 +626,15 @@
                                 "checkbox",
                                 "radio",
                                 "heading",
-                                "combobox"
+                                "combobox",
+                                "listitem",
+                                "tab",
+                                "menuitem"
                               ]
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -263,7 +652,8 @@
                               "const": "label"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -280,7 +670,8 @@
                               "const": "testId"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -297,7 +688,8 @@
                               "const": "text"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -319,17 +711,12 @@
                   "type": "object",
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "narration": {
-                      "type": "string"
-                    },
-                    "annotation": {
-                      "type": "string"
-                    },
-                    "pauseAfterMs": {
-                      "type": "number",
-                      "minimum": 0
+                      "type": "string",
+                      "minLength": 1
                     },
                     "timing": {
                       "type": "object",
@@ -379,11 +766,15 @@
                                 "checkbox",
                                 "radio",
                                 "heading",
-                                "combobox"
+                                "combobox",
+                                "listitem",
+                                "tab",
+                                "menuitem"
                               ]
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -401,7 +792,8 @@
                               "const": "label"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -418,7 +810,8 @@
                               "const": "testId"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -435,7 +828,8 @@
                               "const": "text"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -461,17 +855,12 @@
                   "type": "object",
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "narration": {
-                      "type": "string"
-                    },
-                    "annotation": {
-                      "type": "string"
-                    },
-                    "pauseAfterMs": {
-                      "type": "number",
-                      "minimum": 0
+                      "type": "string",
+                      "minLength": 1
                     },
                     "timing": {
                       "type": "object",
@@ -521,11 +910,15 @@
                                 "checkbox",
                                 "radio",
                                 "heading",
-                                "combobox"
+                                "combobox",
+                                "listitem",
+                                "tab",
+                                "menuitem"
                               ]
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -543,7 +936,8 @@
                               "const": "label"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -560,7 +954,8 @@
                               "const": "testId"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -577,7 +972,8 @@
                               "const": "text"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -603,17 +999,12 @@
                   "type": "object",
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "narration": {
-                      "type": "string"
-                    },
-                    "annotation": {
-                      "type": "string"
-                    },
-                    "pauseAfterMs": {
-                      "type": "number",
-                      "minimum": 0
+                      "type": "string",
+                      "minLength": 1
                     },
                     "timing": {
                       "type": "object",
@@ -663,11 +1054,15 @@
                                 "checkbox",
                                 "radio",
                                 "heading",
-                                "combobox"
+                                "combobox",
+                                "listitem",
+                                "tab",
+                                "menuitem"
                               ]
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -685,7 +1080,8 @@
                               "const": "label"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -702,7 +1098,8 @@
                               "const": "testId"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -719,7 +1116,8 @@
                               "const": "text"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -743,17 +1141,12 @@
                   "type": "object",
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "narration": {
-                      "type": "string"
-                    },
-                    "annotation": {
-                      "type": "string"
-                    },
-                    "pauseAfterMs": {
-                      "type": "number",
-                      "minimum": 0
+                      "type": "string",
+                      "minLength": 1
                     },
                     "timing": {
                       "type": "object",
@@ -803,11 +1196,15 @@
                                 "checkbox",
                                 "radio",
                                 "heading",
-                                "combobox"
+                                "combobox",
+                                "listitem",
+                                "tab",
+                                "menuitem"
                               ]
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -825,7 +1222,8 @@
                               "const": "label"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -842,7 +1240,8 @@
                               "const": "testId"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -859,7 +1258,8 @@
                               "const": "text"
                             },
                             "value": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 1
                             }
                           },
                           "required": [
@@ -893,17 +1293,12 @@
                   "type": "object",
                   "properties": {
                     "title": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "narration": {
-                      "type": "string"
-                    },
-                    "annotation": {
-                      "type": "string"
-                    },
-                    "pauseAfterMs": {
-                      "type": "number",
-                      "minimum": 0
+                      "type": "string",
+                      "minLength": 1
                     },
                     "timing": {
                       "type": "object",
@@ -936,7 +1331,8 @@
                       "const": "screenshot"
                     },
                     "name": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     }
                   },
                   "required": [
@@ -952,7 +1348,9 @@
         "required": [
           "id",
           "title",
+          "purpose",
           "actor",
+          "presentation",
           "actions"
         ],
         "additionalProperties": false
@@ -963,9 +1361,10 @@
     "version",
     "id",
     "title",
+    "outputType",
     "audience",
     "locale",
-    "narration",
+    "audio",
     "branding",
     "preconditions",
     "actors",

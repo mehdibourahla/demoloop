@@ -4,49 +4,416 @@
   "properties": {
     "version": {
       "type": "number",
-      "const": 1
+      "const": 2
     },
     "scenarioId": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "accepted",
+        "rejected",
+        "pending-agent-review"
+      ]
     },
     "passed": {
       "type": "boolean"
     },
-    "checks": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "passed": {
-            "type": "boolean"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
+    "technical": {
+      "type": "object",
+      "properties": {
+        "passed": {
+          "type": "boolean"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
               },
-              {
-                "type": "number"
-              },
-              {
+              "passed": {
                 "type": "boolean"
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "detail": {
+                "type": "string",
+                "minLength": 1
+              },
+              "timestamps": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0
+                }
               }
-            ]
-          },
-          "detail": {
-            "type": "string"
+            },
+            "required": [
+              "id",
+              "passed",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "passed",
+        "checks"
+      ],
+      "additionalProperties": false
+    },
+    "editorial": {
+      "type": "object",
+      "properties": {
+        "passed": {
+          "type": "boolean"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "passed": {
+                "type": "boolean"
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "detail": {
+                "type": "string",
+                "minLength": 1
+              },
+              "timestamps": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "required": [
+              "id",
+              "passed",
+              "value"
+            ],
+            "additionalProperties": false
           }
         },
-        "required": [
-          "id",
-          "passed",
-          "value"
-        ],
-        "additionalProperties": false
-      }
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "passed": {
+                "type": "boolean"
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "detail": {
+                "type": "string",
+                "minLength": 1
+              },
+              "timestamps": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "required": [
+              "id",
+              "passed",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "passed",
+        "checks",
+        "warnings"
+      ],
+      "additionalProperties": false
+    },
+    "agentReview": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "const": "not-required"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "const": "missing"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "const": "complete"
+            },
+            "review": {
+              "type": "object",
+              "properties": {
+                "version": {
+                  "type": "number",
+                  "const": 1
+                },
+                "tool": {
+                  "type": "string",
+                  "const": "watch"
+                },
+                "videoPath": {
+                  "type": "string",
+                  "pattern": "^\\/.*"
+                },
+                "detail": {
+                  "type": "string",
+                  "enum": [
+                    "balanced",
+                    "token-burner"
+                  ]
+                },
+                "resolution": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "transcriptStatus": {
+                  "type": "string",
+                  "enum": [
+                    "available",
+                    "not-required",
+                    "unavailable"
+                  ]
+                },
+                "score": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 10
+                },
+                "frames": {
+                  "type": "object",
+                  "properties": {
+                    "distinct": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "discarded": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "inspected": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "distinct",
+                    "discarded",
+                    "inspected"
+                  ],
+                  "additionalProperties": false
+                },
+                "assessments": {
+                  "type": "object",
+                  "properties": {
+                    "hook": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "narrativeContinuity": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "staticSections": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "readability": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "attentionGuidance": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "overlayObstruction": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "transitions": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "audioTreatment": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "outcome": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "closing": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "hook",
+                    "narrativeContinuity",
+                    "staticSections",
+                    "readability",
+                    "attentionGuidance",
+                    "overlayObstruction",
+                    "transitions",
+                    "audioTreatment",
+                    "outcome",
+                    "closing"
+                  ],
+                  "additionalProperties": false
+                },
+                "defects": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "timestampSeconds": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "category": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "description": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "timestampSeconds",
+                      "category",
+                      "description"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "verdict": {
+                  "type": "string",
+                  "enum": [
+                    "accept",
+                    "reject"
+                  ]
+                },
+                "reviewedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                }
+              },
+              "required": [
+                "version",
+                "tool",
+                "videoPath",
+                "detail",
+                "transcriptStatus",
+                "score",
+                "frames",
+                "assessments",
+                "defects",
+                "verdict",
+                "reviewedAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "status",
+            "review"
+          ],
+          "additionalProperties": false
+        }
+      ]
     },
     "sensitiveFindings": {
       "type": "array",
@@ -118,8 +485,11 @@
   "required": [
     "version",
     "scenarioId",
+    "status",
     "passed",
-    "checks",
+    "technical",
+    "editorial",
+    "agentReview",
     "sensitiveFindings",
     "omittedScenes"
   ],

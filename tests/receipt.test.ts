@@ -12,4 +12,11 @@ describe('rehearsal receipt', () => {
   test('digest is stable across object key order', async () => {
     expect(await scenarioDigest({ b: 2, a: 1 })).toBe(await scenarioDigest({ a: 1, b: 2 }));
   });
+
+  test('editorial presentation changes invalidate the rehearsal receipt', async () => {
+    const base = { version: 2, id: 'demo', scenes: [{ id: 'result', presentation: { caption: { mode: 'none' } } }] };
+    const changed = { version: 2, id: 'demo', scenes: [{ id: 'result', presentation: { caption: { mode: 'lower-third', safeArea: 'bottom' } } }] };
+
+    expect(await scenarioDigest(base)).not.toBe(await scenarioDigest(changed));
+  });
 });
