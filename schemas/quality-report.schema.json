@@ -439,6 +439,27 @@
         "additionalProperties": false
       }
     },
+    "review": {
+      "type": "object",
+      "properties": {
+        "contactSheet": {
+          "type": "string",
+          "minLength": 1
+        },
+        "moments": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "required": [
+        "contactSheet",
+        "moments"
+      ],
+      "additionalProperties": false
+    },
     "omittedScenes": {
       "type": "array",
       "items": {

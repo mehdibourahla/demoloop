@@ -30,6 +30,27 @@ function measuredPixels(regions: ExcludedRegion[]): boolean[] {
   return measured;
 }
 
+async function grayFrame(videoPath: string, atSeconds: number): Promise<Buffer> {
+  const { stdout } = await execFileAsync('ffmpeg', ['-loglevel', 'error', '-ss', Math.max(0, atSeconds).toFixed(3), '-i', videoPath, '-frames:v', '1',
+    '-vf', `scale=${SAMPLE_WIDTH}:${SAMPLE_HEIGHT}:flags=area,format=gray`, '-f', 'rawvideo', 'pipe:1'], { encoding: 'buffer', maxBuffer: 4 * 1024 * 1024 });
+  return stdout.subarray(0, FRAME_BYTES);
+}
+
+export async function seamChanges(videoPath: string, cuts: number[], options: { windowSeconds?: number; excludeRegions?: ExcludedRegion[] } = {}): Promise<Array<{ atSeconds: number; changeRatio: number }>> {
+  const windowSeconds = options.windowSeconds ?? 0.12;
+  const measured = measuredPixels(options.excludeRegions ?? []);
+  const measuredCount = measured.reduce((total, include) => total + (include ? 1 : 0), 0) || FRAME_BYTES;
+  const results: Array<{ atSeconds: number; changeRatio: number }> = [];
+  for (const cut of cuts) {
+    const [before, after] = await Promise.all([grayFrame(videoPath, cut - windowSeconds), grayFrame(videoPath, cut + windowSeconds)]);
+    if (before.length < FRAME_BYTES || after.length < FRAME_BYTES) continue;
+    let changed = 0;
+    for (let pixel = 0; pixel < FRAME_BYTES; pixel += 1) if (measured[pixel] && Math.abs(before[pixel] - after[pixel]) > PIXEL_DELTA) changed += 1;
+    results.push({ atSeconds: cut, changeRatio: changed / measuredCount });
+  }
+  return results;
+}
+
 export async function analyzeVideo(videoPath: string, options: { samplesPerSecond?: number; changeThreshold?: number; staticWarnSeconds?: number; excludeRegions?: ExcludedRegion[] } = {}): Promise<VisualAnalysis> {
   const samplesPerSecond = options.samplesPerSecond ?? 2;
   const changeThreshold = options.changeThreshold ?? 0.0015;

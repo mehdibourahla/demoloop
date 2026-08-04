@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { describe, expect, test } from 'vitest';
-import { applyTrim, prepareClip, trimSegments } from '../src/editing.js';
+import { applyTrim, buildEdl, contactSheet, outputCuts, prepareClip, trimSegments } from '../src/editing.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -12,6 +12,50 @@ async function durationOf(path: string): Promise<number> {
   const { stdout } = await execFileAsync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', path]);
   return Number(stdout.trim());
 }
+
+describe('edit decision list', () => {
+  const clips = [
+    { id: 'send', sourcePath: '/raw/raw-send.webm', purpose: 'state-change', title: 'Send the item', segments: [{ startSeconds: 0, endSeconds: 3 }, { startSeconds: 8, endSeconds: 10 }] },
+    { id: 'receive', sourcePath: '/raw/raw-receive.webm', purpose: 'proof', title: 'Item received', segments: [{ startSeconds: 0, endSeconds: 4 }] }
+  ];
+
+  test('describes every kept range against its source clip', () => {
+    const edl = buildEdl(clips);
+
+    expect(edl.sources).toEqual({ send: '/raw/raw-send.webm', receive: '/raw/raw-receive.webm' });
+    expect(edl.ranges).toEqual([
+      { source: 'send', start: 0, end: 3, beat: 'state-change', note: 'Send the item' },
+      { source: 'send', start: 8, end: 10, beat: 'state-change', note: 'Send the item' },
+      { source: 'receive', start: 0, end: 4, beat: 'proof', note: 'Item received' }
+    ]);
+    expect(edl.grade).toBeNull();
+    expect(edl.overlays).toEqual([]);
+  });
+
+  test('locates every cut on the output timeline', () => {
+    expect(outputCuts(clips)).toEqual([
+      { outputSeconds: 3, kind: 'trim', sceneId: 'send' },
+      { outputSeconds: 5, kind: 'scene', sceneId: 'receive' }
+    ]);
+  });
+});
+
+describe('contact sheet', () => {
+  test('tiles the frame from each requested moment, not the same frame repeatedly', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'product-demo-sheet-'));
+    const source = join(directory, 'source.mp4');
+    const sheet = join(directory, 'sheet.png');
+    await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=320x240:d=3:r=30', '-f', 'lavfi', '-i', 'color=c=white:s=320x240:d=3:r=30',
+      '-filter_complex', '[0:v][1:v]concat=n=2:v=1', '-pix_fmt', 'yuv420p', source]);
+
+    const moments = await contactSheet(source, sheet, [1, 5]);
+
+    expect(moments).toEqual([1, 5]);
+    const { stdout } = await execFileAsync('ffmpeg', ['-loglevel', 'error', '-i', sheet, '-vf', 'scale=2:1,format=gray', '-f', 'rawvideo', 'pipe:1'], { encoding: 'buffer' });
+    expect(stdout[0]).toBeLessThan(64);
+    expect(stdout[1]).toBeGreaterThan(192);
+  }, 90_000);
+});
 
 describe('static span trimming', () => {
   test('keeps the whole clip when nothing is inactive for too long', () => {

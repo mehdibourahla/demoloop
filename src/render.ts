@@ -7,7 +7,7 @@ import { renderMedia, selectComposition } from '@remotion/renderer';
 import { chromium } from 'playwright';
 import type { NarrationProvider } from './adapters.js';
 import { resolveAudioPolicy } from './audio.js';
-import { prepareClip } from './editing.js';
+import { buildEdl, outputCuts, prepareClip, type EdlClip } from './editing.js';
 import { presentationLayout } from './presentation.js';
 import type { DemoConfig, Scenario } from './schemas.js';
 
@@ -30,11 +30,13 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
   const audioPolicy = await resolveAudioPolicy(options.scenario.audio);
   const clips = [];
   const edits: Array<{ id: string; removedSeconds: number }> = [];
+  const edlClips: EdlClip[] = [];
   for (const scene of options.scenario.scenes) {
     const rawPath = options.executionReport.artifacts[`raw-${scene.id}`];
     if (!rawPath) throw new Error(`Raw recording missing for scene ${scene.id}`);
     const prepared = await prepareClip(rawPath, join(options.outputDirectory, `trimmed-${scene.id}.mp4`), scene.presentation);
     if (prepared.removedSeconds > 0) edits.push({ id: scene.id, removedSeconds: Number(prepared.removedSeconds.toFixed(3)) });
+    edlClips.push({ id: scene.id, sourcePath: rawPath, purpose: scene.purpose, title: scene.title, segments: prepared.segments });
     const fileName = basename(prepared.path);
     await copyFile(prepared.path, join(publicDirectory, fileName));
     const durationInFrames = Math.max(1, Math.ceil(prepared.durationSeconds * FPS));
@@ -75,6 +77,8 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
     video: finalPath,
     scenes: options.scenario.scenes.map((scene) => ({ id: scene.id, purpose: scene.purpose, ...presentationLayout(scene.presentation, profile.width, profile.height) })),
     edits,
+    cuts: outputCuts(edlClips),
   }, null, 2));
+  await writeFile(join(options.outputDirectory, 'edl.json'), JSON.stringify(buildEdl(edlClips), null, 2));
   return finalPath;
 }

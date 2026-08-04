@@ -4,7 +4,8 @@ import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 import { scanCaptureArtifacts, scanSensitiveText } from './safety.js';
 import { EditorialReviewSchema, QualityReportSchema, TimelineSchema, type DemoConfig, type Scenario } from './schemas.js';
-import { analyzeVideo } from './visual-analysis.js';
+import { contactSheet } from './editing.js';
+import { analyzeVideo, seamChanges } from './visual-analysis.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -70,13 +71,16 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
   ];
 
   const thresholds = options.config.editorial.thresholds[options.scenario.outputType];
-  const metadata = await optionalJson(options.presentationMetadataPath ?? join(dirname(options.videoPath), 'presentation-metadata.json')) as { scenes?: Array<{ viewport?: { width: number; height: number }; caption?: { x: number; y: number; width: number; height: number }; obstructions?: unknown[] }> } | undefined;
+  const metadata = await optionalJson(options.presentationMetadataPath ?? join(dirname(options.videoPath), 'presentation-metadata.json')) as { scenes?: Array<{ viewport?: { width: number; height: number }; caption?: { x: number; y: number; width: number; height: number }; obstructions?: unknown[] }>; cuts?: Array<{ outputSeconds: number; kind: string; sceneId: string }> } | undefined;
   const captionPad = 0.015;
   const captionRegions = (metadata?.scenes ?? []).flatMap((scene) => scene.caption ? [{
     x: scene.caption.x / width - captionPad, y: scene.caption.y / height - captionPad,
     width: scene.caption.width / width + captionPad * 2, height: scene.caption.height / height + captionPad * 2
   }] : []);
   const visual = await analyzeVideo(options.videoPath, { staticWarnSeconds: thresholds.staticWarnSeconds, excludeRegions: captionRegions });
+  const trimCuts = (metadata?.cuts ?? []).filter((cut) => cut.kind === 'trim');
+  const seams = await seamChanges(options.videoPath, trimCuts.map((cut) => cut.outputSeconds), { excludeRegions: captionRegions });
+  const visibleSeams = seams.filter((seam) => seam.changeRatio > thresholds.seamChangeMax);
   const viewportRatios = metadata?.scenes?.map((scene) => scene.viewport ? (scene.viewport.width * scene.viewport.height) / (width * height) : 0) ?? [];
   const obstructions = metadata?.scenes?.reduce((sum, scene) => sum + (scene.obstructions?.length ?? 0), 0) ?? 0;
   const hasHook = options.scenario.scenes.some((scene) => scene.purpose === 'hook');
@@ -89,12 +93,23 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
     { id: 'outcome-close', passed: options.scenario.outputType !== 'public-master' || hasClose, value: hasClose },
     { id: 'product-dominance', passed: viewportRatios.length === options.scenario.scenes.length && viewportRatios.every((ratio) => ratio >= 0.7), value: viewportRatios.length ? Number(Math.min(...viewportRatios).toFixed(3)) : 0 },
     { id: 'overlay-obstruction', passed: obstructions === 0, value: obstructions },
+    { id: 'cut-seams', passed: visibleSeams.length === 0, value: visibleSeams.length, detail: `${seams.length} trimmed cuts inspected`, timestamps: visibleSeams.map((seam) => seam.atSeconds) },
     { id: 'montage-ratio', passed: montageRatio <= thresholds.montageMaxRatio, value: Number(montageRatio.toFixed(3)) },
   ];
   const warnings = [
     { id: 'distinct-frames-warning', passed: visual.distinctRatio >= thresholds.distinctWarnRatio, value: Number(visual.distinctRatio.toFixed(3)) },
     ...visual.staticSpans.map((span, index) => ({ id: `static-span-${index + 1}`, passed: false, value: Number(span.durationSeconds.toFixed(2)), timestamps: [span.startSeconds], detail: 'Static section exceeds the warning threshold' })),
   ];
+  const reviewMoments = [...new Set([
+    Math.min(1, durationSeconds / 2),
+    ...trimCuts.map((cut) => cut.outputSeconds),
+    ...(metadata?.cuts ?? []).filter((cut) => cut.kind === 'scene').map((cut) => cut.outputSeconds),
+    ...visual.staticSpans.map((span) => span.startSeconds),
+    Math.max(0, durationSeconds - 0.5)
+  ].map((moment) => Number(moment.toFixed(2))).filter((moment) => moment >= 0 && moment < durationSeconds))].sort((a, b) => a - b);
+  const sheetPath = join(dirname(options.outputPath), `${options.scenario.id}-${options.device}-contact-sheet.png`);
+  const sheetMoments = await contactSheet(options.videoPath, sheetPath, reviewMoments).catch(() => undefined);
+
   const reviewValue = options.editorialReviewPath ? await optionalJson(options.editorialReviewPath) : undefined;
   const review = reviewValue ? EditorialReviewSchema.parse(reviewValue) : undefined;
   const agentReview = review ? { status: 'complete' as const, review } : { status: 'missing' as const, reason: 'Run the Watch skill against the actual final MP4 and provide its editorial review' };
@@ -105,7 +120,7 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
   const report = QualityReportSchema.parse({
     version: 2, scenarioId: options.scenario.id, status, passed: status === 'accepted',
     technical: { passed: technicalPassed, checks: technicalChecks }, editorial: { passed: editorialPassed, checks: editorialChecks, warnings }, agentReview,
-    sensitiveFindings, omittedScenes, encoding: { codec: stream.codec_name, width, height, durationSeconds, pixelFormat: stream.pix_fmt ?? '' },
+    sensitiveFindings, omittedScenes, review: sheetMoments ? { contactSheet: sheetPath, moments: sheetMoments } : undefined, encoding: { codec: stream.codec_name, width, height, durationSeconds, pixelFormat: stream.pix_fmt ?? '' },
   });
   await writeFile(options.outputPath, JSON.stringify(report, null, 2));
   return report;

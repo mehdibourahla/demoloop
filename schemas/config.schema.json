@@ -249,35 +249,40 @@
             "distinctFailRatio": 0.4,
             "staticWarnSeconds": 3,
             "repeatedStaticFailCount": 2,
-            "montageMaxRatio": 0.25
+            "montageMaxRatio": 0.25,
+            "seamChangeMax": 0.05
           },
           "actor-journey": {
             "distinctWarnRatio": 0.5,
             "distinctFailRatio": 0.4,
             "staticWarnSeconds": 3,
             "repeatedStaticFailCount": 2,
-            "montageMaxRatio": 0.25
+            "montageMaxRatio": 0.25,
+            "seamChangeMax": 0.05
           },
           "feature-clip": {
             "distinctWarnRatio": 0.5,
             "distinctFailRatio": 0.4,
             "staticWarnSeconds": 3,
             "repeatedStaticFailCount": 2,
-            "montageMaxRatio": 0.25
+            "montageMaxRatio": 0.25,
+            "seamChangeMax": 0.05
           },
           "release-demo": {
             "distinctWarnRatio": 0.5,
             "distinctFailRatio": 0.4,
             "staticWarnSeconds": 3,
             "repeatedStaticFailCount": 2,
-            "montageMaxRatio": 0.25
+            "montageMaxRatio": 0.25,
+            "seamChangeMax": 0.05
           },
           "montage": {
             "distinctWarnRatio": 0.5,
             "distinctFailRatio": 0.4,
             "staticWarnSeconds": 3,
             "repeatedStaticFailCount": 2,
-            "montageMaxRatio": 1
+            "montageMaxRatio": 1,
+            "seamChangeMax": 0.05
           }
         }
       },
@@ -290,35 +295,40 @@
               "distinctFailRatio": 0.4,
               "staticWarnSeconds": 3,
               "repeatedStaticFailCount": 2,
-              "montageMaxRatio": 0.25
+              "montageMaxRatio": 0.25,
+              "seamChangeMax": 0.05
             },
             "actor-journey": {
               "distinctWarnRatio": 0.5,
               "distinctFailRatio": 0.4,
               "staticWarnSeconds": 3,
               "repeatedStaticFailCount": 2,
-              "montageMaxRatio": 0.25
+              "montageMaxRatio": 0.25,
+              "seamChangeMax": 0.05
             },
             "feature-clip": {
               "distinctWarnRatio": 0.5,
               "distinctFailRatio": 0.4,
               "staticWarnSeconds": 3,
               "repeatedStaticFailCount": 2,
-              "montageMaxRatio": 0.25
+              "montageMaxRatio": 0.25,
+              "seamChangeMax": 0.05
             },
             "release-demo": {
               "distinctWarnRatio": 0.5,
               "distinctFailRatio": 0.4,
               "staticWarnSeconds": 3,
               "repeatedStaticFailCount": 2,
-              "montageMaxRatio": 0.25
+              "montageMaxRatio": 0.25,
+              "seamChangeMax": 0.05
             },
             "montage": {
               "distinctWarnRatio": 0.5,
               "distinctFailRatio": 0.4,
               "staticWarnSeconds": 3,
               "repeatedStaticFailCount": 2,
-              "montageMaxRatio": 1
+              "montageMaxRatio": 1,
+              "seamChangeMax": 0.05
             }
           },
           "type": "object",
@@ -358,6 +368,12 @@
                 "type": "number",
                 "minimum": 0,
                 "maximum": 1
+              },
+              "seamChangeMax": {
+                "default": 0.05,
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
               }
             },
             "required": [
@@ -365,7 +381,8 @@
               "distinctFailRatio",
               "staticWarnSeconds",
               "repeatedStaticFailCount",
-              "montageMaxRatio"
+              "montageMaxRatio",
+              "seamChangeMax"
             ],
             "additionalProperties": false
           },

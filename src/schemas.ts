@@ -185,12 +185,13 @@ export const QualityReportSchema = z.object({
     z.object({ status: z.literal('complete'), review: EditorialReviewSchema })
   ]),
   sensitiveFindings: z.array(z.object({ kind: z.string(), match: z.string() })),
+  review: z.object({ contactSheet: z.string().min(1), moments: z.array(z.number().nonnegative()) }).optional(),
   omittedScenes: z.array(z.object({ id: z.string(), reason: z.string() })),
   encoding: z.object({ codec: z.string(), width: z.number(), height: z.number(), durationSeconds: z.number(), pixelFormat: z.string() }).optional()
 });
 
-const ThresholdSchema = z.object({ distinctWarnRatio: z.number().min(0).max(1), distinctFailRatio: z.number().min(0).max(1), staticWarnSeconds: z.number().positive(), repeatedStaticFailCount: z.number().int().positive(), montageMaxRatio: z.number().min(0).max(1) });
-const defaultThreshold = { distinctWarnRatio: 0.5, distinctFailRatio: 0.4, staticWarnSeconds: 3, repeatedStaticFailCount: 2, montageMaxRatio: 0.25 };
+const ThresholdSchema = z.object({ distinctWarnRatio: z.number().min(0).max(1), distinctFailRatio: z.number().min(0).max(1), staticWarnSeconds: z.number().positive(), repeatedStaticFailCount: z.number().int().positive(), montageMaxRatio: z.number().min(0).max(1), seamChangeMax: z.number().min(0).max(1).default(0.05) });
+const defaultThreshold = { distinctWarnRatio: 0.5, distinctFailRatio: 0.4, staticWarnSeconds: 3, repeatedStaticFailCount: 2, montageMaxRatio: 0.25, seamChangeMax: 0.05 };
 const defaultThresholds = { 'public-master': defaultThreshold, 'actor-journey': defaultThreshold, 'feature-clip': defaultThreshold, 'release-demo': defaultThreshold, montage: { ...defaultThreshold, montageMaxRatio: 1 } };
 
 export const ConfigSchema = z.object({

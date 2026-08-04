@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { describe, expect, test } from 'vitest';
-import { analyzeVideo } from '../src/visual-analysis.js';
+import { analyzeVideo, seamChanges } from '../src/visual-analysis.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -44,6 +44,21 @@ describe('visual analysis', () => {
     expect(withOverlay.staticSpans.some((span) => span.durationSeconds >= 7)).toBe(false);
     expect(productOnly.staticSpans.some((span) => span.durationSeconds >= 7)).toBe(true);
   }, 60_000);
+
+  test('reports a seamless cut as quiet and a jump cut as loud', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'demo-seam-'));
+    const seamless = join(directory, 'seamless.mp4');
+    const jump = join(directory, 'jump.mp4');
+    await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=640x480:d=6:r=10', '-pix_fmt', 'yuv420p', seamless]);
+    await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=640x480:d=3:r=10', '-f', 'lavfi', '-i', 'color=c=white:s=640x480:d=3:r=10',
+      '-filter_complex', '[0:v][1:v]concat=n=2:v=1', '-pix_fmt', 'yuv420p', jump]);
+
+    const quiet = await seamChanges(seamless, [3]);
+    const loud = await seamChanges(jump, [3]);
+
+    expect(quiet[0].changeRatio).toBeLessThan(0.05);
+    expect(loud[0].changeRatio).toBeGreaterThan(0.5);
+  }, 90_000);
 
   test('recognizes meaningful motion', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'demo-motion-'));

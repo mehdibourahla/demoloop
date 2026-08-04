@@ -45,9 +45,15 @@ Rendering trims each clip before composition: with `loading: cut`, static spans 
 
 Audio policies are explicit: silent, local music, voiceover, or voiceover plus music. ElevenLabs and macOS narration implement the same provider interface. Music must be a real local file and includes level and fades. Silent output has no audio stream.
 
+## Editing and post-production
+
+Rendering emits an edit decision list alongside the master. It names each scene's raw recording and the ranges kept from it, so the deterministic trim is auditable and can be re-rendered from the originals. Cut positions on the output timeline are recorded with it.
+
+That EDL is also the handoff to [video-use](https://github.com/browser-use/video-use), which the Agent Skill may use for treatment this pipeline deliberately does not implement: grading, burned subtitles, animated overlays, reordered beats. The CLI has no dependency on it, exactly as with Watch. An edited master re-enters the pipeline at `evaluate` and is accepted only on its own checksum-bound review, never by inheriting the verdict of the file it was derived from.
+
 ## Quality and acceptance
 
-Technical checks cover execution, requests, console errors, locators, encoding, viewport, duration, dead time, privacy, and audio policy. Deterministic editorial checks sample real frames and report distinct/discarded counts, static spans with timestamps, hook and close presence, product dominance, overlay obstruction, and montage balance.
+Technical checks cover execution, requests, console errors, locators, encoding, viewport, duration, dead time, privacy, and audio policy. Deterministic editorial checks additionally inspect every trimmed cut for a visible jump, and static spans are measured on the product with the caption band excluded, so the tool never mistakes its own overlay for product activity. Deterministic editorial checks sample real frames and report distinct/discarded counts, static spans with timestamps, hook and close presence, product dominance, overlay obstruction, and montage balance.
 
 These checks do not substitute for editorial judgment. Before Watch, an otherwise passing output is `pending-agent-review`. The Agent Skill runs Watch on the actual absolute MP4, reads every extracted frame and transcript when required, and writes the schema-defined review. Finalization accepts only a video whose checksum matches the review, a score of at least 7, an accept verdict, deterministic passes, and an available transcript for voiced output.
 

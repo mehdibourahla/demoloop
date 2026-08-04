@@ -36,6 +36,12 @@ The pipeline is `repository + app + request -> product model -> plan result -> s
 
 ElevenLabs reads its key from `ELEVENLABS_API_KEY`; never put secrets in scenarios or source control. Generated audio remains local and content-addressed.
 
+## Editing
+
+- `render` writes `edl.json` (video-use schema) and records every cut on the output timeline in `presentation-metadata.json` as `{outputSeconds, kind, sceneId}`, where `kind` is `trim` (footage removed inside a scene) or `scene` (a boundary between scenes).
+- Trim cuts must be invisible: `evaluate` samples each one and fails `cut-seams` when the frames either side differ by more than `seamChangeMax`. Scene cuts are deliberate and are not held to that rule.
+- `evaluate` writes a contact sheet tiling the opening, every cut, every static span, and the close, and records those timestamps under `review` in the quality report. Read that one image before deciding whether any moment needs a closer look.
+
 ## Quality
 
 `quality-report.json` separates technical checks, deterministic editorial checks, and the Watch agent review. Deterministic analysis measures encoding, viewport, audio policy, sensitive information, distinct/discarded frames, static spans, hook, close, product dominance, ROI obstruction, and montage ratio.

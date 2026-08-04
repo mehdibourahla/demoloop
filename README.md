@@ -11,6 +11,7 @@ The LLM agent decides what story to tell and how to present it. The CLI locks th
 - A short public master plus actor journey clips, coverage, and omissions in full mode.
 - Desktop or mobile H.264 MP4s with a smooth visible cursor and explicit silent, music, voiceover, or voiceover-plus-music treatment.
 - Separate technical, deterministic editorial, and Watch agent-review reports.
+- An edit decision list plus a contact sheet of the moments worth reviewing.
 
 Routes alone are never converted into a slideshow. Unresolved actors and missing proof remain unresolved until evidence or the user settles them.
 
@@ -119,6 +120,12 @@ Only narration text is sent to ElevenLabs. Audio is cached locally by content an
 | `run` | Rehearse, record, render, and evaluate |
 
 Run `npm run product-demo -- help` for flags.
+
+## Post-production with video-use
+
+`render` writes `edl.json` in the [video-use](https://github.com/browser-use/video-use) schema next to the master, naming each scene's raw recording and the ranges kept from it. For treatment this pipeline does not implement — colour grading, burned subtitles, animated overlays, reordered beats — hand that EDL to video-use, which is installed separately and never imported by this CLI.
+
+An edited master is not accepted by inheritance. Run `evaluate --video`, Watch, and `finalize --video` against the edited file: acceptance binds to the checksum of the file that was actually reviewed.
 
 ## Agent Skill and mandatory video review
 
