@@ -41,7 +41,7 @@ const narrationProvider = { synthesize: async (segment: { text: string; outputPa
 
 describe('subtitles', () => {
   it('writes an SRT timed across the whole master and names it in the EDL', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-srt-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-srt-'));
     const outputDirectory = join(directory, 'render');
 
     await renderDemo({ scenario: scenario(), config, device: 'test', outputDirectory, executionReport: { artifacts: await raws(directory) }, narrationProvider });
@@ -57,7 +57,7 @@ describe('subtitles', () => {
   }, 240_000);
 
   it('muxes a toggleable subtitle track when asked to embed', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-embed-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-embed-'));
     const video = await renderDemo({ scenario: scenario({ subtitles: 'embedded' }), config, device: 'test', outputDirectory: join(directory, 'render'), executionReport: { artifacts: await raws(directory) }, narrationProvider });
 
     const { stdout } = await execFileAsync('ffprobe', ['-v', 'error', '-select_streams', 's', '-show_entries', 'stream=codec_name', '-of', 'csv=p=0', video]);
@@ -65,7 +65,7 @@ describe('subtitles', () => {
   }, 300_000);
 
   it('leaves the picture untouched unless burning is requested', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-plain-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-plain-'));
     const video = await renderDemo({ scenario: scenario(), config, device: 'test', outputDirectory: join(directory, 'render'), executionReport: { artifacts: await raws(directory) }, narrationProvider });
 
     const { stdout } = await execFileAsync('ffprobe', ['-v', 'error', '-select_streams', 's', '-show_entries', 'stream=codec_name', '-of', 'csv=p=0', video]);
@@ -73,7 +73,7 @@ describe('subtitles', () => {
   }, 300_000);
 
   it('refuses to burn when this ffmpeg cannot render subtitles', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-noburn-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-noburn-'));
     if (await supportsBurnedSubtitles()) return;
 
     await expect(renderDemo({ scenario: scenario({ subtitles: 'burned' }), config, device: 'test', outputDirectory: join(directory, 'render'), executionReport: { artifacts: await raws(directory) }, narrationProvider }))

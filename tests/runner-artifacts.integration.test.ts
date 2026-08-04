@@ -27,7 +27,7 @@ afterAll(() => server?.kill('SIGTERM'));
 
 describe('capture artifacts', () => {
   test('captures the visible text of every recorded scene for privacy scanning', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-text-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-text-'));
     const model = await discoverProduct(resolve('fixtures/neutral/handoff'));
     const result = planDemo(model, { mode: 'journey', journeyId: 'deliver-item', locale: 'en' });
     if (result.status !== 'planned') throw new Error('Expected planned handoff');
@@ -43,14 +43,14 @@ describe('capture artifacts', () => {
 
   test('never persists the redaction source value that capture is configured to hide', async () => {
     const secret = 'REDACTION-SOURCE-9F3B7C';
-    process.env.PRODUCT_DEMO_TEST_SECRET = secret;
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-artifacts-'));
+    process.env.DEMOLOOP_TEST_SECRET = secret;
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-artifacts-'));
     const model = await discoverProduct(resolve('fixtures/neutral/handoff'));
     const result = planDemo(model, { mode: 'journey', journeyId: 'deliver-item', locale: 'en' });
     if (result.status !== 'planned') throw new Error('Expected planned handoff');
     const config = ConfigSchema.parse({
       app: { url: 'http://127.0.0.1:4173' },
-      privacy: { redactions: [{ sourceEnv: 'PRODUCT_DEMO_TEST_SECRET', replacement: 'Demo Value' }] }
+      privacy: { redactions: [{ sourceEnv: 'DEMOLOOP_TEST_SECRET', replacement: 'Demo Value' }] }
     });
     const rehearsal = ExecutionReportSchema.parse(await executeScenario({ scenario: result.outputs[0], config, mode: 'rehearse', outputDirectory: join(outputDirectory, 'rehearsal'), device: 'desktop' }));
     const recording = ExecutionReportSchema.parse(await executeScenario({ scenario: result.outputs[0], config, mode: 'record', outputDirectory: join(outputDirectory, 'recording'), device: 'desktop', rehearsalReceiptPath: rehearsal.artifacts.report }));

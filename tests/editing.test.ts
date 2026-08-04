@@ -42,7 +42,7 @@ describe('edit decision list', () => {
 
 describe('media frame rate', () => {
   test('reads the real capture rate rather than assuming', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-fps-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-fps-'));
     const at25 = join(directory, 'at25.webm');
     const at30 = join(directory, 'at30.mp4');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'testsrc=duration=1:size=160x120:rate=25', '-c:v', 'libvpx', at25]);
@@ -55,7 +55,7 @@ describe('media frame rate', () => {
 
 describe('holding a clip for narration', () => {
   test('extends the clip by freezing its last frame', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-pad-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-pad-'));
     const source = join(directory, 'source.mp4');
     const padded = join(directory, 'padded.mp4');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=320x240:d=1:r=30', '-f', 'lavfi', '-i', 'color=c=white:s=320x240:d=1:r=30',
@@ -71,7 +71,7 @@ describe('holding a clip for narration', () => {
 
 describe('contact sheet', () => {
   test('tiles the frame from each requested moment, not the same frame repeatedly', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-sheet-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-sheet-'));
     const source = join(directory, 'source.mp4');
     const sheet = join(directory, 'sheet.png');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=320x240:d=3:r=30', '-f', 'lavfi', '-i', 'color=c=white:s=320x240:d=3:r=30',
@@ -114,7 +114,7 @@ describe('static span trimming', () => {
   });
 
   test('renders only the kept segments into the trimmed clip', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-trim-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-trim-'));
     const source = join(directory, 'source.mp4');
     const trimmed = join(directory, 'trimmed.mp4');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'testsrc=duration=10:size=320x240:rate=30', '-pix_fmt', 'yuv420p', source]);
@@ -126,7 +126,7 @@ describe('static span trimming', () => {
   }, 60_000);
 
   test('cuts a long inactive stretch out of a recorded clip', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-clip-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-clip-'));
     const source = join(directory, 'raw-scene.mp4');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=black:duration=8:size=320x240:rate=30', '-f', 'lavfi', '-i', 'testsrc=duration=3:size=320x240:rate=30', '-filter_complex', '[0:v][1:v]concat=n=2:v=1', '-pix_fmt', 'yuv420p', source]);
 

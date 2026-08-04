@@ -29,7 +29,7 @@ afterAll(() => server?.kill('SIGTERM'));
 
 describe('fresh-checkout vertical slice', () => {
   test('discovers, plans, rehearses, records, renders and evaluates desktop and mobile MP4s', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'product-demo-e2e-'));
+    const root = await mkdtemp(join(tmpdir(), 'demoloop-e2e-'));
     const model = await discoverProduct(resolve('fixtures/neutral/handoff'), 'http://127.0.0.1:4173', join(root, 'discovery'));
     expect(model.journeys.some((journey) => journey.id === 'deliver-item')).toBe(true);
     const planned = planDemo(model, { mode: 'journey', journeyId: 'deliver-item', locale: 'en', audience: 'operations', audio: { policy: 'silent' } });

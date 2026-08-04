@@ -8,3 +8,4 @@ playwright-report/
 product-demo.sanox-*.yaml
 scenarios/sanox-*.yaml
 docs/superpowers/
+demoloop.sanox-*.yaml

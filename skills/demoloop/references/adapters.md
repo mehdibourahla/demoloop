@@ -13,7 +13,7 @@ python helpers/render.py <render-dir>/edl.json -o <render-dir>/final.mp4
 Two rules make this safe:
 
 - video-use may only cut, reorder, grade, or annotate footage that was actually recorded. It must never introduce product behaviour that no pass captured; the evidence chain is the EDL's `ranges` pointing at real sources.
-- Its output is not accepted by inheritance. Re-run `product-demo evaluate --video <edited.mp4>`, run Watch against that file, and `finalize --video <edited.mp4>`. Acceptance binds to the checksum of the file that was reviewed, so the edited master must earn its own verdict.
+- Its output is not accepted by inheritance. Re-run `demoloop evaluate --video <edited.mp4>`, run Watch against that file, and `finalize --video <edited.mp4>`. Acceptance binds to the checksum of the file that was reviewed, so the edited master must earn its own verdict.
 
 - Playwright MCP: use for agent-led semantic exploration and screenshots. Convert findings to stable role, label, test-ID, or text locators before rehearsal; never compile ephemeral MCP refs.
 - Chrome DevTools MCP: use for deeper console, network, runtime, performance, accessibility, or Lighthouse investigation. It is evidence collection, not a final-take dependency.

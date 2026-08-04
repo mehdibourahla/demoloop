@@ -16,7 +16,7 @@ let videoPath: string;
 let videoSha256: string;
 
 beforeAll(async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'product-demo-finalize-'));
+  const directory = await mkdtemp(join(tmpdir(), 'demoloop-finalize-'));
   videoPath = join(directory, 'final.mp4');
   await writeFile(videoPath, 'reviewed video bytes');
   videoSha256 = createHash('sha256').update('reviewed video bytes').digest('hex');

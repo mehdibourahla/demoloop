@@ -11,7 +11,7 @@ const execFileAsync = promisify(execFile);
 
 describe('voiceover rendering', () => {
   it('mixes measured narration into the normalized MP4', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-render-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-render-'));
     const raw = join(directory, 'raw-intro.webm');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=white:s=320x240:d=2', '-c:v', 'libvpx-vp9', raw]);
     const scenario = ScenarioSchema.parse({
@@ -36,7 +36,7 @@ describe('voiceover rendering', () => {
   }, 120_000);
 
   it('keeps enough footage for the narration when trimming a static scene', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-floor-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-floor-'));
     const raw = join(directory, 'raw-intro.webm');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=white:s=320x240:d=8:r=30', '-c:v', 'libvpx-vp9', raw]);
     const scenario = ScenarioSchema.parse({
@@ -60,7 +60,7 @@ describe('voiceover rendering', () => {
 
   it('lands quiet and loud narration at a comparable level', async () => {
     const levels = await Promise.all([1, 0.1].map(async (amplitude) => {
-      const directory = await mkdtemp(join(tmpdir(), `product-demo-level-${amplitude}-`));
+      const directory = await mkdtemp(join(tmpdir(), `demoloop-level-${amplitude}-`));
       const raw = join(directory, 'raw-intro.webm');
       await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=white:s=320x240:d=3', '-c:v', 'libvpx-vp9', raw]);
       const scenario = ScenarioSchema.parse({

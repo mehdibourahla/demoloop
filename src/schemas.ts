@@ -135,7 +135,7 @@ export const ScenarioSchema = z.object({
   requestedDurationSeconds: z.number().positive().optional(),
   audio: AudioPolicySchema.default({ policy: 'silent' }),
   subtitles: z.enum(['none', 'sidecar', 'embedded', 'burned']).default('sidecar'),
-  branding: z.object({ name: z.string().min(1), primary: z.string().min(1), background: z.string().min(1) }).default({ name: 'Product Demo', primary: '#2563eb', background: '#08111f' }),
+  branding: z.object({ name: z.string().min(1), primary: z.string().min(1), background: z.string().min(1) }).default({ name: 'Demoloop', primary: '#2563eb', background: '#08111f' }),
   preconditions: z.object({ resetCommand: z.string().min(1).optional(), seedCommand: z.string().min(1).optional() }).default({}),
   actors: z.array(z.object({
     id: z.string().min(1), label: z.string().min(1), storageState: z.string().min(1).optional(),

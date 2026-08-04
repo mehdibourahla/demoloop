@@ -1,4 +1,4 @@
-# Product Demo architecture
+# Demoloop architecture
 
 ## Boundary
 

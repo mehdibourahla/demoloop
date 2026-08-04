@@ -1,18 +1,26 @@
 {
-  "name": "product-demo",
+  "name": "demoloop",
   "version": "0.1.0",
-  "description": "Portable Agent Skill and deterministic runtime for evidence-backed product demo videos",
+  "description": "Portable Agent Skill and deterministic runtime for evidence-backed demo videos of real software",
   "private": true,
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mehdibourahla/product-demo.git"
+    "url": "git+https://github.com/mehdibourahla/demoloop.git"
   },
-  "homepage": "https://github.com/mehdibourahla/product-demo#readme",
-  "bugs": "https://github.com/mehdibourahla/product-demo/issues",
-  "keywords": ["agent-skill", "playwright", "remotion", "product-demo", "elevenlabs"],
+  "homepage": "https://github.com/mehdibourahla/demoloop#readme",
+  "bugs": "https://github.com/mehdibourahla/demoloop/issues",
+  "keywords": [
+    "agent-skill",
+    "playwright",
+    "remotion",
+    "demoloop",
+    "elevenlabs"
+  ],
   "type": "module",
-  "bin": { "product-demo": "dist/src/cli.js" },
+  "bin": {
+    "demoloop": "dist/src/cli.js"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "schemas": "tsx src/export-schemas.ts",
@@ -20,7 +28,7 @@
     "test": "vitest run",
     "test:e2e": "vitest run tests/e2e.test.ts --testTimeout=180000",
     "fixture": "tsx fixtures/neutral/server.ts",
-    "product-demo": "tsx src/cli.ts",
+    "demoloop": "tsx src/cli.ts",
     "install:browsers": "playwright install chromium"
   },
   "dependencies": {
@@ -41,5 +49,7 @@
     "typescript": "5.9.3",
     "vitest": "4.1.10"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  }
 }

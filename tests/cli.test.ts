@@ -36,7 +36,7 @@ describe('CLI', () => {
   });
 
   test('refuses a duration flag that is not a number', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-args-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-args-'));
     const configPath = join(directory, 'config.yaml');
     await writeFile(configPath, 'app:\n  url: http://127.0.0.1:4173\n');
 
@@ -59,7 +59,7 @@ describe('CLI', () => {
   }, 60_000);
 
   test('writes needs-authoring instead of a route slideshow', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-cli-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-cli-'));
     const modelPath = join(directory, 'product-model.json');
     const configPath = join(directory, 'config.yaml');
     const output = join(directory, 'plan');

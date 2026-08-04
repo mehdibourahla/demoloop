@@ -1,0 +1,4 @@
+interface:
+  display_name: "Demoloop"
+  short_description: "Create deterministic product demo videos"
+  default_prompt: "Use $demoloop to create an evidence-backed deterministic product demo video."

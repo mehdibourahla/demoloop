@@ -1,4 +1,4 @@
-# Product Demo
+# Demoloop
 
 Turn a software repository and running web app into evidence-backed product videos with natural cursor movement, deliberate pacing, optional voiceover, and an editorial acceptance gate.
 
@@ -34,16 +34,16 @@ The included fixtures cover stateful, cross-context handoff, analytics, operatio
 ```bash
 npm run fixture
 # In another terminal:
-npm run product-demo -- discover
-npm run product-demo -- plan --mode journey --journey deliver-item
-npm run product-demo -- run artifacts/plan/deliver-item.yaml --device desktop
+npm run demoloop -- discover
+npm run demoloop -- plan --mode journey --journey deliver-item
+npm run demoloop -- run artifacts/plan/deliver-item.yaml --device desktop
 ```
 
 `run` exits 3 after rendering because a final video is not accepted until the Agent Skill completes its Watch review. Exit codes are 0 accepted, 1 rejected, 2 `needs-authoring`, and 3 awaiting the Watch review. The output remains available under `artifacts/deliver-item/desktop/`.
 
 ## Use it with your application
 
-Edit `product-demo.config.yaml`:
+Edit `demoloop.config.yaml`:
 
 ```yaml
 app:
@@ -84,7 +84,7 @@ Without one, each pass accumulates data and the demo eventually breaks on its ow
 ### Check the locators before recording
 
 ```bash
-npm run product-demo -- verify artifacts/plan/my-journey.yaml
+npm run demoloop -- verify artifacts/plan/my-journey.yaml
 ```
 
 `verify` opens the app once and resolves every target in the scenario, reporting each as resolved, missing, or ambiguous. It exits non-zero if any target is broken, which is far cheaper than discovering it during a rehearsal. When a label is ambiguous, scope it:
@@ -96,8 +96,8 @@ target: { by: role, role: button, value: Enregistrer, within: { role: dialog } }
 Then discover and plan:
 
 ```bash
-npm run product-demo -- discover
-npm run product-demo -- plan --mode full --audience customer --duration-seconds 120 --audio silent
+npm run demoloop -- discover
+npm run demoloop -- plan --mode full --audience customer --duration-seconds 120 --audio silent
 ```
 
 Planning modes are `full`, `journey`, `feature`, `actor`, and `release`. A planned scene declares its purpose, actor, semantic actions, presentation controls, and optional region of interest. Cursor and typing timing live in each action’s `timing` object and are part of the rehearsal digest.
@@ -162,7 +162,7 @@ Only narration text is sent to ElevenLabs. Audio is cached locally by content an
 | `finalize` | Apply a validated Watch editorial review, matched to the MP4 by checksum |
 | `run` | Rehearse, record, render, and evaluate |
 
-Run `npm run product-demo -- help` for flags.
+Run `npm run demoloop -- help` for flags.
 
 ## Subtitles
 
@@ -185,7 +185,7 @@ An edited master is not accepted by inheritance. Run `evaluate --video`, Watch, 
 
 ## Agent Skill and mandatory video review
 
-The portable skill lives at `skills/product-demo`. Symlink or copy it into `.agents/skills/product-demo`, `.codex/skills/product-demo`, or `.claude/skills/product-demo` and keep the built CLI checkout available through `PRODUCT_DEMO_CLI` when needed.
+The portable skill lives at `skills/demoloop`. Symlink or copy it into `.agents/skills/demoloop`, `.codex/skills/demoloop`, or `.claude/skills/demoloop` and keep the built CLI checkout available through `DEMOLOOP_CLI` when needed.
 
 The production agent environment also requires Claude Video:
 
@@ -217,7 +217,7 @@ npm run build
 npm run schemas
 ```
 
-See [architecture](docs/architecture.md), [skill workflow](skills/product-demo/SKILL.md), and [runtime contracts](skills/product-demo/references/contracts.md).
+See [architecture](docs/architecture.md), [skill workflow](skills/demoloop/SKILL.md), and [runtime contracts](skills/demoloop/references/contracts.md).
 
 ## License
 

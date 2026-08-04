@@ -77,7 +77,7 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
   }
   const serveUrl = await bundle(resolve('remotion/index.tsx'), undefined, { publicDir: publicDirectory });
   const inputProps = { clips, brand: options.scenario.branding, music };
-  const selected = await selectComposition({ serveUrl, id: 'ProductDemo', inputProps, browserExecutable: chromium.executablePath(), logLevel: 'error' });
+  const selected = await selectComposition({ serveUrl, id: 'Demoloop', inputProps, browserExecutable: chromium.executablePath(), logLevel: 'error' });
   const profile = options.config.devices[options.device];
   const composition = { ...selected, fps: FPS, width: profile.width, height: profile.height, durationInFrames: clips.reduce((sum, clip) => sum + clip.durationInFrames, 0) };
   const remotionPath = join(options.outputDirectory, 'remotion.mp4');

@@ -12,7 +12,7 @@ describe('privacy guard', () => {
   });
 
   test('scans captured scene text on disk and ignores binary artifacts', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-scan-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-scan-'));
     const textPath = join(directory, 'text-result.txt');
     const screenshotPath = join(directory, 'final-result.png');
     await writeFile(textPath, 'Patient real.person@example.com is ready');

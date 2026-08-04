@@ -18,7 +18,7 @@ import { chromium } from 'playwright';
 import { ElevenLabsNarrationProvider, MacOSNarrationProvider, narrationPlan } from './narration.js';
 import { ConfigSchema, EditorialReviewSchema, ExecutionReportSchema, ProductModelSchema, QualityReportSchema, ScenarioSchema, type DemoConfig, type Scenario } from './schemas.js';
 
-const help = `product-demo <command> [scenario] [options]
+const help = `demoloop <command> [scenario] [options]
 
 Commands:
   discover                         Build an evidence-backed product model
@@ -145,7 +145,7 @@ export async function runCli(args: string[]): Promise<number> {
   const supported = new Set(['discover', 'plan', 'verify', 'rehearse', 'record', 'render', 'evaluate', 'finalize', 'run']);
   if (!supported.has(command)) throw new Error(`Unknown command: ${command}`);
   const { values, positionals } = parse(args.slice(1));
-  const config = await loadConfig(values.config ?? 'product-demo.config.yaml');
+  const config = await loadConfig(values.config ?? 'demoloop.config.yaml');
   const device = values.device ?? 'desktop';
   const output = values.output;
   const requestedDurationSeconds = numeric(values['duration-seconds'], 'duration-seconds');

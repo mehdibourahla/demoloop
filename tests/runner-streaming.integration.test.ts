@@ -38,7 +38,7 @@ function scenario(actions: unknown[]) {
 
 describe('narration-aware capture', () => {
   test('records long enough to carry the scene narration', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-paced-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-paced-'));
     const paced = ScenarioSchema.parse({
       version: 2, id: 'paced-demo', title: 'Paced', outputType: 'feature-clip', audience: 'operators', audio: { policy: 'voiceover' },
       actors: [{ id: 'operator', label: 'Operator' }],
@@ -65,7 +65,7 @@ describe('narration-aware capture', () => {
 
 describe('actor sessions', () => {
   test('reports an unusable actor session instead of a missing element', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-preflight-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-preflight-'));
     const unusable = ScenarioSchema.parse({
       version: 2, id: 'preflight-demo', title: 'Preflight', outputType: 'feature-clip', audience: 'operators',
       actors: [{ id: 'operator', label: 'Operator', preflight: { path: '/handoff', target: { by: 'text', value: 'Signed in as Operator' }, timeoutMs: 500 } }],
@@ -76,7 +76,7 @@ describe('actor sessions', () => {
   }, 60_000);
 
   test('runs the journey when the actor session preflight succeeds', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-preflight-ok-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-preflight-ok-'));
     const usable = ScenarioSchema.parse({
       version: 2, id: 'preflight-ok', title: 'Preflight ok', outputType: 'feature-clip', audience: 'operators',
       actors: [{ id: 'operator', label: 'Operator', preflight: { path: '/handoff', target: { by: 'text', value: 'Delivery board' } } }],
@@ -91,7 +91,7 @@ describe('actor sessions', () => {
 
 describe('streaming interfaces', () => {
   test('navigates an application whose network never goes idle', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-stream-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-stream-'));
 
     const report = ExecutionReportSchema.parse(await executeScenario({
       scenario: scenario([{ type: 'goto', path: '/streaming' }, { type: 'assert', target: { by: 'text', value: 'Assistant' }, state: 'visible' }]),
@@ -102,7 +102,7 @@ describe('streaming interfaces', () => {
   }, 60_000);
 
   test('waits for a streamed reply to settle before the next action', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-stream-wait-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-stream-wait-'));
 
     const report = ExecutionReportSchema.parse(await executeScenario({
       scenario: scenario([

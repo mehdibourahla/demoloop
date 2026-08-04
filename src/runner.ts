@@ -58,10 +58,10 @@ function targetLabel(target: Target): string {
 function capturedCursorScript(primary: string): string {
   return `(() => {
     const mount = () => {
-      if (document.querySelector('[data-product-demo-cursor]') || !document.documentElement) return;
+      if (document.querySelector('[data-demoloop-cursor]') || !document.documentElement) return;
       const color = ${JSON.stringify(primary)};
       const cursor = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      cursor.setAttribute('data-product-demo-cursor', '');
+      cursor.setAttribute('data-demoloop-cursor', '');
       cursor.setAttribute('viewBox', '0 0 28 36');
       cursor.setAttribute('aria-hidden', 'true');
       Object.assign(cursor.style, {

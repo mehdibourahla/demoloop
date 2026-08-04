@@ -27,7 +27,7 @@ afterAll(() => server?.kill('SIGTERM'));
 
 describe('deterministic scenario runner', () => {
   test('passes two consecutive rehearsals across isolated handoff contexts', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-rehearse-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-rehearse-'));
     const model = await discoverProduct(resolve('fixtures/neutral/handoff'));
     const result = planDemo(model, { mode: 'journey', journeyId: 'deliver-item', locale: 'en' });
     if (result.status !== 'planned') throw new Error('Expected planned handoff');
@@ -45,7 +45,7 @@ describe('deterministic scenario runner', () => {
   }, 60_000);
 
   test('runs as many rehearsal passes as the configured requirement', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-passes-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-passes-'));
     const model = await discoverProduct(resolve('fixtures/neutral/handoff'));
     const result = planDemo(model, { mode: 'journey', journeyId: 'deliver-item', locale: 'en' });
     if (result.status !== 'planned') throw new Error('Expected planned handoff');
@@ -58,7 +58,7 @@ describe('deterministic scenario runner', () => {
   }, 90_000);
 
   test('records real scene videos only with a matching two-pass receipt', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-record-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-record-'));
     const rehearsalDirectory = join(outputDirectory, 'rehearsal');
     const recordingDirectory = join(outputDirectory, 'recording');
     const model = await discoverProduct(resolve('fixtures/neutral/handoff'));

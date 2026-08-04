@@ -53,5 +53,5 @@ const DemoVideo: React.FC<DemoVideoProps> = ({ clips, brand, music }) => {
   </AbsoluteFill>;
 };
 
-const Root: React.FC = () => <Composition id="ProductDemo" component={DemoVideo} durationInFrames={300} fps={30} width={1440} height={900} defaultProps={{ clips: [], brand: { name: 'Product Demo', primary: '#2563eb', background: '#08111f' } }} />;
+const Root: React.FC = () => <Composition id="Demoloop" component={DemoVideo} durationInFrames={300} fps={30} width={1440} height={900} defaultProps={{ clips: [], brand: { name: 'Demoloop', primary: '#2563eb', background: '#08111f' } }} />;
 registerRoot(Root);

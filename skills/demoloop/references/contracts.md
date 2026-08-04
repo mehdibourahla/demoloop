@@ -27,7 +27,7 @@ The pipeline is `repository + app + request -> product model -> plan result -> s
 - Actors may declare a `preflight` target. A failed preflight reports an unusable actor session instead of a missing element.
 - `runtime.ignoreRequestPatterns` and `runtime.ignoreConsolePatterns` allow capture-environment noise (headless WebGL warnings, third-party beacons) without hiding it: ignored items are listed in the execution report as `ignoredRequests` / `ignoredConsoleErrors`. Never use them to silence a real application defect.
 - Any target may carry `within: { role, testId }` to scope it to a container. Use it whenever a label appears more than once — a dialog's save button and the page's save button are different targets.
-- `product-demo verify <scenario>` resolves every target against the running app and reports missing or ambiguous ones before a rehearsal is spent.
+- `demoloop verify <scenario>` resolves every target against the running app and reports missing or ambiguous ones before a rehearsal is spent.
 - A demo that changes data needs `preconditions.resetCommand`: rehearsal runs twice and recording once, so without a reset each pass starts from the previous pass's leftovers.
 - Use separate browser contexts for actors. Never round-robin actors or merge distinct sessions.
 - Render one caption system only. Do not show action names, click circles, or capture-time chapter/brand overlays.

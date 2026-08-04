@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, test } from 'vitest';
 
-describe('product-demo Agent Skill', () => {
+describe('demoloop Agent Skill', () => {
   test('requires the installed Watch skill and a truthful editorial review', async () => {
-    const skill = await readFile('skills/product-demo/SKILL.md', 'utf8');
+    const skill = await readFile('skills/demoloop/SKILL.md', 'utf8');
     expect(skill).toContain('npx skills add bradautomates/claude-video -g');
     expect(skill).toMatch(/\/watch <absolute-video-path>/);
     expect(skill).toContain('--resolution 1024');

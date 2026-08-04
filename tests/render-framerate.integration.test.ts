@@ -11,7 +11,7 @@ const execFileAsync = promisify(execFile);
 
 describe('render frame rate', () => {
   it('composes at the capture rate instead of resampling the recording', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-fps-render-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-fps-render-'));
     const raw = join(directory, 'raw-intro.webm');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'testsrc=duration=2:size=320x240:rate=25', '-c:v', 'libvpx', raw]);
     const scenario = ScenarioSchema.parse({

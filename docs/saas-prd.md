@@ -1,6 +1,6 @@
-# Product Requirements — Demo Studio
+# Product Requirements — Demoloop
 
-The complete product. Hosted service built on the `product-demo` runtime.
+The complete product. Hosted service built on the `demoloop` runtime.
 
 ---
 
@@ -31,7 +31,7 @@ When the product changes, the demos that broke are detected, repaired, and regen
 | Loom, manual capture | Video | Yes | Full re-record, human |
 | Arcade, Supademo | Clickable walkthrough | Screenshots of it | Re-capture each step |
 | AI video generators | Video | **No** — synthesised UI | Re-prompt, still fictional |
-| **Demo Studio** | Video | Yes, driven live | Automatic |
+| **Demoloop** | Video | Yes, driven live | Automatic |
 
 Arcade is the nearest neighbour and a good product; it builds interactive walkthroughs from captured screens. We produce **video of software running** — the format launch, sales, docs and social actually consume — regenerated from the source of truth rather than from a stale capture.
 

@@ -42,7 +42,7 @@ const safeChoice = {
 
 describe('adaptive interfaces', () => {
   test('repeats a declared intent until the form reports completion', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-intake-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-intake-'));
 
     const report = ExecutionReportSchema.parse(await executeScenario({
       scenario: scenario([
@@ -60,7 +60,7 @@ describe('adaptive interfaces', () => {
   }, 90_000);
 
   test('records which option each declared intent selected', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-choice-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-choice-'));
 
     const report = ExecutionReportSchema.parse(await executeScenario({
       scenario: scenario([{ type: 'goto', path: '/intake' }, safeChoice]),
@@ -72,7 +72,7 @@ describe('adaptive interfaces', () => {
   }, 90_000);
 
   test('refuses to click an option the scenario forbids', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-avoid-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-avoid-'));
 
     const report = ExecutionReportSchema.parse(await executeScenario({
       scenario: scenario([
@@ -87,7 +87,7 @@ describe('adaptive interfaces', () => {
   }, 90_000);
 
   test('takes a branch only when its condition currently holds', async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-branch-'));
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'demoloop-branch-'));
 
     const report = ExecutionReportSchema.parse(await executeScenario({
       scenario: scenario([

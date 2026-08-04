@@ -8,7 +8,7 @@ npm run install:browsers
 npm run build
 ```
 
-FFmpeg and `ffprobe` must be on `PATH`. Run `npm run product-demo -- help` from the checkout or link the package with `npm link` to expose `product-demo`.
+FFmpeg and `ffprobe` must be on `PATH`. Run `npm run demoloop -- help` from the checkout or link the package with `npm link` to expose `demoloop`.
 
 The generic CLI has no dependency on globally installed third-party Agent Skills.
 
@@ -25,11 +25,11 @@ The list must include `watch` for the active agent runtime. Configure a transcri
 
 ## Codex
 
-Symlink or copy `skills/product-demo` into `.codex/skills/product-demo`, `~/.codex/skills/product-demo`, or the cross-runtime `.agents/skills/product-demo` directory. Keep the runtime checkout available and set `PRODUCT_DEMO_CLI` to its built `dist/src/cli.js` when using a copied skill.
+Symlink or copy `skills/demoloop` into `.codex/skills/demoloop`, `~/.codex/skills/demoloop`, or the cross-runtime `.agents/skills/demoloop` directory. Keep the runtime checkout available and set `DEMOLOOP_CLI` to its built `dist/src/cli.js` when using a copied skill.
 
 ## Claude Code
 
-Symlink or copy `skills/product-demo` into `.claude/skills/product-demo`, `~/.claude/skills/product-demo`, or `.agents/skills/product-demo`. Invoke it as `$product-demo` and run the same local CLI.
+Symlink or copy `skills/demoloop` into `.claude/skills/demoloop`, `~/.claude/skills/demoloop`, or `.agents/skills/demoloop`. Invoke it as `$demoloop` and run the same local CLI.
 
 No MCP server, paid service, remote browser, or narration provider is required for intentionally silent demos.
 

@@ -30,7 +30,7 @@ async function recordingServer(bytes: Buffer) {
 
 describe('ElevenLabs delivery', () => {
   it('sends voice settings, a fixed seed, and the surrounding narration', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-voice-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-voice-'));
     const audio = join(directory, 'response.mp3');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=0.35', '-c:a', 'libmp3lame', audio]);
     const { requests, baseUrl } = await recordingServer(await readFile(audio));
@@ -49,7 +49,7 @@ describe('ElevenLabs delivery', () => {
   });
 
   it('re-synthesizes when the voice settings change', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-voice-cache-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-voice-cache-'));
     const audio = join(directory, 'response.mp3');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=0.35', '-c:a', 'libmp3lame', audio]);
     const { requests, baseUrl } = await recordingServer(await readFile(audio));
@@ -65,7 +65,7 @@ describe('ElevenLabs delivery', () => {
 
 describe('ElevenLabs narration', () => {
   it('authenticates, measures generated speech, and reuses the local cache', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-narration-'));
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-narration-'));
     const audio = join(directory, 'response.mp3');
     await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=0.35', '-c:a', 'libmp3lame', audio]);
     const bytes = await readFile(audio);
