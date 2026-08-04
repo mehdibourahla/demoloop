@@ -21,6 +21,10 @@ export function isIgnoredRequest(url: string, patterns: string[]): boolean {
   return patterns.some((pattern) => new RegExp(pattern).test(url));
 }
 
+export function isIgnoredConsoleError(text: string, patterns: string[]): boolean {
+  return patterns.some((pattern) => new RegExp(pattern).test(text));
+}
+
 export function locatorFor(page: Page, target: Target): Locator {
   if (target.by === 'label') return page.getByLabel(target.value, { exact: true });
   if (target.by === 'testId') return page.getByTestId(target.value);
@@ -333,6 +337,8 @@ async function runPass(options: ExecuteOptions, pass: number) {
   const failedRequests: Array<{ url: string; status?: number; error?: string }> = [];
   const ignoredRequests: Array<{ url: string; status?: number; error?: string }> = [];
   const ignorePatterns = options.config.runtime.ignoreRequestPatterns;
+  const consolePatterns = options.config.runtime.ignoreConsolePatterns;
+  const ignoredConsoleErrors: string[] = [];
   const events: TimelineEvent[] = [];
   const sceneReports: Array<{ id: string; status: 'passed' | 'failed' | 'omitted'; failure?: string }> = [];
   const executedPath: Array<{ sceneId: string; actionIndex: number; detail: string }> = [];
@@ -345,7 +351,10 @@ async function runPass(options: ExecuteOptions, pass: number) {
       const page = await context.newPage();
       await installTextRedactions(page, options.config.privacy.redactions);
       if (options.mode === 'record') await installCapturedCursor(page, options.scenario.branding.primary);
-      page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+      page.on('console', (message) => {
+        if (message.type() !== 'error') return;
+        (isIgnoredConsoleError(message.text(), consolePatterns) ? ignoredConsoleErrors : consoleErrors).push(message.text());
+      });
       page.on('requestfailed', (request) => {
         const error = request.failure()?.errorText;
         if (isIgnorableRequestFailure(error)) return;
@@ -436,7 +445,7 @@ async function runPass(options: ExecuteOptions, pass: number) {
     await Promise.all([...contexts.values()].map((context) => context.close()));
     await browser.close();
   }
-  return { pass, passed: sceneReports.length === options.scenario.scenes.length && sceneReports.every((scene) => scene.status === 'passed') && consoleErrors.length === 0 && failedRequests.length === 0, sceneReports, consoleErrors, failedRequests, ignoredRequests, executedPath, events, artifacts: rawArtifacts };
+  return { pass, passed: sceneReports.length === options.scenario.scenes.length && sceneReports.every((scene) => scene.status === 'passed') && consoleErrors.length === 0 && failedRequests.length === 0, sceneReports, consoleErrors, ignoredConsoleErrors, failedRequests, ignoredRequests, executedPath, events, artifacts: rawArtifacts };
 }
 
 export async function executeScenario(options: ExecuteOptions): Promise<unknown> {
@@ -461,7 +470,7 @@ export async function executeScenario(options: ExecuteOptions): Promise<unknown>
   const timelinePath = join(options.outputDirectory, 'timeline.json');
   const reportPath = join(options.outputDirectory, 'execution-report.json');
   await writeFile(timelinePath, JSON.stringify(TimelineSchema.parse({ version: 2, scenarioId: options.scenario.id, viewport: { width: profile.width, height: profile.height }, events: result.events }), null, 2));
-  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, narrationSeconds: options.narrationSeconds ?? {}, executedPath: result.executedPath, failedRequests: result.failedRequests, ignoredRequests: result.ignoredRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
+  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, ignoredConsoleErrors: result.ignoredConsoleErrors, narrationSeconds: options.narrationSeconds ?? {}, executedPath: result.executedPath, failedRequests: result.failedRequests, ignoredRequests: result.ignoredRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
   await writeFile(reportPath, JSON.stringify(report, null, 2));
   return report;
 }

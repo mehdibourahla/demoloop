@@ -114,7 +114,8 @@
         "headless": true,
         "startTimeoutMs": 60000,
         "actionTimeoutMs": 10000,
-        "ignoreRequestPatterns": []
+        "ignoreRequestPatterns": [],
+        "ignoreConsolePatterns": []
       },
       "type": "object",
       "properties": {
@@ -147,6 +148,14 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "ignoreConsolePatterns": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "required": [
@@ -154,7 +163,8 @@
         "headless",
         "startTimeoutMs",
         "actionTimeoutMs",
-        "ignoreRequestPatterns"
+        "ignoreRequestPatterns",
+        "ignoreConsolePatterns"
       ],
       "additionalProperties": false
     },

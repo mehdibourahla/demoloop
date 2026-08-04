@@ -25,6 +25,17 @@ async function optionalJson(path: string): Promise<unknown | undefined> {
   return readFile(path, 'utf8').then(JSON.parse).catch(() => undefined);
 }
 
+export function reviewMoments(durationSeconds: number, cuts: Array<{ outputSeconds: number; kind: string }>, staticSpans: Array<{ startSeconds: number }>): number[] {
+  const settle = 0.4;
+  const moments = [
+    Math.min(1, durationSeconds / 2),
+    ...cuts.map((cut) => cut.outputSeconds + settle),
+    ...staticSpans.map((span) => span.startSeconds),
+    durationSeconds - 0.5
+  ];
+  return [...new Set(moments.map((moment) => Number(moment.toFixed(2))).filter((moment) => moment >= 0 && moment < durationSeconds))].sort((a, b) => a - b);
+}
+
 export function durationCheck(durationSeconds: number, requestedSeconds?: number) {
   const passed = requestedSeconds
     ? durationSeconds >= requestedSeconds * 0.5 && durationSeconds <= requestedSeconds * 1.25
@@ -101,15 +112,9 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
     { id: 'distinct-frames-warning', passed: visual.distinctRatio >= thresholds.distinctWarnRatio, value: Number(visual.distinctRatio.toFixed(3)) },
     ...visual.staticSpans.map((span, index) => ({ id: `static-span-${index + 1}`, passed: false, value: Number(span.durationSeconds.toFixed(2)), timestamps: [span.startSeconds], detail: 'Static section exceeds the warning threshold' })),
   ];
-  const reviewMoments = [...new Set([
-    Math.min(1, durationSeconds / 2),
-    ...trimCuts.map((cut) => cut.outputSeconds),
-    ...(metadata?.cuts ?? []).filter((cut) => cut.kind === 'scene').map((cut) => cut.outputSeconds),
-    ...visual.staticSpans.map((span) => span.startSeconds),
-    Math.max(0, durationSeconds - 0.5)
-  ].map((moment) => Number(moment.toFixed(2))).filter((moment) => moment >= 0 && moment < durationSeconds))].sort((a, b) => a - b);
+  const moments = reviewMoments(durationSeconds, metadata?.cuts ?? [], visual.staticSpans);
   const sheetPath = join(dirname(options.outputPath), `${options.scenario.id}-${options.device}-contact-sheet.png`);
-  const sheetMoments = await contactSheet(options.videoPath, sheetPath, reviewMoments).catch(() => undefined);
+  const sheetMoments = await contactSheet(options.videoPath, sheetPath, moments).catch(() => undefined);
 
   const reviewValue = options.editorialReviewPath ? await optionalJson(options.editorialReviewPath) : undefined;
   const review = reviewValue ? EditorialReviewSchema.parse(reviewValue) : undefined;

@@ -66,6 +66,13 @@
         "type": "string"
       }
     },
+    "ignoredConsoleErrors": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "narrationSeconds": {
       "default": {},
       "type": "object",
@@ -166,6 +173,7 @@
     "scenarioDigest",
     "scenes",
     "consoleErrors",
+    "ignoredConsoleErrors",
     "narrationSeconds",
     "executedPath",
     "failedRequests",

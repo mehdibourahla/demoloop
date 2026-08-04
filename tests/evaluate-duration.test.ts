@@ -1,5 +1,17 @@
 import { describe, expect, test } from 'vitest';
-import { durationCheck } from '../src/evaluate.js';
+import { durationCheck, reviewMoments } from '../src/evaluate.js';
+
+describe('review moments', () => {
+  test('samples after a cut has settled rather than on the transition frame', () => {
+    expect(reviewMoments(20, [{ outputSeconds: 7.3, kind: 'scene' }, { outputSeconds: 12, kind: 'trim' }], []))
+      .toEqual([1, 7.7, 12.4, 19.5]);
+  });
+
+  test('keeps static spans and drops moments past the end', () => {
+    expect(reviewMoments(10, [{ outputSeconds: 9.9, kind: 'scene' }], [{ startSeconds: 4 }]))
+      .toEqual([1, 4, 9.5]);
+  });
+});
 
 describe('duration check', () => {
   test('bounds an unconstrained demo to a sane absolute window', () => {

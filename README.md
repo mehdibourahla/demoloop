@@ -64,6 +64,7 @@ runtime:
   startTimeoutMs: 60000
   actionTimeoutMs: 10000
   ignoreRequestPatterns: []
+  ignoreConsolePatterns: []
 narration:
   provider: none
 ```

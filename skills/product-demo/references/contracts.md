@@ -24,6 +24,7 @@ The pipeline is `repository + app + request -> product model -> plan result -> s
   - `waitFor` settles on `visible`, `hidden`, `enabled`, or `disabled` before continuing, which is how streamed replies and re-enabled inputs are awaited.
 - The scenario digest pins the program, not the path. When control flow varies between runs, `executedPath` in the execution report records every choice and branch actually taken.
 - Actors may declare a `preflight` target. A failed preflight reports an unusable actor session instead of a missing element.
+- `runtime.ignoreRequestPatterns` and `runtime.ignoreConsolePatterns` allow capture-environment noise (headless WebGL warnings, third-party beacons) without hiding it: ignored items are listed in the execution report as `ignoredRequests` / `ignoredConsoleErrors`. Never use them to silence a real application defect.
 - Use separate browser contexts for actors. Never round-robin actors or merge distinct sessions.
 - Render one caption system only. Do not show action names, click circles, or capture-time chapter/brand overlays.
 

@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { Browser } from 'playwright';
-import { executeAction, installTextRedactions, isIgnorableRequestFailure, isIgnoredRequest, locatorFor, textRedactionScript } from '../src/runner.js';
+import { executeAction, installTextRedactions, isIgnorableRequestFailure, isIgnoredConsoleError, isIgnoredRequest, locatorFor, textRedactionScript } from '../src/runner.js';
 import { ConfigSchema, TargetSchema } from '../src/schemas.js';
 
 describe('capture privacy redactions', () => {
@@ -111,6 +111,15 @@ describe('capture privacy redactions', () => {
     expect(isIgnoredRequest('http://app.test/.well-known/probe', patterns)).toBe(true);
     expect(isIgnoredRequest('http://app.test/api/orders', patterns)).toBe(false);
     expect(isIgnoredRequest('http://app.test/api/telemetry', [])).toBe(false);
+  });
+
+  test('ignores only the console messages the configuration allows', () => {
+    const patterns = ['Vector Map', '^ResizeObserver loop'];
+
+    expect(isIgnoredConsoleError('Attempted to load a Vector Map, but failed. Falling back to Raster', patterns)).toBe(true);
+    expect(isIgnoredConsoleError('ResizeObserver loop completed with undelivered notifications', patterns)).toBe(true);
+    expect(isIgnoredConsoleError('TypeError: cannot read property id of undefined', patterns)).toBe(false);
+    expect(isIgnoredConsoleError('Attempted to load a Vector Map', [])).toBe(false);
   });
 
   test('ignores browser-aborted requests but keeps real network failures', () => {
