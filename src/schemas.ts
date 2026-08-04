@@ -95,12 +95,9 @@ export const ScenePresentationSchema = z.object({
   maxStaticHoldMs: z.number().int().min(250).max(15_000).default(3_000),
   regionOfInterest: RegionSchema.optional(),
   camera: z.object({ type: z.enum(['none', 'crop', 'pan', 'zoom']), scale: z.number().min(1).max(3).optional(), to: RegionSchema.optional() }).default({ type: 'none' }),
-  loading: z.enum(['preserve', 'cut', 'accelerate']).default('cut'),
+  loading: z.enum(['preserve', 'cut']).default('cut'),
   transitionWeight: z.enum(['light', 'meaningful', 'major']).default('light'),
-  caption: z.object({ mode: z.enum(['none', 'lower-third']), safeArea: z.enum(['top', 'bottom', 'left', 'right']).optional() }).default({ mode: 'none' }),
-  opening: z.enum(['product-promise', 'context-card', 'none']).optional(),
-  closing: z.enum(['call-to-action', 'outcome-recap', 'none']).optional(),
-  actorTransition: z.enum(['cut', 'context-card', 'split-causality']).optional()
+  caption: z.object({ mode: z.enum(['none', 'lower-third']), safeArea: z.enum(['top', 'bottom', 'left', 'right']).optional() }).default({ mode: 'none' })
 }).default({ maxStaticHoldMs: 3_000, camera: { type: 'none' }, loading: 'cut', transitionWeight: 'light', caption: { mode: 'none' } });
 
 const MusicSchema = z.object({ path: z.string().min(1), level: z.number().min(0).max(1).default(0.2), fadeInMs: z.number().int().min(0).max(10_000).default(500), fadeOutMs: z.number().int().min(0).max(10_000).default(500) });

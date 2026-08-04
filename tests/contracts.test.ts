@@ -74,9 +74,9 @@ describe('version 2 contracts', () => {
       branding: { name: 'Neutral Workspace', primary: '#2563eb', background: '#08111f' },
       actors: [{ id: 'workspace-owner', label: 'Workspace owner' }],
       scenes: [
-        { id: 'hook', title: 'See the signal', purpose: 'hook', actor: 'workspace-owner', presentation: { maxStaticHoldMs: 1800, caption: { mode: 'none' }, opening: 'product-promise' }, actions: [{ type: 'goto', path: '/workspace' }] },
+        { id: 'hook', title: 'See the signal', purpose: 'hook', actor: 'workspace-owner', presentation: { maxStaticHoldMs: 1800, caption: { mode: 'none' } }, actions: [{ type: 'goto', path: '/workspace' }] },
         { id: 'proof', title: 'Compare the result', purpose: 'proof', actor: 'workspace-owner', presentation: { regionOfInterest: { x: 0.4, y: 0.2, width: 0.5, height: 0.5 }, camera: { type: 'zoom', scale: 1.2 }, loading: 'cut', transitionWeight: 'meaningful', caption: { mode: 'lower-third', safeArea: 'bottom' } }, actions: [{ type: 'assert', target: { by: 'text', value: '42%' }, state: 'visible' }] },
-        { id: 'close', title: 'Make the decision', purpose: 'close', actor: 'workspace-owner', presentation: { closing: 'call-to-action' }, actions: [{ type: 'screenshot', name: 'close' }] }
+        { id: 'close', title: 'Make the decision', purpose: 'close', actor: 'workspace-owner', presentation: { maxStaticHoldMs: 2000 }, actions: [{ type: 'screenshot', name: 'close' }] }
       ]
     });
 

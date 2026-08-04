@@ -14,7 +14,8 @@ The pipeline is `repository + app + request -> product model -> plan result -> s
 
 - Recording accepts only a passing two-rehearsal receipt for the exact scenario digest. Presentation and audio changes invalidate the digest.
 - The deterministic runner owns contexts, semantic locators, waits, actions, cursor motion, capture, and evidence. The agent edits only between runs.
-- `timing` owns cursor travel, settling, keystroke delay, and post-action dwell. Presentation owns ROI, camera, loading treatment, transition weight, caption placement, opening, closing, and actor transitions.
+- `timing` owns cursor travel, settling, keystroke delay, and post-action dwell. Presentation owns ROI, camera, transition weight, caption placement, and the loading treatment.
+- `loading: cut` removes real inactive footage during render: any static span longer than `maxStaticHoldMs` is cut down to that hold. `loading: preserve` keeps the recording untouched. Removed footage is listed in `presentation-metadata.json`.
 - Use separate browser contexts for actors. Never round-robin actors or merge distinct sessions.
 - Render one caption system only. Do not show action names, click circles, or capture-time chapter/brand overlays.
 

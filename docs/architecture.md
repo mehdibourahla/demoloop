@@ -31,13 +31,13 @@ The planner supports public masters, actor journeys, feature clips, release demo
 
 Every scene has a purpose: hook, context, interaction, exploration, state-change, handoff, result, proof, montage, or close. Cross-actor scenes carry a causal link instead of alternating contexts by convenience.
 
-Presentation is compiled with the scenario: region of interest, camera treatment, loading policy, transition weight, caption safe area, opening/closing treatment, cursor movement, settling, typing cadence, and dwell. Any presentation or audio edit invalidates the rehearsal receipt.
+Presentation is compiled with the scenario: region of interest, camera treatment, loading policy, transition weight, caption safe area, cursor movement, settling, typing cadence, and dwell. Any presentation or audio edit invalidates the rehearsal receipt.
 
 ## Runtime and render
 
 The runner uses isolated Playwright contexts, semantic locators, web-first waits, deterministic action order, and a smooth text-free cursor. It does not add click circles, action labels, chapter cards, or capture-time brand overlays.
 
-Remotion composes the approved scene controls. The product viewport occupies at least 70% of the frame; captions are optional and checked against the region of interest. FFmpeg normalizes H.264/yuv420p output. Raw WebM files are preserved.
+Rendering trims each clip before composition: with `loading: cut`, static spans longer than the scene's `maxStaticHoldMs` are cut back to that hold, so the evaluated master is the edited master. Remotion composes the approved scene controls. The product viewport occupies at least 70% of the frame; captions are optional and checked against the region of interest. FFmpeg normalizes H.264/yuv420p output. Raw WebM files are preserved.
 
 Audio policies are explicit: silent, local music, voiceover, or voiceover plus music. ElevenLabs and macOS narration implement the same provider interface. Music must be a real local file and includes level and fades. Silent output has no audio stream.
 

@@ -7,6 +7,7 @@ import { renderMedia, selectComposition } from '@remotion/renderer';
 import { chromium } from 'playwright';
 import type { NarrationProvider } from './adapters.js';
 import { resolveAudioPolicy } from './audio.js';
+import { prepareClip } from './editing.js';
 import { presentationLayout } from './presentation.js';
 import type { DemoConfig, Scenario } from './schemas.js';
 
@@ -21,25 +22,21 @@ interface RenderOptions {
   narrationProvider?: NarrationProvider;
 }
 
-async function duration(path: string): Promise<number> {
-  const { stdout } = await execFileAsync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', path]);
-  const value = Number(stdout.trim());
-  if (!Number.isFinite(value) || value <= 0) throw new Error(`Could not determine duration for ${path}`);
-  return value;
-}
-
 export async function renderDemo(options: RenderOptions): Promise<string> {
   await mkdir(options.outputDirectory, { recursive: true });
   const publicDirectory = join(options.outputDirectory, 'public');
   await mkdir(publicDirectory, { recursive: true });
   const audioPolicy = await resolveAudioPolicy(options.scenario.audio);
   const clips = [];
+  const edits: Array<{ id: string; removedSeconds: number }> = [];
   for (const scene of options.scenario.scenes) {
     const rawPath = options.executionReport.artifacts[`raw-${scene.id}`];
     if (!rawPath) throw new Error(`Raw recording missing for scene ${scene.id}`);
-    const fileName = basename(rawPath);
-    await copyFile(rawPath, join(publicDirectory, fileName));
-    const durationInFrames = Math.max(1, Math.ceil(await duration(rawPath) * 30));
+    const prepared = await prepareClip(rawPath, join(options.outputDirectory, `trimmed-${scene.id}.mp4`), scene.presentation);
+    if (prepared.removedSeconds > 0) edits.push({ id: scene.id, removedSeconds: Number(prepared.removedSeconds.toFixed(3)) });
+    const fileName = basename(prepared.path);
+    await copyFile(prepared.path, join(publicDirectory, fileName));
+    const durationInFrames = Math.max(1, Math.ceil(prepared.durationSeconds * 30));
     let audioSrc: string | undefined;
     if (audioPolicy.voiceover) {
       if (!options.narrationProvider) throw new Error('Voiceover requested but no narration provider is configured');
@@ -76,6 +73,7 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
     version: 1,
     video: finalPath,
     scenes: options.scenario.scenes.map((scene) => ({ id: scene.id, purpose: scene.purpose, ...presentationLayout(scene.presentation, profile.width, profile.height) })),
+    edits,
   }, null, 2));
   return finalPath;
 }
