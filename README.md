@@ -38,7 +38,7 @@ npm run product-demo -- plan --mode journey --journey deliver-item
 npm run product-demo -- run artifacts/plan/deliver-item.yaml --device desktop
 ```
 
-`run` intentionally exits non-zero after rendering because a final video is not accepted until the Agent Skill completes its Watch review. The output remains available under `artifacts/deliver-item/desktop/`.
+`run` exits 3 after rendering because a final video is not accepted until the Agent Skill completes its Watch review. Exit codes are 0 accepted, 1 rejected, 2 `needs-authoring`, and 3 awaiting the Watch review. The output remains available under `artifacts/deliver-item/desktop/`.
 
 ## Use it with your application
 
@@ -55,11 +55,14 @@ repository:
 output:
   directory: artifacts
 privacy:
-  syntheticData: true
   allowProduction: false
+  scanArtifacts: true
 runtime:
   rehearsalPasses: 2
   headless: true
+  startTimeoutMs: 60000
+  actionTimeoutMs: 10000
+  ignoreRequestPatterns: []
 narration:
   provider: none
 ```
@@ -112,7 +115,7 @@ Only narration text is sent to ElevenLabs. Audio is cached locally by content an
 | `record` | Capture using an exact rehearsal receipt |
 | `render` | Compose and normalize the MP4 |
 | `evaluate` | Run technical and deterministic editorial checks |
-| `finalize` | Apply a validated Watch editorial review |
+| `finalize` | Apply a validated Watch editorial review, matched to the MP4 by checksum |
 | `run` | Rehearse, record, render, and evaluate |
 
 Run `npm run product-demo -- help` for flags.
@@ -135,8 +138,9 @@ The generic CLI does not import or require third-party Agent Skills. This separa
 ## Safety
 
 - Production-looking hosts are refused unless explicitly allowed.
-- Synthetic data is the default; reset and seed commands run before passes when configured.
-- Secrets and personal-data patterns fail evaluation.
+- Reset and seed commands run before passes when configured.
+- Secrets and personal-data patterns fail evaluation: the text visible in every recorded scene is captured and scanned when `privacy.scanArtifacts` is on.
+- Capture never persists Playwright traces, which would embed configured redaction values in plain text.
 - Raw recordings survive render failures.
 - Nothing uploads automatically.
 - LLM reasoning is allowed during discovery, planning, and repair—never during the final take.

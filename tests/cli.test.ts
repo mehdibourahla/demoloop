@@ -2,7 +2,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test, vi } from 'vitest';
-import { ensureApp, narrationProvider, runCli } from '../src/cli.js';
+import { ensureApp, exitCodeForQuality, narrationProvider, runCli } from '../src/cli.js';
 import { MacOSNarrationProvider } from '../src/narration.js';
 import { ConfigSchema, ScenarioSchema } from '../src/schemas.js';
 
@@ -27,6 +27,20 @@ describe('CLI', () => {
     });
 
     expect(narrationProvider(config, scenario)).toBeInstanceOf(MacOSNarrationProvider);
+  });
+
+  test('separates acceptance, rejection, and a review that has not run yet', () => {
+    expect(exitCodeForQuality({ status: 'accepted', passed: true })).toBe(0);
+    expect(exitCodeForQuality({ status: 'rejected', passed: false })).toBe(1);
+    expect(exitCodeForQuality({ status: 'pending-agent-review', passed: false })).toBe(3);
+  });
+
+  test('refuses a duration flag that is not a number', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'product-demo-args-'));
+    const configPath = join(directory, 'config.yaml');
+    await writeFile(configPath, 'app:\n  url: http://127.0.0.1:4173\n');
+
+    await expect(runCli(['plan', '--config', configPath, '--duration-seconds', 'soon'])).rejects.toThrow(/duration-seconds/i);
   });
 
   test('stops the whole application process tree it started', async () => {

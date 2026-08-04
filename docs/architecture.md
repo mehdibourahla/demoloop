@@ -23,6 +23,8 @@ Claude Video is an Agent Skill environment dependency. It is deliberately absent
 
 The version 2 model represents audiences, actors and session contexts, capabilities, journeys, states, transitions, relationships, outcomes, proof surfaces, safe actions, and async behavior. Each claim carries source evidence, runtime observation, or explicit user confirmation. Unknown ownership remains unresolved.
 
+Discovery loads `app-model.json` from the repository root when present and confirms its claims against the running application; otherwise it can only scrape candidate routes from source. Authoring that file is the agent's job and the point where evidence is committed.
+
 Discovery can identify routes as candidate proof surfaces, but planning requires a meaningful action, actor ownership, observable outcome, and evidence. Missing facts produce `needs-authoring`; there is no route-slideshow fallback.
 
 ## Planning

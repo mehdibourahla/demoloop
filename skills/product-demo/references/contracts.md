@@ -4,7 +4,8 @@ The pipeline is `repository + app + request -> product model -> plan result -> s
 
 ## Product and planning
 
-- `product-model.json` stores audiences, actors and sessions, capabilities, journeys, states, transitions, relationships, outcomes, proof surfaces, safe actions, async behavior, and evidence.
+- `discover` reads `<repository.root>/app-model.json` when it exists, validates it against `schemas/product-model.schema.json`, and enriches its proof surfaces with runtime screenshots and ARIA snapshots. Without that file, discovery can only scrape candidate routes from source, which never satisfies planning: authoring `app-model.json` is how a repository becomes demonstrable. `fixtures/neutral/handoff/app-model.json` is a complete minimal example.
+- `product-model.json` is the discovery output: audiences, actors and sessions, capabilities, journeys, states, transitions, relationships, outcomes, proof surfaces, safe actions, async behavior, and evidence.
 - Evidence is source, runtime observation, or explicit user confirmation. Never replace unresolved actor ownership or behavior with a guess.
 - Planning returns `planned` or `needs-authoring`. Route-only discovery cannot become a public scenario.
 - Full planning creates a short public master, actor journey clips, coverage, and explicit omissions.
