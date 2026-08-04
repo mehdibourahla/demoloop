@@ -152,6 +152,219 @@
           "storageState": {
             "type": "string",
             "minLength": 1
+          },
+          "preflight": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "default": "/",
+                "type": "string",
+                "minLength": 1
+              },
+              "target": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "by": {
+                        "type": "string",
+                        "const": "role"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "button",
+                          "link",
+                          "textbox",
+                          "checkbox",
+                          "radio",
+                          "heading",
+                          "combobox",
+                          "listitem",
+                          "tab",
+                          "menuitem"
+                        ]
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "by",
+                      "role",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "by": {
+                        "type": "string",
+                        "const": "label"
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "by",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "by": {
+                        "type": "string",
+                        "const": "testId"
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "by",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "by": {
+                        "type": "string",
+                        "const": "text"
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "by",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "by": {
+                        "type": "string",
+                        "const": "roleAny"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "button",
+                          "link",
+                          "textbox",
+                          "checkbox",
+                          "radio",
+                          "heading",
+                          "combobox",
+                          "listitem",
+                          "tab",
+                          "menuitem"
+                        ]
+                      },
+                      "values": {
+                        "minItems": 2,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "by",
+                      "role",
+                      "values"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "by": {
+                        "type": "string",
+                        "const": "rolePattern"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "button",
+                          "link",
+                          "textbox",
+                          "checkbox",
+                          "radio",
+                          "heading",
+                          "combobox",
+                          "listitem",
+                          "tab",
+                          "menuitem"
+                        ]
+                      },
+                      "pattern": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "by",
+                      "role",
+                      "pattern"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "by": {
+                        "type": "string",
+                        "const": "textPattern"
+                      },
+                      "pattern": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "by",
+                      "pattern"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "state": {
+                "default": "visible",
+                "type": "string",
+                "enum": [
+                  "visible",
+                  "hidden"
+                ]
+              },
+              "timeoutMs": {
+                "default": 10000,
+                "type": "integer",
+                "minimum": 100,
+                "maximum": 120000
+              }
+            },
+            "required": [
+              "path",
+              "target",
+              "state",
+              "timeoutMs"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -497,1340 +710,7 @@
             "minItems": 1,
             "type": "array",
             "items": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "title": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "narration": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "timing": {
-                      "type": "object",
-                      "properties": {
-                        "cursorDurationMs": {
-                          "type": "integer",
-                          "minimum": 100,
-                          "maximum": 2500
-                        },
-                        "settleBeforeMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 1500
-                        },
-                        "keystrokeDelayMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 250
-                        },
-                        "pauseAfterMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 5000
-                        }
-                      },
-                      "additionalProperties": false
-                    },
-                    "optional": {
-                      "type": "boolean"
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 90000
-                    },
-                    "type": {
-                      "type": "string",
-                      "const": "goto"
-                    },
-                    "path": {
-                      "type": "string",
-                      "minLength": 1
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "path"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "title": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "narration": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "timing": {
-                      "type": "object",
-                      "properties": {
-                        "cursorDurationMs": {
-                          "type": "integer",
-                          "minimum": 100,
-                          "maximum": 2500
-                        },
-                        "settleBeforeMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 1500
-                        },
-                        "keystrokeDelayMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 250
-                        },
-                        "pauseAfterMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 5000
-                        }
-                      },
-                      "additionalProperties": false
-                    },
-                    "optional": {
-                      "type": "boolean"
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 90000
-                    },
-                    "type": {
-                      "type": "string",
-                      "const": "click"
-                    },
-                    "target": {
-                      "oneOf": [
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "role"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "label"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "testId"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "text"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "roleAny"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "values": {
-                              "minItems": 2,
-                              "type": "array",
-                              "items": {
-                                "type": "string",
-                                "minLength": 1
-                              }
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "values"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "rolePattern"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "pattern": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "pattern"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "textPattern"
-                            },
-                            "pattern": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "pattern"
-                          ],
-                          "additionalProperties": false
-                        }
-                      ]
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "target"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "title": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "narration": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "timing": {
-                      "type": "object",
-                      "properties": {
-                        "cursorDurationMs": {
-                          "type": "integer",
-                          "minimum": 100,
-                          "maximum": 2500
-                        },
-                        "settleBeforeMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 1500
-                        },
-                        "keystrokeDelayMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 250
-                        },
-                        "pauseAfterMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 5000
-                        }
-                      },
-                      "additionalProperties": false
-                    },
-                    "optional": {
-                      "type": "boolean"
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 90000
-                    },
-                    "type": {
-                      "type": "string",
-                      "const": "fill"
-                    },
-                    "target": {
-                      "oneOf": [
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "role"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "label"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "testId"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "text"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "roleAny"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "values": {
-                              "minItems": 2,
-                              "type": "array",
-                              "items": {
-                                "type": "string",
-                                "minLength": 1
-                              }
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "values"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "rolePattern"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "pattern": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "pattern"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "textPattern"
-                            },
-                            "pattern": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "pattern"
-                          ],
-                          "additionalProperties": false
-                        }
-                      ]
-                    },
-                    "text": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "target",
-                    "text"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "title": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "narration": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "timing": {
-                      "type": "object",
-                      "properties": {
-                        "cursorDurationMs": {
-                          "type": "integer",
-                          "minimum": 100,
-                          "maximum": 2500
-                        },
-                        "settleBeforeMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 1500
-                        },
-                        "keystrokeDelayMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 250
-                        },
-                        "pauseAfterMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 5000
-                        }
-                      },
-                      "additionalProperties": false
-                    },
-                    "optional": {
-                      "type": "boolean"
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 90000
-                    },
-                    "type": {
-                      "type": "string",
-                      "const": "select"
-                    },
-                    "target": {
-                      "oneOf": [
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "role"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "label"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "testId"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "text"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "roleAny"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "values": {
-                              "minItems": 2,
-                              "type": "array",
-                              "items": {
-                                "type": "string",
-                                "minLength": 1
-                              }
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "values"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "rolePattern"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "pattern": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "pattern"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "textPattern"
-                            },
-                            "pattern": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "pattern"
-                          ],
-                          "additionalProperties": false
-                        }
-                      ]
-                    },
-                    "value": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "target",
-                    "value"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "title": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "narration": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "timing": {
-                      "type": "object",
-                      "properties": {
-                        "cursorDurationMs": {
-                          "type": "integer",
-                          "minimum": 100,
-                          "maximum": 2500
-                        },
-                        "settleBeforeMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 1500
-                        },
-                        "keystrokeDelayMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 250
-                        },
-                        "pauseAfterMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 5000
-                        }
-                      },
-                      "additionalProperties": false
-                    },
-                    "optional": {
-                      "type": "boolean"
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 90000
-                    },
-                    "type": {
-                      "type": "string",
-                      "const": "scroll"
-                    },
-                    "target": {
-                      "oneOf": [
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "role"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "label"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "testId"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "text"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "roleAny"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "values": {
-                              "minItems": 2,
-                              "type": "array",
-                              "items": {
-                                "type": "string",
-                                "minLength": 1
-                              }
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "values"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "rolePattern"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "pattern": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "pattern"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "textPattern"
-                            },
-                            "pattern": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "pattern"
-                          ],
-                          "additionalProperties": false
-                        }
-                      ]
-                    },
-                    "deltaY": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "type"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "title": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "narration": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "timing": {
-                      "type": "object",
-                      "properties": {
-                        "cursorDurationMs": {
-                          "type": "integer",
-                          "minimum": 100,
-                          "maximum": 2500
-                        },
-                        "settleBeforeMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 1500
-                        },
-                        "keystrokeDelayMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 250
-                        },
-                        "pauseAfterMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 5000
-                        }
-                      },
-                      "additionalProperties": false
-                    },
-                    "optional": {
-                      "type": "boolean"
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 90000
-                    },
-                    "type": {
-                      "type": "string",
-                      "const": "assert"
-                    },
-                    "target": {
-                      "oneOf": [
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "role"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "label"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "testId"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "text"
-                            },
-                            "value": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "roleAny"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "values": {
-                              "minItems": 2,
-                              "type": "array",
-                              "items": {
-                                "type": "string",
-                                "minLength": 1
-                              }
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "values"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "rolePattern"
-                            },
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "button",
-                                "link",
-                                "textbox",
-                                "checkbox",
-                                "radio",
-                                "heading",
-                                "combobox",
-                                "listitem",
-                                "tab",
-                                "menuitem"
-                              ]
-                            },
-                            "pattern": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "role",
-                            "pattern"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "by": {
-                              "type": "string",
-                              "const": "textPattern"
-                            },
-                            "pattern": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "by",
-                            "pattern"
-                          ],
-                          "additionalProperties": false
-                        }
-                      ]
-                    },
-                    "state": {
-                      "type": "string",
-                      "enum": [
-                        "visible",
-                        "hidden",
-                        "checked"
-                      ]
-                    },
-                    "text": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "target",
-                    "state"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "title": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "narration": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "timing": {
-                      "type": "object",
-                      "properties": {
-                        "cursorDurationMs": {
-                          "type": "integer",
-                          "minimum": 100,
-                          "maximum": 2500
-                        },
-                        "settleBeforeMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 1500
-                        },
-                        "keystrokeDelayMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 250
-                        },
-                        "pauseAfterMs": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 5000
-                        }
-                      },
-                      "additionalProperties": false
-                    },
-                    "optional": {
-                      "type": "boolean"
-                    },
-                    "timeoutMs": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 90000
-                    },
-                    "type": {
-                      "type": "string",
-                      "const": "screenshot"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "name"
-                  ],
-                  "additionalProperties": false
-                }
-              ]
+              "$ref": "#/definitions/__schema0"
             }
           }
         },
@@ -1859,5 +739,2399 @@
     "actors",
     "scenes"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "__schema0": {
+      "anyOf": [
+        {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "narration": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "timing": {
+                  "type": "object",
+                  "properties": {
+                    "cursorDurationMs": {
+                      "type": "integer",
+                      "minimum": 100,
+                      "maximum": 2500
+                    },
+                    "settleBeforeMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1500
+                    },
+                    "keystrokeDelayMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 250
+                    },
+                    "pauseAfterMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5000
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "optional": {
+                  "type": "boolean"
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 90000
+                },
+                "type": {
+                  "type": "string",
+                  "const": "goto"
+                },
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "type",
+                "path"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "narration": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "timing": {
+                  "type": "object",
+                  "properties": {
+                    "cursorDurationMs": {
+                      "type": "integer",
+                      "minimum": 100,
+                      "maximum": 2500
+                    },
+                    "settleBeforeMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1500
+                    },
+                    "keystrokeDelayMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 250
+                    },
+                    "pauseAfterMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5000
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "optional": {
+                  "type": "boolean"
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 90000
+                },
+                "type": {
+                  "type": "string",
+                  "const": "click"
+                },
+                "target": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "role"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "label"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "testId"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "roleAny"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "values": {
+                          "minItems": 2,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "rolePattern"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "textPattern"
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "type",
+                "target"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "narration": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "timing": {
+                  "type": "object",
+                  "properties": {
+                    "cursorDurationMs": {
+                      "type": "integer",
+                      "minimum": 100,
+                      "maximum": 2500
+                    },
+                    "settleBeforeMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1500
+                    },
+                    "keystrokeDelayMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 250
+                    },
+                    "pauseAfterMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5000
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "optional": {
+                  "type": "boolean"
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 90000
+                },
+                "type": {
+                  "type": "string",
+                  "const": "fill"
+                },
+                "target": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "role"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "label"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "testId"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "roleAny"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "values": {
+                          "minItems": 2,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "rolePattern"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "textPattern"
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "target",
+                "text"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "narration": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "timing": {
+                  "type": "object",
+                  "properties": {
+                    "cursorDurationMs": {
+                      "type": "integer",
+                      "minimum": 100,
+                      "maximum": 2500
+                    },
+                    "settleBeforeMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1500
+                    },
+                    "keystrokeDelayMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 250
+                    },
+                    "pauseAfterMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5000
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "optional": {
+                  "type": "boolean"
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 90000
+                },
+                "type": {
+                  "type": "string",
+                  "const": "select"
+                },
+                "target": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "role"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "label"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "testId"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "roleAny"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "values": {
+                          "minItems": 2,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "rolePattern"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "textPattern"
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "target",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "narration": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "timing": {
+                  "type": "object",
+                  "properties": {
+                    "cursorDurationMs": {
+                      "type": "integer",
+                      "minimum": 100,
+                      "maximum": 2500
+                    },
+                    "settleBeforeMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1500
+                    },
+                    "keystrokeDelayMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 250
+                    },
+                    "pauseAfterMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5000
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "optional": {
+                  "type": "boolean"
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 90000
+                },
+                "type": {
+                  "type": "string",
+                  "const": "scroll"
+                },
+                "target": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "role"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "label"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "testId"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "roleAny"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "values": {
+                          "minItems": 2,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "rolePattern"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "textPattern"
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "deltaY": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "narration": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "timing": {
+                  "type": "object",
+                  "properties": {
+                    "cursorDurationMs": {
+                      "type": "integer",
+                      "minimum": 100,
+                      "maximum": 2500
+                    },
+                    "settleBeforeMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1500
+                    },
+                    "keystrokeDelayMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 250
+                    },
+                    "pauseAfterMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5000
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "optional": {
+                  "type": "boolean"
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 90000
+                },
+                "type": {
+                  "type": "string",
+                  "const": "assert"
+                },
+                "target": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "role"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "label"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "testId"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "roleAny"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "values": {
+                          "minItems": 2,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "rolePattern"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "textPattern"
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "visible",
+                    "hidden",
+                    "checked"
+                  ]
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "target",
+                "state"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "narration": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "timing": {
+                  "type": "object",
+                  "properties": {
+                    "cursorDurationMs": {
+                      "type": "integer",
+                      "minimum": 100,
+                      "maximum": 2500
+                    },
+                    "settleBeforeMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1500
+                    },
+                    "keystrokeDelayMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 250
+                    },
+                    "pauseAfterMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5000
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "optional": {
+                  "type": "boolean"
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 90000
+                },
+                "type": {
+                  "type": "string",
+                  "const": "waitFor"
+                },
+                "target": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "role"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "label"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "testId"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "roleAny"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "values": {
+                          "minItems": 2,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "rolePattern"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "textPattern"
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "visible",
+                    "hidden",
+                    "enabled",
+                    "disabled"
+                  ]
+                }
+              },
+              "required": [
+                "type",
+                "target",
+                "state"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "narration": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "timing": {
+                  "type": "object",
+                  "properties": {
+                    "cursorDurationMs": {
+                      "type": "integer",
+                      "minimum": 100,
+                      "maximum": 2500
+                    },
+                    "settleBeforeMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1500
+                    },
+                    "keystrokeDelayMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 250
+                    },
+                    "pauseAfterMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5000
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "optional": {
+                  "type": "boolean"
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 90000
+                },
+                "type": {
+                  "type": "string",
+                  "const": "choose"
+                },
+                "target": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "role"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "label"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "testId"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "roleAny"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "values": {
+                          "minItems": 2,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "rolePattern"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "textPattern"
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "prefer": {
+                  "default": [],
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "avoid": {
+                  "default": [],
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "requirePreferred": {
+                  "default": false,
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "type",
+                "target",
+                "prefer",
+                "avoid",
+                "requirePreferred"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "narration": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "timing": {
+                  "type": "object",
+                  "properties": {
+                    "cursorDurationMs": {
+                      "type": "integer",
+                      "minimum": 100,
+                      "maximum": 2500
+                    },
+                    "settleBeforeMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1500
+                    },
+                    "keystrokeDelayMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 250
+                    },
+                    "pauseAfterMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 5000
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "optional": {
+                  "type": "boolean"
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 90000
+                },
+                "type": {
+                  "type": "string",
+                  "const": "screenshot"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "type",
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "narration": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timing": {
+              "type": "object",
+              "properties": {
+                "cursorDurationMs": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 2500
+                },
+                "settleBeforeMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1500
+                },
+                "keystrokeDelayMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 250
+                },
+                "pauseAfterMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 5000
+                }
+              },
+              "additionalProperties": false
+            },
+            "optional": {
+              "type": "boolean"
+            },
+            "timeoutMs": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 90000
+            },
+            "type": {
+              "type": "string",
+              "const": "repeat"
+            },
+            "until": {
+              "type": "object",
+              "properties": {
+                "target": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "role"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "label"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "testId"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "roleAny"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "values": {
+                          "minItems": 2,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "rolePattern"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "textPattern"
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "state": {
+                  "default": "visible",
+                  "type": "string",
+                  "enum": [
+                    "visible",
+                    "hidden"
+                  ]
+                }
+              },
+              "required": [
+                "target",
+                "state"
+              ],
+              "additionalProperties": false
+            },
+            "maxIterations": {
+              "default": 10,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "actions": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/__schema0"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "until",
+            "maxIterations",
+            "actions"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "narration": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timing": {
+              "type": "object",
+              "properties": {
+                "cursorDurationMs": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 2500
+                },
+                "settleBeforeMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1500
+                },
+                "keystrokeDelayMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 250
+                },
+                "pauseAfterMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 5000
+                }
+              },
+              "additionalProperties": false
+            },
+            "optional": {
+              "type": "boolean"
+            },
+            "timeoutMs": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 90000
+            },
+            "type": {
+              "type": "string",
+              "const": "branch"
+            },
+            "when": {
+              "type": "object",
+              "properties": {
+                "target": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "role"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "label"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "testId"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "roleAny"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "values": {
+                          "minItems": 2,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "rolePattern"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "button",
+                            "link",
+                            "textbox",
+                            "checkbox",
+                            "radio",
+                            "heading",
+                            "combobox",
+                            "listitem",
+                            "tab",
+                            "menuitem"
+                          ]
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "role",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "by": {
+                          "type": "string",
+                          "const": "textPattern"
+                        },
+                        "pattern": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "by",
+                        "pattern"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "state": {
+                  "default": "visible",
+                  "type": "string",
+                  "enum": [
+                    "visible",
+                    "hidden"
+                  ]
+                }
+              },
+              "required": [
+                "target",
+                "state"
+              ],
+              "additionalProperties": false
+            },
+            "then": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/__schema0"
+              }
+            },
+            "otherwise": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/__schema0"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "when",
+            "then",
+            "otherwise"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
 }

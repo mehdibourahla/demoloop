@@ -33,6 +33,32 @@ function scenario(actions: unknown[]) {
   });
 }
 
+describe('actor sessions', () => {
+  test('reports an unusable actor session instead of a missing element', async () => {
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-preflight-'));
+    const unusable = ScenarioSchema.parse({
+      version: 2, id: 'preflight-demo', title: 'Preflight', outputType: 'feature-clip', audience: 'operators',
+      actors: [{ id: 'operator', label: 'Operator', preflight: { path: '/handoff', target: { by: 'text', value: 'Signed in as Operator' }, timeoutMs: 500 } }],
+      scenes: [{ id: 'send', title: 'Send', purpose: 'proof', actor: 'operator', actions: [{ type: 'goto', path: '/handoff' }, { type: 'click', target: { by: 'role', role: 'button', value: 'Send item' } }] }]
+    });
+
+    await expect(executeScenario({ scenario: unusable, config, mode: 'rehearse', outputDirectory, device: 'desktop' })).rejects.toThrow(/actor operator.*session/i);
+  }, 60_000);
+
+  test('runs the journey when the actor session preflight succeeds', async () => {
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-preflight-ok-'));
+    const usable = ScenarioSchema.parse({
+      version: 2, id: 'preflight-ok', title: 'Preflight ok', outputType: 'feature-clip', audience: 'operators',
+      actors: [{ id: 'operator', label: 'Operator', preflight: { path: '/handoff', target: { by: 'text', value: 'Delivery board' } } }],
+      scenes: [{ id: 'send', title: 'Send', purpose: 'proof', actor: 'operator', actions: [{ type: 'goto', path: '/handoff' }, { type: 'click', target: { by: 'role', role: 'button', value: 'Send item' } }] }]
+    });
+
+    const report = ExecutionReportSchema.parse(await executeScenario({ scenario: usable, config, mode: 'rehearse', outputDirectory, device: 'desktop' }));
+
+    expect(report.passed).toBe(true);
+  }, 60_000);
+});
+
 describe('streaming interfaces', () => {
   test('navigates an application whose network never goes idle', async () => {
     const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-stream-'));

@@ -35,7 +35,9 @@ Presentation is compiled with the scenario: region of interest, camera treatment
 
 ## Runtime and render
 
-The runner uses isolated Playwright contexts, semantic locators, web-first waits, deterministic action order, and a smooth text-free cursor. It does not add click circles, action labels, chapter cards, or capture-time brand overlays.
+The runner uses isolated Playwright contexts, semantic locators, web-first waits, and a smooth text-free cursor.
+
+Applications whose wording or step count varies between runs are handled by deterministic control flow rather than improvisation. `choose` resolves declared intent against the options present at that moment using ordered preferences and a hard avoid list; `repeat` and `branch` bound the shape of the journey; `waitFor` settles on element state. No model runs during rehearsal or the final take: the same scenario always follows the same rules, even when it does not follow the same path. The digest therefore pins the program, and `executedPath` in the execution report records the path that actually ran. It does not add click circles, action labels, chapter cards, or capture-time brand overlays.
 
 Rendering trims each clip before composition: with `loading: cut`, static spans longer than the scene's `maxStaticHoldMs` are cut back to that hold, so the evaluated master is the edited master. Remotion composes the approved scene controls. The product viewport occupies at least 70% of the frame; captions are optional and checked against the region of interest. FFmpeg normalizes H.264/yuv420p output. Raw WebM files are preserved.
 

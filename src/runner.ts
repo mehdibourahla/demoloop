@@ -7,7 +7,7 @@ import { chromium, devices, type BrowserContext, type Locator, type Page } from 
 import { actionDelay, cursorMotion, scrollMotion, type Point } from './timing.js';
 import { assertSafeTarget } from './safety.js';
 import { canRecord, scenarioDigest } from './receipt.js';
-import { ExecutionReportSchema, TimelineSchema, type Action, type DemoConfig, type Scenario, type Target, type TimelineEvent } from './schemas.js';
+import { ExecutionReportSchema, TimelineSchema, type Action, type ActionTiming, type Condition, type DemoConfig, type Scenario, type Target, type TimelineEvent } from './schemas.js';
 
 const execAsync = promisify(exec);
 
@@ -154,7 +154,93 @@ async function ensureCapturedCursor(page: Page, primary: string): Promise<void> 
   await page.evaluate(capturedCursorScript(primary));
 }
 
-export async function executeAction(page: Page, action: Action, human = false, cursor: Point = { x: 40, y: 40 }, screenshotPath?: string, defaultTimeoutMs = 10_000): Promise<{ box?: { x: number; y: number; width: number; height: number } | null; cursor: Point }> {
+async function approach(page: Page, box: { x: number; y: number; width: number; height: number } | null | undefined, human: boolean, cursor: Point, timing?: ActionTiming): Promise<Point> {
+  if (!human || !box) return cursor;
+  const target = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  const distance = Math.hypot(target.x - cursor.x, target.y - cursor.y);
+  const durationMs = timing?.cursorDurationMs ?? Math.round(Math.max(280, Math.min(700, 260 + distance * 0.45)));
+  for (const entry of cursorMotion(cursor, target, durationMs).slice(1)) {
+    await page.mouse.move(entry.point.x, entry.point.y);
+    await page.waitForTimeout(entry.waitAfterMs);
+  }
+  await page.waitForTimeout(timing?.settleBeforeMs ?? 140);
+  return target;
+}
+
+export function candidateLocator(page: Page, target: Target): Locator {
+  if (target.by === 'label') return page.getByLabel(target.value, { exact: true });
+  if (target.by === 'testId') return page.getByTestId(target.value);
+  if (target.by === 'text') return page.getByText(target.value, { exact: true });
+  if (target.by === 'textPattern') return page.getByText(new RegExp(target.pattern, 'i'));
+  if (target.by === 'roleAny') {
+    const alternatives = target.values.map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    return page.getByRole(target.role, { name: new RegExp(`^(?:${alternatives.join('|')})$`) });
+  }
+  if (target.by === 'rolePattern') return page.getByRole(target.role, { name: new RegExp(target.pattern, 'i') });
+  return page.getByRole(target.role, { name: target.value, exact: true });
+}
+
+export function selectByIntent(options: string[], prefer: string[], avoid: string[]): number | undefined {
+  const permitted = options.map((text, index) => ({ text, index })).filter((option) => !avoid.some((pattern) => new RegExp(pattern, 'i').test(option.text)));
+  for (const wanted of prefer) {
+    const match = permitted.find((option) => new RegExp(wanted, 'i').test(option.text));
+    if (match) return match.index;
+  }
+  return permitted[0]?.index;
+}
+
+async function conditionHolds(page: Page, condition: Condition): Promise<boolean> {
+  const visible = await locatorFor(page, condition.target).isVisible();
+  return condition.state === 'visible' ? visible : !visible;
+}
+
+export async function executeAction(page: Page, action: Action, human = false, cursor: Point = { x: 40, y: 40 }, screenshotPath?: string, defaultTimeoutMs = 10_000): Promise<{ box?: { x: number; y: number; width: number; height: number } | null; cursor: Point; label?: string; details?: string[] }> {
+  if (action.type === 'repeat') {
+    const details: string[] = [];
+    let iterations = 0;
+    while (iterations < action.maxIterations && !await conditionHolds(page, action.until)) {
+      for (const child of action.actions) {
+        const result = await executeAction(page, child, human, cursor, undefined, defaultTimeoutMs);
+        cursor = result.cursor;
+        details.push(...(result.details ?? []));
+      }
+      iterations += 1;
+    }
+    if (!await conditionHolds(page, action.until)) throw new Error(`Repeat stopped after ${iterations} iterations without ${targetLabel(action.until.target)} becoming ${action.until.state}`);
+    return { cursor, label: `repeat x${iterations}`, details: [`repeat x${iterations}`, ...details] };
+  }
+  if (action.type === 'branch') {
+    const taken = await conditionHolds(page, action.when);
+    const details = [`branch taken: ${taken ? 'then' : 'otherwise'}`];
+    for (const child of taken ? action.then : action.otherwise) {
+      const result = await executeAction(page, child, human, cursor, undefined, defaultTimeoutMs);
+      cursor = result.cursor;
+      details.push(...(result.details ?? []));
+    }
+    return { cursor, label: `branch: ${taken ? 'then' : 'otherwise'}`, details };
+  }
+  if (action.type === 'choose') {
+    const candidates = await candidateLocator(page, action.target).all();
+    const available: Array<{ index: number; text: string }> = [];
+    for (const [index, candidate] of candidates.entries()) {
+      if (!await candidate.isVisible() || !await candidate.isEnabled()) continue;
+      available.push({ index, text: ((await candidate.textContent()) ?? '').trim() });
+    }
+    const chosen = selectByIntent(available.map((option) => option.text), action.prefer, action.avoid);
+    if (chosen === undefined) {
+      if (action.optional) return { cursor };
+      throw new Error(`No permitted option for ${targetLabel(action.target)} among ${available.map((option) => option.text).join(' | ') || 'nothing visible'}`);
+    }
+    const picked = available[chosen];
+    if (action.requirePreferred && !action.prefer.some((wanted) => new RegExp(wanted, 'i').test(picked.text))) {
+      throw new Error(`No preferred option for ${targetLabel(action.target)} among ${available.map((option) => option.text).join(' | ')}`);
+    }
+    const locator = candidates[picked.index];
+    const box = await locator.boundingBox();
+    cursor = await approach(page, box, human, cursor, action.timing);
+    await locator.click();
+    return { box, cursor, label: `chose ${picked.text}`, details: [`chose "${picked.text}"`] };
+  }
   if (action.type === 'goto') {
     await page.goto(action.path, { waitUntil: 'load' });
     return { cursor };
@@ -188,17 +274,7 @@ export async function executeAction(page: Page, action: Action, human = false, c
     }
   }
   const box = locator ? await locator.boundingBox() : undefined;
-  if (human && box && ['click', 'fill', 'select'].includes(action.type)) {
-    const target = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-    const distance = Math.hypot(target.x - cursor.x, target.y - cursor.y);
-    const durationMs = action.timing?.cursorDurationMs ?? Math.round(Math.max(280, Math.min(700, 260 + distance * 0.45)));
-    for (const entry of cursorMotion(cursor, target, durationMs).slice(1)) {
-      await page.mouse.move(entry.point.x, entry.point.y);
-      await page.waitForTimeout(entry.waitAfterMs);
-    }
-    cursor = target;
-    await page.waitForTimeout(action.timing?.settleBeforeMs ?? 140);
-  }
+  if (['click', 'fill', 'select'].includes(action.type)) cursor = await approach(page, box, human, cursor, action.timing);
   if (action.type === 'click') await locator!.click();
   if (action.type === 'fill') {
     if (human) { await locator!.fill(''); await locator!.pressSequentially(action.text, { delay: action.timing?.keystrokeDelayMs ?? 55 }); }
@@ -237,6 +313,16 @@ export function sceneActionPhases(mode: ExecuteOptions['mode'], actions: Action[
   return { preload: [], capture: actions, captureOffset: 0 };
 }
 
+async function assertActorSession(page: Page, actor: Scenario['actors'][number], baseUrl: string): Promise<void> {
+  const preflight = actor.preflight!;
+  await page.goto(new URL(preflight.path, baseUrl).toString(), { waitUntil: 'load' });
+  try {
+    await locatorFor(page, preflight.target).waitFor({ state: preflight.state, timeout: preflight.timeoutMs });
+  } catch {
+    throw new Error(`Actor ${actor.id} session is not usable: ${targetLabel(preflight.target)} was not ${preflight.state} at ${page.url()}. Refresh the stored session for this actor.`);
+  }
+}
+
 async function runPass(options: ExecuteOptions, pass: number) {
   if (options.scenario.preconditions.resetCommand) await execAsync(options.scenario.preconditions.resetCommand, { cwd: options.config.repository.root });
   if (options.scenario.preconditions.seedCommand) await execAsync(options.scenario.preconditions.seedCommand, { cwd: options.config.repository.root });
@@ -249,6 +335,7 @@ async function runPass(options: ExecuteOptions, pass: number) {
   const ignorePatterns = options.config.runtime.ignoreRequestPatterns;
   const events: TimelineEvent[] = [];
   const sceneReports: Array<{ id: string; status: 'passed' | 'failed' | 'omitted'; failure?: string }> = [];
+  const executedPath: Array<{ sceneId: string; actionIndex: number; detail: string }> = [];
   const rawArtifacts: Record<string, string> = {};
   const passStart = performance.now();
   const cursors = new Map<string, Point>();
@@ -270,6 +357,7 @@ async function runPass(options: ExecuteOptions, pass: number) {
         const failure = { url: response.url(), status: response.status() };
         (isIgnoredRequest(response.url(), ignorePatterns) ? ignoredRequests : failedRequests).push(failure);
       });
+      if (actor.preflight) await assertActorSession(page, actor, options.config.app.url);
       contexts.set(actor.id, context);
       pages.set(actor.id, page);
     }
@@ -306,12 +394,13 @@ async function runPass(options: ExecuteOptions, pass: number) {
         try {
           const screenshotName = sourceAction.type === 'screenshot' ? sourceAction.name : undefined;
           const screenshotPath = screenshotName ? join(options.outputDirectory, `${scene.id}-${screenshotName}.png`) : undefined;
-          const { box, cursor } = await executeAction(page, action, options.mode === 'record', cursors.get(scene.actor), screenshotPath, options.config.runtime.actionTimeoutMs);
+          const { box, cursor, label, details } = await executeAction(page, action, options.mode === 'record', cursors.get(scene.actor), screenshotPath, options.config.runtime.actionTimeoutMs);
+          for (const detail of details ?? []) executedPath.push({ sceneId: scene.id, actionIndex, detail });
           if (options.mode === 'record' && sourceAction.type === 'goto') await ensureCapturedCursor(page, options.scenario.branding.primary);
           cursors.set(scene.actor, cursor);
           if (screenshotPath && screenshotName) rawArtifacts[`evidence-${scene.id}-${screenshotName}`] = screenshotPath;
           if (options.mode === 'record') await page.waitForTimeout(sourceAction.timing?.pauseAfterMs ?? actionDelay(sourceAction.type, sourceAction.type === 'fill' ? sourceAction.text : ''));
-          events.push({ sceneId: scene.id, actionIndex, type: sourceAction.type, label: sourceAction.title ?? sourceAction.type, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, target: 'target' in sourceAction ? sourceAction.target : undefined, box, state: 'passed' });
+          events.push({ sceneId: scene.id, actionIndex, type: sourceAction.type, label: label ?? sourceAction.title ?? sourceAction.type, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, target: 'target' in sourceAction ? sourceAction.target : undefined, box, state: 'passed' });
         } catch (error) {
           failed = `${error instanceof Error ? error.message : String(error)}\nURL: ${page.url()}`;
           events.push({ sceneId: scene.id, actionIndex, type: sourceAction.type, label: sourceAction.title ?? sourceAction.type, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, target: 'target' in sourceAction ? sourceAction.target : undefined, state: 'failed' });
@@ -338,7 +427,7 @@ async function runPass(options: ExecuteOptions, pass: number) {
     await Promise.all([...contexts.values()].map((context) => context.close()));
     await browser.close();
   }
-  return { pass, passed: sceneReports.length === options.scenario.scenes.length && sceneReports.every((scene) => scene.status === 'passed') && consoleErrors.length === 0 && failedRequests.length === 0, sceneReports, consoleErrors, failedRequests, ignoredRequests, events, artifacts: rawArtifacts };
+  return { pass, passed: sceneReports.length === options.scenario.scenes.length && sceneReports.every((scene) => scene.status === 'passed') && consoleErrors.length === 0 && failedRequests.length === 0, sceneReports, consoleErrors, failedRequests, ignoredRequests, executedPath, events, artifacts: rawArtifacts };
 }
 
 export async function executeScenario(options: ExecuteOptions): Promise<unknown> {
@@ -363,7 +452,7 @@ export async function executeScenario(options: ExecuteOptions): Promise<unknown>
   const timelinePath = join(options.outputDirectory, 'timeline.json');
   const reportPath = join(options.outputDirectory, 'execution-report.json');
   await writeFile(timelinePath, JSON.stringify(TimelineSchema.parse({ version: 2, scenarioId: options.scenario.id, viewport: { width: profile.width, height: profile.height }, events: result.events }), null, 2));
-  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, failedRequests: result.failedRequests, ignoredRequests: result.ignoredRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
+  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, executedPath: result.executedPath, failedRequests: result.failedRequests, ignoredRequests: result.ignoredRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
   await writeFile(reportPath, JSON.stringify(report, null, 2));
   return report;
 }

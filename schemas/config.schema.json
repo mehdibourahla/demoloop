@@ -113,7 +113,8 @@
         "rehearsalPasses": 2,
         "headless": true,
         "startTimeoutMs": 60000,
-        "actionTimeoutMs": 10000
+        "actionTimeoutMs": 10000,
+        "ignoreRequestPatterns": []
       },
       "type": "object",
       "properties": {
@@ -138,13 +139,22 @@
           "type": "integer",
           "minimum": 100,
           "maximum": 300000
+        },
+        "ignoreRequestPatterns": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "required": [
         "rehearsalPasses",
         "headless",
         "startTimeoutMs",
-        "actionTimeoutMs"
+        "actionTimeoutMs",
+        "ignoreRequestPatterns"
       ],
       "additionalProperties": false
     },

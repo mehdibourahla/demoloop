@@ -15,12 +15,13 @@ For production setup, install Watch with `npx skills add bradautomates/claude-vi
 2. Confirm repository, app URL, output type, audience, device, locale, duration, audio policy, and brand. Never infer production access.
 3. Run `product-demo discover`. Treat routes as candidate proof surfaces, not a story. Every actor, capability, journey, transition, outcome, and safe action needs evidence.
 4. Run `product-demo plan`. If it returns `needs-authoring`, report the known facts, unresolved decisions, scene briefs, and missing runtime evidence; do not invent a route slideshow. For full mode, preserve the master, journey clips, coverage, and omissions.
-5. Review scene purposes and causal continuity. Lock semantic actions and natural timing before capture. Use 350–700 ms cursor travel, 140–240 ms settling, 55–80 ms keystrokes, 700–1,000 ms ordinary dwell, and 1,100–1,800 ms after meaningful state changes as starting ranges, then adjust to the interface.
-6. Run `product-demo rehearse <scenario>` until the exact digest passes twice. Repair only between runs.
-7. Run `product-demo record <scenario>`. Do not edit the scenario or choose new actions during the final take.
-8. Run `product-demo render <scenario>` and `product-demo evaluate <scenario>`. Preserve raw media. A deterministic pass is not final acceptance.
-9. Run Watch against the actual absolute MP4: `/watch <absolute-video-path>`. Use balanced detail by default. Add `--resolution 1024` when interface text must be evaluated. Use `--no-whisper` only when the video is intentionally silent or has no audio stream. Run focused timestamp ranges when the first scan exposes a questionable section.
-10. Inspect every extracted frame. Write `editorial-review.json` matching `schemas/editorial-review.schema.json`, including `videoSha256` from `shasum -a 256 <absolute-video-path>`, then run `product-demo finalize <scenario> --video <absolute-video-path> --review <absolute-review-json-path>`. Repair and repeat after rejection.
+5. For interfaces whose wording or length varies per run, declare intent instead of exact copy: `choose` with `prefer`/`avoid`, `repeat` with `until`, `branch` with `when`, and `waitFor` for streamed responses. Domain judgement belongs in those declared constraints, never in the runtime.
+6. Review scene purposes and causal continuity. Lock semantic actions and natural timing before capture. Use 350–700 ms cursor travel, 140–240 ms settling, 55–80 ms keystrokes, 700–1,000 ms ordinary dwell, and 1,100–1,800 ms after meaningful state changes as starting ranges, then adjust to the interface.
+7. Run `product-demo rehearse <scenario>` until the exact digest passes twice. Repair only between runs.
+8. Run `product-demo record <scenario>`. Do not edit the scenario or choose new actions during the final take.
+9. Run `product-demo render <scenario>` and `product-demo evaluate <scenario>`. Preserve raw media. A deterministic pass is not final acceptance.
+10. Run Watch against the actual absolute MP4: `/watch <absolute-video-path>`. Use balanced detail by default. Add `--resolution 1024` when interface text must be evaluated. Use `--no-whisper` only when the video is intentionally silent or has no audio stream. Run focused timestamp ranges when the first scan exposes a questionable section.
+11. Inspect every extracted frame. Write `editorial-review.json` matching `schemas/editorial-review.schema.json`, including `videoSha256` from `shasum -a 256 <absolute-video-path>`, then run `product-demo finalize <scenario> --video <absolute-video-path> --review <absolute-review-json-path>`. Repair and repeat after rejection.
 
 The review must contain:
 

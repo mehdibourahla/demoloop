@@ -16,6 +16,13 @@ The pipeline is `repository + app + request -> product model -> plan result -> s
 - The deterministic runner owns contexts, semantic locators, waits, actions, cursor motion, capture, and evidence. The agent edits only between runs.
 - `timing` owns cursor travel, settling, keystroke delay, and post-action dwell. Presentation owns ROI, camera, transition weight, caption placement, and the loading treatment.
 - `loading: cut` removes real inactive footage during render: any static span longer than `maxStaticHoldMs` is cut down to that hold. `loading: preserve` keeps the recording untouched. Removed footage is listed in `presentation-metadata.json`.
+- Adaptive interfaces use deterministic actions, never model reasoning at capture time:
+  - `choose` picks among the options visible right now using ordered `prefer` phrases and a hard `avoid` list. An option matching `avoid` is never clicked; when nothing is permitted the scene fails loudly. Set `requirePreferred` when only a preferred option is acceptable.
+  - `repeat` runs its actions until `until` holds, bounded by `maxIterations`.
+  - `branch` runs `then` or `otherwise` depending on whether `when` holds at that moment.
+  - `waitFor` settles on `visible`, `hidden`, `enabled`, or `disabled` before continuing, which is how streamed replies and re-enabled inputs are awaited.
+- The scenario digest pins the program, not the path. When control flow varies between runs, `executedPath` in the execution report records every choice and branch actually taken.
+- Actors may declare a `preflight` target. A failed preflight reports an unusable actor session instead of a missing element.
 - Use separate browser contexts for actors. Never round-robin actors or merge distinct sessions.
 - Render one caption system only. Do not show action names, click circles, or capture-time chapter/brand overlays.
 

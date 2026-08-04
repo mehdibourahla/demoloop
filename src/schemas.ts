@@ -33,7 +33,9 @@ const ActionBase = z.object({
   timeoutMs: z.number().int().min(1).max(90_000).optional()
 });
 
-export const ActionSchema = z.discriminatedUnion('type', [
+export const ConditionSchema = z.object({ target: TargetSchema, state: z.enum(['visible', 'hidden']).default('visible') });
+
+const LeafActionSchema = z.discriminatedUnion('type', [
   ActionBase.extend({ type: z.literal('goto'), path: z.string().min(1) }),
   ActionBase.extend({ type: z.literal('click'), target: TargetSchema }),
   ActionBase.extend({ type: z.literal('fill'), target: TargetSchema, text: z.string() }),
@@ -41,8 +43,22 @@ export const ActionSchema = z.discriminatedUnion('type', [
   ActionBase.extend({ type: z.literal('scroll'), target: TargetSchema.optional(), deltaY: z.number().optional() }),
   ActionBase.extend({ type: z.literal('assert'), target: TargetSchema, state: z.enum(['visible', 'hidden', 'checked']), text: z.string().optional() }),
   ActionBase.extend({ type: z.literal('waitFor'), target: TargetSchema, state: z.enum(['visible', 'hidden', 'enabled', 'disabled']) }),
+  ActionBase.extend({ type: z.literal('choose'), target: TargetSchema, prefer: z.array(z.string().min(1)).default([]), avoid: z.array(z.string().min(1)).default([]), requirePreferred: z.boolean().default(false) }),
   ActionBase.extend({ type: z.literal('screenshot'), name: z.string().min(1) })
 ]);
+
+export type Condition = z.infer<typeof ConditionSchema>;
+export type LeafAction = z.infer<typeof LeafActionSchema>;
+export type ActionTiming = z.infer<typeof ActionTimingSchema>;
+export type RepeatAction = { type: 'repeat'; title?: string; narration?: string; optional?: boolean; timeoutMs?: number; timing?: ActionTiming; until: Condition; maxIterations: number; actions: Action[] };
+export type BranchAction = { type: 'branch'; title?: string; narration?: string; optional?: boolean; timeoutMs?: number; timing?: ActionTiming; when: Condition; then: Action[]; otherwise: Action[] };
+export type Action = LeafAction | RepeatAction | BranchAction;
+
+export const ActionSchema: z.ZodType<Action> = z.lazy(() => z.union([
+  LeafActionSchema,
+  ActionBase.extend({ type: z.literal('repeat'), until: ConditionSchema, maxIterations: z.number().int().min(1).max(50).default(10), actions: z.array(ActionSchema).min(1) }),
+  ActionBase.extend({ type: z.literal('branch'), when: ConditionSchema, then: z.array(ActionSchema).min(1), otherwise: z.array(ActionSchema).default([]) })
+]));
 
 export const ActorOwnershipSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('resolved'), actorId: z.string().min(1), evidence: EvidenceArraySchema }),
@@ -53,7 +69,7 @@ const ClaimSchema = z.object({ id: z.string().min(1), name: z.string().min(1), e
 
 const SafeActionSchema = z.object({
   id: z.string().min(1),
-  type: z.enum(['goto', 'click', 'fill', 'select', 'scroll', 'assert', 'waitFor', 'screenshot']),
+  type: z.enum(['goto', 'click', 'fill', 'select', 'scroll', 'assert', 'waitFor', 'choose', 'screenshot']),
   target: TargetSchema.optional(),
   path: z.string().min(1).optional(),
   value: z.string().optional(),
@@ -117,7 +133,10 @@ export const ScenarioSchema = z.object({
   audio: AudioPolicySchema.default({ policy: 'silent' }),
   branding: z.object({ name: z.string().min(1), primary: z.string().min(1), background: z.string().min(1) }).default({ name: 'Product Demo', primary: '#2563eb', background: '#08111f' }),
   preconditions: z.object({ resetCommand: z.string().min(1).optional(), seedCommand: z.string().min(1).optional() }).default({}),
-  actors: z.array(z.object({ id: z.string().min(1), label: z.string().min(1), storageState: z.string().min(1).optional() })).min(1),
+  actors: z.array(z.object({
+    id: z.string().min(1), label: z.string().min(1), storageState: z.string().min(1).optional(),
+    preflight: z.object({ path: z.string().min(1).default('/'), target: TargetSchema, state: z.enum(['visible', 'hidden']).default('visible'), timeoutMs: z.number().int().min(100).max(120_000).default(10_000) }).optional()
+  })).min(1),
   scenes: z.array(z.object({
     id: z.string().regex(/^[a-z0-9-]+$/), title: z.string().min(1), description: z.string().min(1).optional(), purpose: ScenePurposeSchema,
     capabilityId: z.string().min(1).optional(), proofSurfaceId: z.string().min(1).optional(),
@@ -197,7 +216,7 @@ export const TimelineSchema = z.object({ version: z.literal(2), scenarioId: z.st
 export const ExecutionReportSchema = z.object({
   version: z.literal(2), scenarioId: z.string(), mode: z.enum(['rehearse', 'record']), passed: z.boolean(), consecutivePasses: z.number().int().nonnegative(), startedAt: z.string(), endedAt: z.string(),
   scenarioDigest: z.string(), scenes: z.array(z.object({ id: z.string(), status: z.enum(['passed', 'failed', 'omitted']), failure: z.string().optional() })),
-  consoleErrors: z.array(z.string()), failedRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })), ignoredRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })).default([]), artifacts: z.record(z.string(), z.string())
+  consoleErrors: z.array(z.string()), executedPath: z.array(z.object({ sceneId: z.string(), actionIndex: z.number().int().nonnegative(), detail: z.string() })).default([]), failedRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })), ignoredRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })).default([]), artifacts: z.record(z.string(), z.string())
 });
 
 export type Evidence = z.infer<typeof EvidenceSchema>;
@@ -206,7 +225,6 @@ export type PlanResult = z.infer<typeof PlanResultSchema>;
 export type Scenario = z.infer<typeof ScenarioSchema>;
 export type DemoConfig = z.infer<typeof ConfigSchema>;
 export type Target = z.infer<typeof TargetSchema>;
-export type Action = z.infer<typeof ActionSchema>;
 export type TimelineEvent = z.infer<typeof TimelineEventSchema>;
 export type EditorialReview = z.infer<typeof EditorialReviewSchema>;
 export type QualityReport = z.infer<typeof QualityReportSchema>;
