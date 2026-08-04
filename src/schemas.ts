@@ -40,6 +40,7 @@ export const ActionSchema = z.discriminatedUnion('type', [
   ActionBase.extend({ type: z.literal('select'), target: TargetSchema, value: z.string() }),
   ActionBase.extend({ type: z.literal('scroll'), target: TargetSchema.optional(), deltaY: z.number().optional() }),
   ActionBase.extend({ type: z.literal('assert'), target: TargetSchema, state: z.enum(['visible', 'hidden', 'checked']), text: z.string().optional() }),
+  ActionBase.extend({ type: z.literal('waitFor'), target: TargetSchema, state: z.enum(['visible', 'hidden', 'enabled', 'disabled']) }),
   ActionBase.extend({ type: z.literal('screenshot'), name: z.string().min(1) })
 ]);
 
@@ -52,7 +53,7 @@ const ClaimSchema = z.object({ id: z.string().min(1), name: z.string().min(1), e
 
 const SafeActionSchema = z.object({
   id: z.string().min(1),
-  type: z.enum(['goto', 'click', 'fill', 'select', 'scroll', 'assert', 'screenshot']),
+  type: z.enum(['goto', 'click', 'fill', 'select', 'scroll', 'assert', 'waitFor', 'screenshot']),
   target: TargetSchema.optional(),
   path: z.string().min(1).optional(),
   value: z.string().optional(),
@@ -147,7 +148,7 @@ export const PlanResultSchema = z.discriminatedUnion('status', [
 const CheckSchema = z.object({ id: z.string().min(1), passed: z.boolean(), value: z.union([z.string(), z.number(), z.boolean()]), detail: z.string().min(1).optional(), timestamps: z.array(z.number().nonnegative()).optional() });
 
 export const EditorialReviewSchema = z.object({
-  version: z.literal(1), tool: z.literal('watch'), videoPath: z.string().startsWith('/'), detail: z.enum(['balanced', 'token-burner']), resolution: z.number().int().positive().optional(),
+  version: z.literal(1), tool: z.literal('watch'), videoPath: z.string().startsWith('/'), videoSha256: z.string().regex(/^[a-f0-9]{64}$/), detail: z.enum(['balanced', 'token-burner']), resolution: z.number().int().positive().optional(),
   transcriptStatus: z.enum(['available', 'not-required', 'unavailable']), score: z.number().min(0).max(10),
   frames: z.object({ distinct: z.number().int().nonnegative(), discarded: z.number().int().nonnegative(), inspected: z.number().int().nonnegative() }),
   assessments: z.object({ hook: z.string().min(1), narrativeContinuity: z.string().min(1), staticSections: z.string().min(1), readability: z.string().min(1), attentionGuidance: z.string().min(1), overlayObstruction: z.string().min(1), transitions: z.string().min(1), audioTreatment: z.string().min(1), outcome: z.string().min(1), closing: z.string().min(1) }),
@@ -178,7 +179,7 @@ export const ConfigSchema = z.object({
   repository: z.object({ root: z.string().default('.') }).default({ root: '.' }),
   output: z.object({ directory: z.string().default('artifacts') }).default({ directory: 'artifacts' }),
   privacy: z.object({ allowProduction: z.boolean().default(false), scanArtifacts: z.boolean().default(true), redactions: z.array(z.object({ sourceEnv: z.string().min(1), replacement: z.string().min(1) })).default([]) }).default({ allowProduction: false, scanArtifacts: true, redactions: [] }),
-  runtime: z.object({ rehearsalPasses: z.number().int().min(2).default(2), headless: z.boolean().default(true), startTimeoutMs: z.number().int().min(1_000).max(600_000).default(60_000), actionTimeoutMs: z.number().int().min(100).max(300_000).default(10_000) }).default({ rehearsalPasses: 2, headless: true, startTimeoutMs: 60_000, actionTimeoutMs: 10_000 }),
+  runtime: z.object({ rehearsalPasses: z.number().int().min(2).default(2), headless: z.boolean().default(true), startTimeoutMs: z.number().int().min(1_000).max(600_000).default(60_000), actionTimeoutMs: z.number().int().min(100).max(300_000).default(10_000), ignoreRequestPatterns: z.array(z.string().min(1)).default([]) }).default({ rehearsalPasses: 2, headless: true, startTimeoutMs: 60_000, actionTimeoutMs: 10_000, ignoreRequestPatterns: [] }),
   narration: z.object({
     provider: z.enum(['none', 'elevenlabs', 'macos']).default('none'),
     elevenlabs: z.object({ voiceId: z.string().min(1).optional(), modelId: z.string().min(1).default('eleven_multilingual_v2'), outputFormat: z.string().min(1).default('mp3_44100_128'), apiKeyEnv: z.string().min(1).default('ELEVENLABS_API_KEY') }).default({ modelId: 'eleven_multilingual_v2', outputFormat: 'mp3_44100_128', apiKeyEnv: 'ELEVENLABS_API_KEY' }),
@@ -196,7 +197,7 @@ export const TimelineSchema = z.object({ version: z.literal(2), scenarioId: z.st
 export const ExecutionReportSchema = z.object({
   version: z.literal(2), scenarioId: z.string(), mode: z.enum(['rehearse', 'record']), passed: z.boolean(), consecutivePasses: z.number().int().nonnegative(), startedAt: z.string(), endedAt: z.string(),
   scenarioDigest: z.string(), scenes: z.array(z.object({ id: z.string(), status: z.enum(['passed', 'failed', 'omitted']), failure: z.string().optional() })),
-  consoleErrors: z.array(z.string()), failedRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })), artifacts: z.record(z.string(), z.string())
+  consoleErrors: z.array(z.string()), failedRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })), ignoredRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })).default([]), artifacts: z.record(z.string(), z.string())
 });
 
 export type Evidence = z.infer<typeof EvidenceSchema>;

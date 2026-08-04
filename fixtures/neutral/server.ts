@@ -8,7 +8,8 @@ const pages: Record<string, string> = {
   analytics: `<h1>Signal comparison</h1><label>Window<select><option>month</option><option>week</option></select></label><output>18%</output><script>document.querySelector('select').onchange=()=>document.querySelector('output').textContent='42%'</script>`,
   operations: `<h1>Runtime check</h1><button>Run check</button><pre>Idle</pre><script>document.querySelector('button').onclick=()=>document.querySelector('pre').textContent='Check passed\n3 targets healthy'</script>`,
   mobile: `<h1>Quick capture</h1><button>Add entry</button><output>Empty</output><script>document.querySelector('button').onclick=()=>document.querySelector('output').textContent='Entry added'</script>`,
-  'route-only': `<h1>Route catalog</h1><nav><a href="/route-only/overview">Overview</a><a href="/route-only/activity">Activity</a></nav>`
+  'route-only': `<h1>Route catalog</h1><nav><a href="/route-only/overview">Overview</a><a href="/route-only/activity">Activity</a></nav>`,
+  streaming: `<h1>Assistant</h1><label>Message<input aria-label="Message"></label><button>Send</button><output>Idle</output><ul></ul><script>const o=document.querySelector('output'),i=document.querySelector('input'),u=document.querySelector('ul');setInterval(()=>fetch('/api/ping'),300);document.querySelector('button').onclick=()=>{const text=i.value;i.disabled=true;o.textContent='Streaming';setTimeout(()=>{const li=document.createElement('li');li.textContent=text;u.append(li);o.textContent='Stream complete';i.disabled=false;i.value=''},600)}</script>`
 };
 
 const shell = (body: string) => `<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font:18px system-ui;max-width:720px;margin:60px auto;padding:24px}button,select{font:inherit;padding:12px;margin:12px}output,pre{display:block;padding:24px;background:#eef4ff}</style><body>${body}</body></html>`;
@@ -17,6 +18,7 @@ createServer((request, response) => {
   const url = new URL(request.url ?? '/', 'http://127.0.0.1');
   if (url.pathname === '/health') { response.end('ok'); return; }
   if (url.pathname === '/api/reset') { state.clear(); response.end('ok'); return; }
+  if (url.pathname === '/api/ping') { response.end('pong'); return; }
   if (url.pathname === '/api/handoff') {
     if (request.method === 'POST') { state.set('handoff', 'Item received'); response.end('Item sent'); return; }
     response.end(state.get('handoff') ?? 'Inbox empty'); return;

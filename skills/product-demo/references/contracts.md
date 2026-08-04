@@ -32,4 +32,4 @@ ElevenLabs reads its key from `ELEVENLABS_API_KEY`; never put secrets in scenari
 
 `quality-report.json` separates technical checks, deterministic editorial checks, and the Watch agent review. Deterministic analysis measures encoding, viewport, audio policy, sensitive information, distinct/discarded frames, static spans, hook, close, product dominance, ROI obstruction, and montage ratio.
 
-Before Watch, status is `pending-agent-review` unless deterministic checks already reject the output. Watch writes a schema-valid `editorial-review.json`; `finalize` accepts only the actual absolute MP4, an accept verdict, score at least 7, complete frame inspection, and a usable transcript for voiced output.
+Before Watch, status is `pending-agent-review` unless deterministic checks already reject the output. Watch writes a schema-valid `editorial-review.json`; `finalize` accepts only the actual absolute MP4 whose SHA-256 matches the review's `videoSha256`, an accept verdict, score at least 7, complete frame inspection, and a usable transcript for voiced output.

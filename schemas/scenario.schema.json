@@ -443,8 +443,7 @@
                 "type": "string",
                 "enum": [
                   "preserve",
-                  "cut",
-                  "accelerate"
+                  "cut"
                 ]
               },
               "transitionWeight": {
@@ -483,30 +482,6 @@
                   "mode"
                 ],
                 "additionalProperties": false
-              },
-              "opening": {
-                "type": "string",
-                "enum": [
-                  "product-promise",
-                  "context-card",
-                  "none"
-                ]
-              },
-              "closing": {
-                "type": "string",
-                "enum": [
-                  "call-to-action",
-                  "outcome-recap",
-                  "none"
-                ]
-              },
-              "actorTransition": {
-                "type": "string",
-                "enum": [
-                  "cut",
-                  "context-card",
-                  "split-causality"
-                ]
               }
             },
             "required": [

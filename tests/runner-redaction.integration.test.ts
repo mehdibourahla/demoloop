@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { Browser } from 'playwright';
-import { executeAction, installTextRedactions, isIgnorableRequestFailure, locatorFor, textRedactionScript } from '../src/runner.js';
+import { executeAction, installTextRedactions, isIgnorableRequestFailure, isIgnoredRequest, locatorFor, textRedactionScript } from '../src/runner.js';
 import { ConfigSchema, TargetSchema } from '../src/schemas.js';
 
 describe('capture privacy redactions', () => {
@@ -102,6 +102,15 @@ describe('capture privacy redactions', () => {
 
     expect(await locatorFor(page, target).isVisible()).toBe(true);
     await page.close();
+  });
+
+  test('ignores only the request URLs the configuration allows', () => {
+    const patterns = ['/api/telemetry', '\\.well-known/'];
+
+    expect(isIgnoredRequest('http://app.test/api/telemetry?id=3', patterns)).toBe(true);
+    expect(isIgnoredRequest('http://app.test/.well-known/probe', patterns)).toBe(true);
+    expect(isIgnoredRequest('http://app.test/api/orders', patterns)).toBe(false);
+    expect(isIgnoredRequest('http://app.test/api/telemetry', [])).toBe(false);
   });
 
   test('ignores browser-aborted requests but keeps real network failures', () => {

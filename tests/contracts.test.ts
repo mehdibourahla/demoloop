@@ -88,7 +88,7 @@ describe('version 2 contracts', () => {
     const review = EditorialReviewSchema.parse({
       version: 1,
       tool: 'watch',
-      videoPath: '/tmp/workspace.mp4',
+      videoPath: '/tmp/workspace.mp4', videoSha256: 'a'.repeat(64),
       detail: 'balanced',
       transcriptStatus: 'not-required',
       score: 8,

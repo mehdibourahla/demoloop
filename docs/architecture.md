@@ -45,7 +45,7 @@ Audio policies are explicit: silent, local music, voiceover, or voiceover plus m
 
 Technical checks cover execution, requests, console errors, locators, encoding, viewport, duration, dead time, privacy, and audio policy. Deterministic editorial checks sample real frames and report distinct/discarded counts, static spans with timestamps, hook and close presence, product dominance, overlay obstruction, and montage balance.
 
-These checks do not substitute for editorial judgment. Before Watch, an otherwise passing output is `pending-agent-review`. The Agent Skill runs Watch on the actual absolute MP4, reads every extracted frame and transcript when required, and writes the schema-defined review. Finalization accepts only a matching video, a score of at least 7, an accept verdict, deterministic passes, and an available transcript for voiced output.
+These checks do not substitute for editorial judgment. Before Watch, an otherwise passing output is `pending-agent-review`. The Agent Skill runs Watch on the actual absolute MP4, reads every extracted frame and transcript when required, and writes the schema-defined review. Finalization accepts only a video whose checksum matches the review, a score of at least 7, an accept verdict, deterministic passes, and an available transcript for voiced output.
 
 ## Safety
 

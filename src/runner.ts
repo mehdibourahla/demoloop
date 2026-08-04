@@ -17,6 +17,10 @@ export function isIgnorableRequestFailure(errorText: string | undefined): boolea
   return errorText === 'net::ERR_ABORTED';
 }
 
+export function isIgnoredRequest(url: string, patterns: string[]): boolean {
+  return patterns.some((pattern) => new RegExp(pattern).test(url));
+}
+
 export function locatorFor(page: Page, target: Target): Locator {
   if (target.by === 'label') return page.getByLabel(target.value, { exact: true });
   if (target.by === 'testId') return page.getByTestId(target.value);
@@ -152,8 +156,22 @@ async function ensureCapturedCursor(page: Page, primary: string): Promise<void> 
 
 export async function executeAction(page: Page, action: Action, human = false, cursor: Point = { x: 40, y: 40 }, screenshotPath?: string, defaultTimeoutMs = 10_000): Promise<{ box?: { x: number; y: number; width: number; height: number } | null; cursor: Point }> {
   if (action.type === 'goto') {
-    await page.goto(action.path, { waitUntil: 'networkidle' });
+    await page.goto(action.path, { waitUntil: 'load' });
     return { cursor };
+  }
+  if (action.type === 'waitFor') {
+    const locator = locatorFor(page, action.target);
+    const deadline = Date.now() + (action.timeoutMs ?? defaultTimeoutMs);
+    while (Date.now() < deadline) {
+      const settled = action.state === 'visible' ? await locator.isVisible()
+        : action.state === 'hidden' ? !(await locator.isVisible())
+        : action.state === 'enabled' ? await locator.isVisible() && await locator.isEnabled()
+        : !(await locator.isVisible()) || !(await locator.isEnabled());
+      if (settled) return { cursor };
+      await page.waitForTimeout(100);
+    }
+    if (action.optional) return { cursor };
+    throw new Error(`Timed out waiting for ${targetLabel(action.target)} to be ${action.state}`);
   }
   if (action.type === 'screenshot') {
     if (!screenshotPath) throw new Error(`Screenshot path missing for ${action.name}`);
@@ -227,6 +245,8 @@ async function runPass(options: ExecuteOptions, pass: number) {
   const pages = new Map<string, Page>();
   const consoleErrors: string[] = [];
   const failedRequests: Array<{ url: string; status?: number; error?: string }> = [];
+  const ignoredRequests: Array<{ url: string; status?: number; error?: string }> = [];
+  const ignorePatterns = options.config.runtime.ignoreRequestPatterns;
   const events: TimelineEvent[] = [];
   const sceneReports: Array<{ id: string; status: 'passed' | 'failed' | 'omitted'; failure?: string }> = [];
   const rawArtifacts: Record<string, string> = {};
@@ -241,9 +261,15 @@ async function runPass(options: ExecuteOptions, pass: number) {
       page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
       page.on('requestfailed', (request) => {
         const error = request.failure()?.errorText;
-        if (!isIgnorableRequestFailure(error)) failedRequests.push({ url: request.url(), error });
+        if (isIgnorableRequestFailure(error)) return;
+        const failure = { url: request.url(), error };
+        (isIgnoredRequest(request.url(), ignorePatterns) ? ignoredRequests : failedRequests).push(failure);
       });
-      page.on('response', (response) => { if (response.status() >= 400) failedRequests.push({ url: response.url(), status: response.status() }); });
+      page.on('response', (response) => {
+        if (response.status() < 400) return;
+        const failure = { url: response.url(), status: response.status() };
+        (isIgnoredRequest(response.url(), ignorePatterns) ? ignoredRequests : failedRequests).push(failure);
+      });
       contexts.set(actor.id, context);
       pages.set(actor.id, page);
     }
@@ -312,7 +338,7 @@ async function runPass(options: ExecuteOptions, pass: number) {
     await Promise.all([...contexts.values()].map((context) => context.close()));
     await browser.close();
   }
-  return { pass, passed: sceneReports.length === options.scenario.scenes.length && sceneReports.every((scene) => scene.status === 'passed') && consoleErrors.length === 0 && failedRequests.length === 0, sceneReports, consoleErrors, failedRequests, events, artifacts: rawArtifacts };
+  return { pass, passed: sceneReports.length === options.scenario.scenes.length && sceneReports.every((scene) => scene.status === 'passed') && consoleErrors.length === 0 && failedRequests.length === 0, sceneReports, consoleErrors, failedRequests, ignoredRequests, events, artifacts: rawArtifacts };
 }
 
 export async function executeScenario(options: ExecuteOptions): Promise<unknown> {
@@ -337,7 +363,7 @@ export async function executeScenario(options: ExecuteOptions): Promise<unknown>
   const timelinePath = join(options.outputDirectory, 'timeline.json');
   const reportPath = join(options.outputDirectory, 'execution-report.json');
   await writeFile(timelinePath, JSON.stringify(TimelineSchema.parse({ version: 2, scenarioId: options.scenario.id, viewport: { width: profile.width, height: profile.height }, events: result.events }), null, 2));
-  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, failedRequests: result.failedRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
+  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, failedRequests: result.failedRequests, ignoredRequests: result.ignoredRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
   await writeFile(reportPath, JSON.stringify(report, null, 2));
   return report;
 }

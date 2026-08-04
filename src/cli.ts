@@ -187,7 +187,7 @@ export async function runCli(args: string[]): Promise<number> {
     const videoPath = flag(args, 'video', join(paths.render, `${scenario.id}-${device}.mp4`))!;
     const quality = QualityReportSchema.parse(JSON.parse(await readFile(qualityPath, 'utf8')));
     const review = EditorialReviewSchema.parse(JSON.parse(await readFile(resolve(reviewPath), 'utf8')));
-    const finalized = finalizeQuality(quality, review, { videoPath: resolve(videoPath), audioPolicy: scenario.audio.policy });
+    const finalized = await finalizeQuality(quality, review, { videoPath: resolve(videoPath), audioPolicy: scenario.audio.policy });
     const destination = output ?? qualityPath;
     await writeFile(destination, JSON.stringify(finalized, null, 2));
     console.log(destination);

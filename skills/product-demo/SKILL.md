@@ -20,11 +20,12 @@ For production setup, install Watch with `npx skills add bradautomates/claude-vi
 7. Run `product-demo record <scenario>`. Do not edit the scenario or choose new actions during the final take.
 8. Run `product-demo render <scenario>` and `product-demo evaluate <scenario>`. Preserve raw media. A deterministic pass is not final acceptance.
 9. Run Watch against the actual absolute MP4: `/watch <absolute-video-path>`. Use balanced detail by default. Add `--resolution 1024` when interface text must be evaluated. Use `--no-whisper` only when the video is intentionally silent or has no audio stream. Run focused timestamp ranges when the first scan exposes a questionable section.
-10. Inspect every extracted frame. Write `editorial-review.json` matching `schemas/editorial-review.schema.json`, then run `product-demo finalize <scenario> --video <absolute-video-path> --review <absolute-review-json-path>`. Repair and repeat after rejection.
+10. Inspect every extracted frame. Write `editorial-review.json` matching `schemas/editorial-review.schema.json`, including `videoSha256` from `shasum -a 256 <absolute-video-path>`, then run `product-demo finalize <scenario> --video <absolute-video-path> --review <absolute-review-json-path>`. Repair and repeat after rejection.
 
 The review must contain:
 
 - Score out of 10.
+- The reviewed file's SHA-256 checksum.
 - Visually distinct versus discarded frame count.
 - Hook assessment.
 - Narrative continuity.

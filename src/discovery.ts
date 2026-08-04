@@ -62,7 +62,8 @@ export async function discoverProduct(root: string, url?: string, outputDirector
     for (const surface of model.proofSurfaces) {
       if (!surface.route && !surface.runtimeUrl) continue;
       const targetUrl = surface.runtimeUrl ?? new URL(surface.route!, url).toString();
-      const response = await page.goto(targetUrl, { waitUntil: 'networkidle' });
+      const response = await page.goto(targetUrl, { waitUntil: 'load' });
+      await page.waitForLoadState('networkidle', { timeout: 5_000 }).catch(() => undefined);
       if (!response?.ok() || !await page.locator('body').isVisible()) continue;
       const screenshot = join(outputDirectory, `${surface.id}.png`);
       const ariaSnapshot = join(outputDirectory, `${surface.id}.aria.yml`);
