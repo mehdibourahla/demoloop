@@ -111,7 +111,8 @@ export function narrationProvider(config: DemoConfig, scenario: Scenario) {
   const settings = config.narration.elevenlabs;
   return new ElevenLabsNarrationProvider({
     apiKey: process.env[settings.apiKeyEnv] ?? '', voiceId: settings.voiceId ?? '', modelId: settings.modelId,
-    outputFormat: settings.outputFormat, cacheDirectory: join(config.output.directory, '.narration-cache')
+    outputFormat: settings.outputFormat, cacheDirectory: join(config.output.directory, '.narration-cache'),
+    voiceSettings: settings.voiceSettings, seed: settings.seed
   });
 }
 

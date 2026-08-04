@@ -202,9 +202,13 @@ export const ConfigSchema = z.object({
   runtime: z.object({ rehearsalPasses: z.number().int().min(2).default(2), headless: z.boolean().default(true), startTimeoutMs: z.number().int().min(1_000).max(600_000).default(60_000), actionTimeoutMs: z.number().int().min(100).max(300_000).default(10_000), ignoreRequestPatterns: z.array(z.string().min(1)).default([]) }).default({ rehearsalPasses: 2, headless: true, startTimeoutMs: 60_000, actionTimeoutMs: 10_000, ignoreRequestPatterns: [] }),
   narration: z.object({
     provider: z.enum(['none', 'elevenlabs', 'macos']).default('none'),
-    elevenlabs: z.object({ voiceId: z.string().min(1).optional(), modelId: z.string().min(1).default('eleven_multilingual_v2'), outputFormat: z.string().min(1).default('mp3_44100_128'), apiKeyEnv: z.string().min(1).default('ELEVENLABS_API_KEY') }).default({ modelId: 'eleven_multilingual_v2', outputFormat: 'mp3_44100_128', apiKeyEnv: 'ELEVENLABS_API_KEY' }),
+    elevenlabs: z.object({
+      voiceId: z.string().min(1).optional(), modelId: z.string().min(1).default('eleven_multilingual_v2'), outputFormat: z.string().min(1).default('mp3_44100_128'), apiKeyEnv: z.string().min(1).default('ELEVENLABS_API_KEY'),
+      seed: z.number().int().min(0).max(4_294_967_295).default(1),
+      voiceSettings: z.object({ stability: z.number().min(0).max(1).default(0.45), similarityBoost: z.number().min(0).max(1).default(0.75), style: z.number().min(0).max(1).default(0), useSpeakerBoost: z.boolean().default(true), speed: z.number().min(0.7).max(1.2).default(1) }).default({ stability: 0.45, similarityBoost: 0.75, style: 0, useSpeakerBoost: true, speed: 1 })
+    }).default({ modelId: 'eleven_multilingual_v2', outputFormat: 'mp3_44100_128', apiKeyEnv: 'ELEVENLABS_API_KEY', seed: 1, voiceSettings: { stability: 0.45, similarityBoost: 0.75, style: 0, useSpeakerBoost: true, speed: 1 } }),
     macos: z.object({ voice: z.string().min(1).default('Samantha') }).default({ voice: 'Samantha' })
-  }).default({ provider: 'none', elevenlabs: { modelId: 'eleven_multilingual_v2', outputFormat: 'mp3_44100_128', apiKeyEnv: 'ELEVENLABS_API_KEY' }, macos: { voice: 'Samantha' } }),
+  }).default({ provider: 'none', elevenlabs: { modelId: 'eleven_multilingual_v2', outputFormat: 'mp3_44100_128', apiKeyEnv: 'ELEVENLABS_API_KEY', seed: 1, voiceSettings: { stability: 0.45, similarityBoost: 0.75, style: 0, useSpeakerBoost: true, speed: 1 } }, macos: { voice: 'Samantha' } }),
   editorial: z.object({ thresholds: z.record(OutputTypeSchema, ThresholdSchema).default(defaultThresholds) }).default({ thresholds: defaultThresholds }),
   devices: z.record(z.string(), z.object({ width: z.number().int().positive(), height: z.number().int().positive(), device: z.string().optional(), isMobile: z.boolean().default(false) })).default({ desktop: { width: 1440, height: 900, isMobile: false }, mobile: { width: 390, height: 844, device: 'iPhone 13', isMobile: true } })
 });

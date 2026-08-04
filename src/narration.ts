@@ -8,6 +8,14 @@ import type { Scenario } from './schemas.js';
 
 const execFileAsync = promisify(execFile);
 
+export interface ElevenLabsVoiceSettings {
+  stability?: number;
+  similarityBoost?: number;
+  style?: number;
+  useSpeakerBoost?: boolean;
+  speed?: number;
+}
+
 export interface ElevenLabsNarrationOptions {
   apiKey: string;
   voiceId: string;
@@ -15,6 +23,18 @@ export interface ElevenLabsNarrationOptions {
   modelId?: string;
   outputFormat?: string;
   baseUrl?: string;
+  voiceSettings?: ElevenLabsVoiceSettings;
+  seed?: number;
+}
+
+function wireVoiceSettings(settings: ElevenLabsVoiceSettings): Record<string, number | boolean> {
+  const wire: Record<string, number | boolean> = {};
+  if (settings.stability !== undefined) wire.stability = settings.stability;
+  if (settings.similarityBoost !== undefined) wire.similarity_boost = settings.similarityBoost;
+  if (settings.style !== undefined) wire.style = settings.style;
+  if (settings.useSpeakerBoost !== undefined) wire.use_speaker_boost = settings.useSpeakerBoost;
+  if (settings.speed !== undefined) wire.speed = settings.speed;
+  return wire;
 }
 
 export interface MacOSNarrationOptions {
@@ -41,9 +61,13 @@ export async function narrationPlan(scenario: Scenario, provider: NarrationProvi
   if (scenario.audio.policy !== 'voiceover' && scenario.audio.policy !== 'voiceover-and-music') return {};
   if (!provider) throw new Error('Voiceover requires a configured narration provider');
   await mkdir(cacheDirectory, { recursive: true });
+  const lines = scenario.scenes.map(sceneNarrationText);
   const plan: Record<string, number> = {};
-  for (const scene of scenario.scenes) {
-    const speech = await provider.synthesize({ id: scene.id, text: sceneNarrationText(scene), locale: scenario.locale, outputPath: join(cacheDirectory, `voice-${scene.id}.mp3`) });
+  for (const [index, scene] of scenario.scenes.entries()) {
+    const speech = await provider.synthesize({
+      id: scene.id, text: lines[index], locale: scenario.locale, outputPath: join(cacheDirectory, `voice-${scene.id}.mp3`),
+      previousText: lines[index - 1], nextText: lines[index + 1]
+    });
     plan[scene.id] = speech.durationSeconds;
   }
   return plan;
@@ -58,7 +82,7 @@ export class ElevenLabsNarrationProvider implements NarrationProvider {
   async synthesize(segment: NarrationSegment): Promise<{ path: string; durationSeconds: number }> {
     const modelId = this.options.modelId ?? 'eleven_multilingual_v2';
     const outputFormat = this.options.outputFormat ?? 'mp3_44100_128';
-    const digest = createHash('sha256').update(JSON.stringify({ provider: 'elevenlabs', voiceId: this.options.voiceId, modelId, outputFormat, text: segment.text, locale: segment.locale })).digest('hex');
+    const digest = createHash('sha256').update(JSON.stringify({ provider: 'elevenlabs', voiceId: this.options.voiceId, modelId, outputFormat, text: segment.text, locale: segment.locale, voiceSettings: this.options.voiceSettings ?? null, seed: this.options.seed ?? null, previousText: segment.previousText ?? null, nextText: segment.nextText ?? null })).digest('hex');
     const cachedPath = join(this.options.cacheDirectory, `${digest}.mp3`);
     await mkdir(this.options.cacheDirectory, { recursive: true });
     if (!await exists(cachedPath)) {
@@ -67,7 +91,13 @@ export class ElevenLabsNarrationProvider implements NarrationProvider {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'content-type': 'application/json', accept: 'audio/mpeg', 'xi-api-key': this.options.apiKey },
-        body: JSON.stringify({ text: segment.text, model_id: modelId })
+        body: JSON.stringify({
+          text: segment.text, model_id: modelId,
+          ...(this.options.seed !== undefined ? { seed: this.options.seed } : {}),
+          ...(segment.previousText ? { previous_text: segment.previousText } : {}),
+          ...(segment.nextText ? { next_text: segment.nextText } : {}),
+          ...(this.options.voiceSettings ? { voice_settings: wireVoiceSettings(this.options.voiceSettings) } : {})
+        })
       });
       if (!response.ok) {
         const detail = (await response.text()).slice(0, 300);

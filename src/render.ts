@@ -33,16 +33,16 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
   const edits: Array<{ id: string; removedSeconds: number }> = [];
   const edlClips: EdlClip[] = [];
   const holds: Array<{ id: string; heldSeconds: number }> = [];
-  for (const scene of options.scenario.scenes) {
+  const narrationLines = options.scenario.scenes.map(sceneNarrationText);
+  for (const [sceneIndex, scene] of options.scenario.scenes.entries()) {
     const rawPath = options.executionReport.artifacts[`raw-${scene.id}`];
     if (!rawPath) throw new Error(`Raw recording missing for scene ${scene.id}`);
     let audioSrc: string | undefined;
     let narrationSeconds = 0;
     if (audioPolicy.voiceover) {
       if (!options.narrationProvider) throw new Error('Voiceover requested but no narration provider is configured');
-      const text = sceneNarrationText(scene);
       const audioName = `voice-${scene.id}.mp3`;
-      const speech = await options.narrationProvider.synthesize({ id: scene.id, text, locale: options.scenario.locale, outputPath: join(publicDirectory, audioName) });
+      const speech = await options.narrationProvider.synthesize({ id: scene.id, text: narrationLines[sceneIndex], locale: options.scenario.locale, outputPath: join(publicDirectory, audioName), previousText: narrationLines[sceneIndex - 1], nextText: narrationLines[sceneIndex + 1] });
       narrationSeconds = speech.durationSeconds;
       audioSrc = audioName;
     }

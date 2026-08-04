@@ -36,6 +36,24 @@ describe('narration plan', () => {
     expect(plan).toEqual({ one: 0.3, two: 0.3 });
   });
 
+  test('gives each scene the neighbouring lines for prosody', async () => {
+    const seen: Array<{ id: string; previousText?: string; nextText?: string }> = [];
+    await narrationPlan(scenario([
+      { id: 'one', title: 'One', purpose: 'hook', actor: 'user', actions: [{ type: 'goto', path: '/' }] },
+      { id: 'two', title: 'Two', purpose: 'interaction', actor: 'user', actions: [{ type: 'goto', path: '/' }] },
+      { id: 'three', title: 'Three', purpose: 'proof', actor: 'user', actions: [{ type: 'goto', path: '/' }] }
+    ]), { synthesize: async (segment) => {
+      seen.push({ id: segment.id, previousText: segment.previousText, nextText: segment.nextText });
+      return { path: segment.outputPath, durationSeconds: 1 };
+    } }, '/tmp/plan-cache');
+
+    expect(seen).toEqual([
+      { id: 'one', previousText: undefined, nextText: 'Two' },
+      { id: 'two', previousText: 'One', nextText: 'Three' },
+      { id: 'three', previousText: 'Two', nextText: undefined }
+    ]);
+  });
+
   test('is empty when the scenario is silent', async () => {
     const silent = ScenarioSchema.parse({
       version: 2, id: 'silent', title: 'Silent', outputType: 'feature-clip', audience: 'operators', audio: { policy: 'silent' },
