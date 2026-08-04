@@ -4,7 +4,7 @@ import { AbsoluteFill, Composition, Html5Audio, OffthreadVideo, Sequence, regist
 type Presentation = {
   camera: { type: 'none' | 'crop' | 'pan' | 'zoom'; scale?: number; to?: { x: number; y: number; width: number; height: number } };
   transitionWeight: 'light' | 'meaningful' | 'major';
-  caption: { mode: 'none' | 'lower-third'; safeArea?: 'top' | 'bottom' | 'left' | 'right' };
+  caption: { mode: 'none' | 'lower-third'; safeArea?: 'top' | 'bottom' };
 };
 
 export type DemoVideoProps = {

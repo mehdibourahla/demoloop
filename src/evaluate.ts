@@ -70,8 +70,13 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
   ];
 
   const thresholds = options.config.editorial.thresholds[options.scenario.outputType];
-  const visual = await analyzeVideo(options.videoPath, { staticWarnSeconds: thresholds.staticWarnSeconds });
-  const metadata = await optionalJson(options.presentationMetadataPath ?? join(dirname(options.videoPath), 'presentation-metadata.json')) as { scenes?: Array<{ viewport?: { width: number; height: number }; obstructions?: unknown[] }> } | undefined;
+  const metadata = await optionalJson(options.presentationMetadataPath ?? join(dirname(options.videoPath), 'presentation-metadata.json')) as { scenes?: Array<{ viewport?: { width: number; height: number }; caption?: { x: number; y: number; width: number; height: number }; obstructions?: unknown[] }> } | undefined;
+  const captionPad = 0.015;
+  const captionRegions = (metadata?.scenes ?? []).flatMap((scene) => scene.caption ? [{
+    x: scene.caption.x / width - captionPad, y: scene.caption.y / height - captionPad,
+    width: scene.caption.width / width + captionPad * 2, height: scene.caption.height / height + captionPad * 2
+  }] : []);
+  const visual = await analyzeVideo(options.videoPath, { staticWarnSeconds: thresholds.staticWarnSeconds, excludeRegions: captionRegions });
   const viewportRatios = metadata?.scenes?.map((scene) => scene.viewport ? (scene.viewport.width * scene.viewport.height) / (width * height) : 0) ?? [];
   const obstructions = metadata?.scenes?.reduce((sum, scene) => sum + (scene.obstructions?.length ?? 0), 0) ?? 0;
   const hasHook = options.scenario.scenes.some((scene) => scene.purpose === 'hook');

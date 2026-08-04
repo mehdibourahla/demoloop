@@ -32,6 +32,19 @@ describe('visual analysis', () => {
     expect(analysis.staticSpans.some((span) => span.startSeconds < 3 && span.endSeconds > 3)).toBe(false);
   }, 60_000);
 
+  test('ignores changes inside an excluded overlay band', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'demo-overlay-'));
+    const video = join(directory, 'overlay.mp4');
+    await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=1440x900:d=8:r=10',
+      '-vf', "drawbox=x=60:y=780:w=900:h=90:color=white:t=fill:enable='gt(t,4)'", '-pix_fmt', 'yuv420p', video]);
+
+    const withOverlay = await analyzeVideo(video, { samplesPerSecond: 2, staticWarnSeconds: 3 });
+    const productOnly = await analyzeVideo(video, { samplesPerSecond: 2, staticWarnSeconds: 3, excludeRegions: [{ x: 0, y: 0.82, width: 1, height: 0.18 }] });
+
+    expect(withOverlay.staticSpans.some((span) => span.durationSeconds >= 7)).toBe(false);
+    expect(productOnly.staticSpans.some((span) => span.durationSeconds >= 7)).toBe(true);
+  }, 60_000);
+
   test('recognizes meaningful motion', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'demo-motion-'));
     const video = join(directory, 'motion.mp4');

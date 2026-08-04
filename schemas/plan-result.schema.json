@@ -701,9 +701,7 @@
                               "type": "string",
                               "enum": [
                                 "top",
-                                "bottom",
-                                "left",
-                                "right"
+                                "bottom"
                               ]
                             }
                           },
