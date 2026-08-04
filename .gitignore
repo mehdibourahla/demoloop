@@ -7,3 +7,4 @@ playwright-report/
 .DS_Store
 product-demo.sanox-*.yaml
 scenarios/sanox-*.yaml
+docs/superpowers/
