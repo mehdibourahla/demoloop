@@ -1,10 +1,13 @@
-import { spawn, type ChildProcess } from 'node:child_process';
-import { mkdtemp } from 'node:fs/promises';
+import { execFile, spawn, type ChildProcess } from 'node:child_process';
+import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { executeScenario } from '../src/runner.js';
-import { ConfigSchema, ExecutionReportSchema, ScenarioSchema } from '../src/schemas.js';
+import { ConfigSchema, ExecutionReportSchema, ScenarioSchema, TimelineSchema } from '../src/schemas.js';
+
+const execFileAsync = promisify(execFile);
 
 let server: ChildProcess;
 
@@ -32,6 +35,33 @@ function scenario(actions: unknown[]) {
     scenes: [{ id: 'ask', title: 'Ask the assistant', purpose: 'proof', actor: 'operator', actions }]
   });
 }
+
+describe('narration-aware capture', () => {
+  test('records long enough to carry the scene narration', async () => {
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-paced-'));
+    const paced = ScenarioSchema.parse({
+      version: 2, id: 'paced-demo', title: 'Paced', outputType: 'feature-clip', audience: 'operators', audio: { policy: 'voiceover' },
+      actors: [{ id: 'operator', label: 'Operator' }],
+      scenes: [{ id: 'send', title: 'Send', purpose: 'proof', actor: 'operator', actions: [{ type: 'goto', path: '/handoff' }, { type: 'click', target: { by: 'role', role: 'button', value: 'Send item' } }] }]
+    });
+    const rehearsal = ExecutionReportSchema.parse(await executeScenario({ scenario: paced, config, mode: 'rehearse', outputDirectory: join(outputDirectory, 'rehearsal'), device: 'desktop', narrationSeconds: { send: 4 } }));
+
+    const recording = ExecutionReportSchema.parse(await executeScenario({
+      scenario: paced, config, mode: 'record', outputDirectory: join(outputDirectory, 'recording'), device: 'desktop',
+      rehearsalReceiptPath: rehearsal.artifacts.report, narrationSeconds: { send: 4 }
+    }));
+
+    expect(recording.passed).toBe(true);
+    const { stdout } = await execFileAsync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', recording.artifacts['raw-send']]);
+    expect(Number(stdout.trim())).toBeGreaterThanOrEqual(3.8);
+
+    const timeline = TimelineSchema.parse(JSON.parse(await readFile(recording.artifacts.timeline, 'utf8')));
+    const pacingEvent = timeline.events.find((event) => event.type === 'narration');
+    expect(pacingEvent?.endedAtMs).toBeGreaterThan((pacingEvent?.startedAtMs ?? 0) + 500);
+    const gaps = timeline.events.slice(1).map((event, index) => event.startedAtMs - timeline.events[index].endedAtMs);
+    expect(Math.max(...gaps)).toBeLessThan(1_000);
+  }, 120_000);
+});
 
 describe('actor sessions', () => {
   test('reports an unusable actor session instead of a missing element', async () => {

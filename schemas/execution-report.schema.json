@@ -66,6 +66,16 @@
         "type": "string"
       }
     },
+    "narrationSeconds": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
     "executedPath": {
       "default": [],
       "type": "array",
@@ -156,6 +166,7 @@
     "scenarioDigest",
     "scenes",
     "consoleErrors",
+    "narrationSeconds",
     "executedPath",
     "failedRequests",
     "ignoredRequests",

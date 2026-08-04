@@ -4,6 +4,7 @@ import { copyFile, mkdir, stat, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 import type { NarrationProvider, NarrationSegment } from './adapters.js';
+import type { Scenario } from './schemas.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -29,6 +30,23 @@ async function audioDuration(path: string): Promise<number> {
 
 async function exists(path: string): Promise<boolean> {
   try { return (await stat(path)).isFile(); } catch { return false; }
+}
+
+export function sceneNarrationText(scene: Scenario['scenes'][number]): string {
+  const scripted = scene.actions.map((action) => action.narration).filter((value): value is string => Boolean(value));
+  return scripted.length ? scripted.join(' ') : [scene.title, scene.description].filter(Boolean).join('. ');
+}
+
+export async function narrationPlan(scenario: Scenario, provider: NarrationProvider | undefined, cacheDirectory: string): Promise<Record<string, number>> {
+  if (scenario.audio.policy !== 'voiceover' && scenario.audio.policy !== 'voiceover-and-music') return {};
+  if (!provider) throw new Error('Voiceover requires a configured narration provider');
+  await mkdir(cacheDirectory, { recursive: true });
+  const plan: Record<string, number> = {};
+  for (const scene of scenario.scenes) {
+    const speech = await provider.synthesize({ id: scene.id, text: sceneNarrationText(scene), locale: scenario.locale, outputPath: join(cacheDirectory, `voice-${scene.id}.mp3`) });
+    plan[scene.id] = speech.durationSeconds;
+  }
+  return plan;
 }
 
 export class ElevenLabsNarrationProvider implements NarrationProvider {

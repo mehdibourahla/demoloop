@@ -36,7 +36,11 @@ The pipeline is `repository + app + request -> product model -> plan result -> s
 
 ElevenLabs reads its key from `ELEVENLABS_API_KEY`; never put secrets in scenarios or source control. Generated audio remains local and content-addressed.
 
-Narration is measured before editing and constrains it:
+Narration is measured before capture and constrains both the take and the edit:
+
+- `rehearse` and `record` synthesize every scene's narration before launching the browser, then extend each scene's capture so the recorded footage covers its narration. The plan is recorded as `narrationSeconds` in the execution report and the wait is a `narration` timeline event, so it is never counted as dead time.
+- Text-to-speech is a measurement, not a decision: the same scenario, voice, and model always produce the same durations, so pacing does not weaken the rehearsal receipt. Changing the configured voice between rehearsal and recording changes pacing without changing the digest — compare `narrationSeconds` across the two reports if that matters.
+- Scene narration is the scripted action `narration` values joined in order, or the scene title and description when none are scripted. Capture and render derive it identically.
 
 - Trimming keeps at least the narration's duration, giving inactive time back proportionally rather than cutting a scene shorter than its script.
 - When narration still outruns the recording, the last frame is held to cover it and the hold is recorded in `presentation-metadata.json` and warned per scene. Holds are legitimate in small amounts and become a rejection through the distinct-frame and static-section checks when relied upon.

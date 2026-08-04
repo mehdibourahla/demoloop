@@ -217,7 +217,7 @@ export const TimelineSchema = z.object({ version: z.literal(2), scenarioId: z.st
 export const ExecutionReportSchema = z.object({
   version: z.literal(2), scenarioId: z.string(), mode: z.enum(['rehearse', 'record']), passed: z.boolean(), consecutivePasses: z.number().int().nonnegative(), startedAt: z.string(), endedAt: z.string(),
   scenarioDigest: z.string(), scenes: z.array(z.object({ id: z.string(), status: z.enum(['passed', 'failed', 'omitted']), failure: z.string().optional() })),
-  consoleErrors: z.array(z.string()), executedPath: z.array(z.object({ sceneId: z.string(), actionIndex: z.number().int().nonnegative(), detail: z.string() })).default([]), failedRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })), ignoredRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })).default([]), artifacts: z.record(z.string(), z.string())
+  consoleErrors: z.array(z.string()), narrationSeconds: z.record(z.string(), z.number()).default({}), executedPath: z.array(z.object({ sceneId: z.string(), actionIndex: z.number().int().nonnegative(), detail: z.string() })).default([]), failedRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })), ignoredRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })).default([]), artifacts: z.record(z.string(), z.string())
 });
 
 export type Evidence = z.infer<typeof EvidenceSchema>;

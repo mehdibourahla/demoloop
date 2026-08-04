@@ -88,7 +88,9 @@ Audio is explicit and independent from captions:
 | `voiceover` | Narration from the configured provider |
 | `voiceover-and-music` | Narration with subordinate local music |
 
-Narration is synthesized before the clip is edited, so it drives the edit rather than being cut by it: trimming never removes footage a scene's narration still needs, and when narration outruns the recording the last frame is held to cover it. Every hold is listed in `presentation-metadata.json` and warned about by name in the quality report — a demo that leans on long holds becomes a slideshow and is rejected on distinct frames and static sections, which is the signal to shorten the narration or record a longer scene.
+Narration is measured before capture, not after. `rehearse`, `record`, and `run` synthesize every scene's narration first, then hold each scene open long enough to carry it, so the footage is paced to the script instead of the script being squeezed into whatever was recorded. The measured plan is stored in the execution report, and the pacing appears in the timeline as a `narration` event rather than as dead time. Synthesis happens before the browser opens, so nothing waits on a network call mid-take.
+
+Narration is also synthesized before the clip is edited, so it drives the edit rather than being cut by it: trimming never removes footage a scene's narration still needs, and when narration outruns the recording the last frame is held to cover it. Every hold is listed in `presentation-metadata.json` and warned about by name in the quality report — a demo that leans on long holds becomes a slideshow and is rejected on distinct frames and static sections, which is the signal to shorten the narration or record a longer scene.
 
 All non-silent output is loudness-normalized to -16 LUFS with a -1.5 dBTP ceiling, so ElevenLabs, macOS narration, and music land at a comparable level.
 

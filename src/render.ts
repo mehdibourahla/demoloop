@@ -8,6 +8,7 @@ import { chromium } from 'playwright';
 import type { NarrationProvider } from './adapters.js';
 import { resolveAudioPolicy } from './audio.js';
 import { buildEdl, outputCuts, padClip, prepareClip, type EdlClip } from './editing.js';
+import { sceneNarrationText } from './narration.js';
 import { presentationLayout } from './presentation.js';
 import type { DemoConfig, Scenario } from './schemas.js';
 
@@ -39,8 +40,7 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
     let narrationSeconds = 0;
     if (audioPolicy.voiceover) {
       if (!options.narrationProvider) throw new Error('Voiceover requested but no narration provider is configured');
-      const scripted = scene.actions.map((action) => action.narration).filter((value): value is string => Boolean(value));
-      const text = scripted.length ? scripted.join(' ') : [scene.title, scene.description].filter(Boolean).join('. ');
+      const text = sceneNarrationText(scene);
       const audioName = `voice-${scene.id}.mp3`;
       const speech = await options.narrationProvider.synthesize({ id: scene.id, text, locale: options.scenario.locale, outputPath: join(publicDirectory, audioName) });
       narrationSeconds = speech.durationSeconds;

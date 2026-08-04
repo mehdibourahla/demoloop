@@ -11,7 +11,7 @@ import { ExecutionReportSchema, TimelineSchema, type Action, type ActionTiming, 
 
 const execAsync = promisify(exec);
 
-export interface ExecuteOptions { scenario: Scenario; config: DemoConfig; mode: 'rehearse' | 'record'; outputDirectory: string; device: string; rehearsalReceiptPath?: string }
+export interface ExecuteOptions { scenario: Scenario; config: DemoConfig; mode: 'rehearse' | 'record'; outputDirectory: string; device: string; rehearsalReceiptPath?: string; narrationSeconds?: Record<string, number> }
 
 export function isIgnorableRequestFailure(errorText: string | undefined): boolean {
   return errorText === 'net::ERR_ABORTED';
@@ -382,9 +382,11 @@ async function runPass(options: ExecuteOptions, pass: number) {
           break;
         }
       }
+      let captureStartedAt = 0;
       if (options.mode === 'record' && !failed) {
         await page.screencast.start({ path: rawPath, size: { width: options.config.devices[options.device].width, height: options.config.devices[options.device].height }, quality: 90 });
         recordingStarted = true;
+        captureStartedAt = performance.now();
       }
       for (const [phaseIndex, sourceAction] of phases.capture.entries()) {
         if (failed) break;
@@ -408,6 +410,13 @@ async function runPass(options: ExecuteOptions, pass: number) {
         }
       }
       if (recordingStarted) {
+        const narrationMs = (options.narrationSeconds?.[scene.id] ?? 0) * 1_000;
+        const shortfall = narrationMs - (performance.now() - captureStartedAt);
+        if (shortfall > 0) {
+          const startedAtMs = performance.now() - passStart;
+          await page.waitForTimeout(shortfall);
+          events.push({ sceneId: scene.id, actionIndex: scene.actions.length, type: 'narration', label: `narration pacing ${(narrationMs / 1_000).toFixed(2)}s`, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, state: 'passed' });
+        }
         await page.screencast.stop();
         rawArtifacts[`raw-${scene.id}`] = rawPath;
         const screenshotPath = join(options.outputDirectory, `final-${scene.id}.png`);
@@ -452,7 +461,7 @@ export async function executeScenario(options: ExecuteOptions): Promise<unknown>
   const timelinePath = join(options.outputDirectory, 'timeline.json');
   const reportPath = join(options.outputDirectory, 'execution-report.json');
   await writeFile(timelinePath, JSON.stringify(TimelineSchema.parse({ version: 2, scenarioId: options.scenario.id, viewport: { width: profile.width, height: profile.height }, events: result.events }), null, 2));
-  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, executedPath: result.executedPath, failedRequests: result.failedRequests, ignoredRequests: result.ignoredRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
+  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, narrationSeconds: options.narrationSeconds ?? {}, executedPath: result.executedPath, failedRequests: result.failedRequests, ignoredRequests: result.ignoredRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
   await writeFile(reportPath, JSON.stringify(report, null, 2));
   return report;
 }

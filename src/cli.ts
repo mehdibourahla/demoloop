@@ -11,7 +11,7 @@ import { finalizeQuality } from './finalize.js';
 import { planDemo, type PlanOptions } from './planner.js';
 import { renderDemo } from './render.js';
 import { executeScenario } from './runner.js';
-import { ElevenLabsNarrationProvider, MacOSNarrationProvider } from './narration.js';
+import { ElevenLabsNarrationProvider, MacOSNarrationProvider, narrationPlan } from './narration.js';
 import { ConfigSchema, EditorialReviewSchema, ExecutionReportSchema, ProductModelSchema, QualityReportSchema, ScenarioSchema, type DemoConfig, type Scenario } from './schemas.js';
 
 const help = `product-demo <command> [scenario] [options]
@@ -115,15 +115,21 @@ export function narrationProvider(config: DemoConfig, scenario: Scenario) {
   });
 }
 
+async function pacing(config: DemoConfig, scenario: Scenario) {
+  return narrationPlan(scenario, narrationProvider(config, scenario), join(config.output.directory, '.narration-cache'));
+}
+
 async function rehearse(config: DemoConfig, scenario: Scenario, device: string, output?: string) {
+  const narrationSeconds = await pacing(config, scenario);
   const cleanup = await ensureApp(config);
-  try { return ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'rehearse', outputDirectory: output ?? pathsFor(config, scenario, device).rehearsal, device })); }
+  try { return ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'rehearse', outputDirectory: output ?? pathsFor(config, scenario, device).rehearsal, device, narrationSeconds })); }
   finally { await cleanup(); }
 }
 
 async function record(config: DemoConfig, scenario: Scenario, device: string, receipt: string, output?: string) {
+  const narrationSeconds = await pacing(config, scenario);
   const cleanup = await ensureApp(config);
-  try { return ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'record', outputDirectory: output ?? pathsFor(config, scenario, device).recording, device, rehearsalReceiptPath: receipt })); }
+  try { return ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'record', outputDirectory: output ?? pathsFor(config, scenario, device).recording, device, rehearsalReceiptPath: receipt, narrationSeconds })); }
   finally { await cleanup(); }
 }
 
@@ -211,11 +217,12 @@ export async function runCli(args: string[]): Promise<number> {
     return report.passed ? 0 : 1;
   }
   if (command === 'run') {
+    const narrationSeconds = await pacing(config, scenario);
     const cleanup = await ensureApp(config);
     try {
-      const rehearsalReport = ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'rehearse', outputDirectory: paths.rehearsal, device }));
+      const rehearsalReport = ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'rehearse', outputDirectory: paths.rehearsal, device, narrationSeconds }));
       if (!rehearsalReport.passed) return 1;
-      const freshRecording = ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'record', outputDirectory: paths.recording, device, rehearsalReceiptPath: rehearsalReport.artifacts.report }));
+      const freshRecording = ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'record', outputDirectory: paths.recording, device, rehearsalReceiptPath: rehearsalReport.artifacts.report, narrationSeconds }));
       if (!freshRecording.passed) return 1;
       const freshVideo = await renderDemo({ scenario, config, executionReport: freshRecording, outputDirectory: paths.render, device, narrationProvider: narrationProvider(config, scenario) });
       const quality = QualityReportSchema.parse(await evaluateDemo({ scenario, config, executionReport: freshRecording, videoPath: freshVideo, timelinePath: freshRecording.artifacts.timeline, outputPath: paths.quality, device }));
