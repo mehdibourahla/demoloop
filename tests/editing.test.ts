@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { describe, expect, test } from 'vitest';
-import { applyTrim, buildEdl, contactSheet, outputCuts, padClip, prepareClip, trimSegments } from '../src/editing.js';
+import { applyTrim, buildEdl, contactSheet, mediaFrameRate, outputCuts, padClip, prepareClip, trimSegments } from '../src/editing.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -38,6 +38,19 @@ describe('edit decision list', () => {
       { outputSeconds: 5, kind: 'scene', sceneId: 'receive' }
     ]);
   });
+});
+
+describe('media frame rate', () => {
+  test('reads the real capture rate rather than assuming', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'product-demo-fps-'));
+    const at25 = join(directory, 'at25.webm');
+    const at30 = join(directory, 'at30.mp4');
+    await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'testsrc=duration=1:size=160x120:rate=25', '-c:v', 'libvpx', at25]);
+    await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'testsrc=duration=1:size=160x120:rate=30', '-pix_fmt', 'yuv420p', at30]);
+
+    expect(await mediaFrameRate(at25)).toBe(25);
+    expect(await mediaFrameRate(at30)).toBe(30);
+  }, 90_000);
 });
 
 describe('holding a clip for narration', () => {

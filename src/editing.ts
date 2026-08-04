@@ -69,6 +69,14 @@ export async function mediaDuration(path: string): Promise<number> {
   return value;
 }
 
+export async function mediaFrameRate(path: string): Promise<number> {
+  const { stdout } = await execFileAsync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'default=noprint_wrappers=1:nokey=1', path]);
+  const [numerator, denominator] = stdout.trim().split('/').map(Number);
+  const rate = denominator ? numerator / denominator : numerator;
+  if (!Number.isFinite(rate) || rate <= 0) throw new Error(`Could not determine frame rate for ${path}`);
+  return Math.round(rate);
+}
+
 export async function prepareClip(rawPath: string, trimmedPath: string, presentation: { loading: 'preserve' | 'cut'; maxStaticHoldMs: number }, minKeepSeconds = 0): Promise<{ path: string; durationSeconds: number; removedSeconds: number; segments: Segment[] }> {
   const durationSeconds = await mediaDuration(rawPath);
   if (presentation.loading === 'preserve') return { path: rawPath, durationSeconds, removedSeconds: 0, segments: [{ startSeconds: 0, endSeconds: durationSeconds }] };

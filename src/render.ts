@@ -7,13 +7,12 @@ import { renderMedia, selectComposition } from '@remotion/renderer';
 import { chromium } from 'playwright';
 import type { NarrationProvider } from './adapters.js';
 import { resolveAudioPolicy } from './audio.js';
-import { buildEdl, outputCuts, padClip, prepareClip, type EdlClip } from './editing.js';
+import { buildEdl, mediaFrameRate, outputCuts, padClip, prepareClip, type EdlClip } from './editing.js';
 import { sceneNarrationText } from './narration.js';
 import { presentationLayout } from './presentation.js';
 import type { DemoConfig, Scenario } from './schemas.js';
 
 const execFileAsync = promisify(execFile);
-const FPS = 30;
 
 interface RenderOptions {
   scenario: Scenario;
@@ -29,6 +28,9 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
   const publicDirectory = join(options.outputDirectory, 'public');
   await mkdir(publicDirectory, { recursive: true });
   const audioPolicy = await resolveAudioPolicy(options.scenario.audio);
+  const firstRaw = options.executionReport.artifacts[`raw-${options.scenario.scenes[0].id}`];
+  if (!firstRaw) throw new Error(`Raw recording missing for scene ${options.scenario.scenes[0].id}`);
+  const FPS = await mediaFrameRate(firstRaw);
   const clips = [];
   const edits: Array<{ id: string; removedSeconds: number }> = [];
   const edlClips: EdlClip[] = [];
@@ -72,7 +74,7 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
   const inputProps = { clips, brand: options.scenario.branding, music };
   const selected = await selectComposition({ serveUrl, id: 'ProductDemo', inputProps, browserExecutable: chromium.executablePath(), logLevel: 'error' });
   const profile = options.config.devices[options.device];
-  const composition = { ...selected, width: profile.width, height: profile.height, durationInFrames: clips.reduce((sum, clip) => sum + clip.durationInFrames, 0) };
+  const composition = { ...selected, fps: FPS, width: profile.width, height: profile.height, durationInFrames: clips.reduce((sum, clip) => sum + clip.durationInFrames, 0) };
   const remotionPath = join(options.outputDirectory, 'remotion.mp4');
   await renderMedia({ composition, serveUrl, codec: 'h264', pixelFormat: 'yuv420p', outputLocation: remotionPath, inputProps, browserExecutable: chromium.executablePath(), overwrite: true, logLevel: 'error', crf: 20, concurrency: 2 });
   const finalPath = join(options.outputDirectory, `${options.scenario.id}-${options.device}.mp4`);
@@ -85,6 +87,7 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
   await writeFile(join(options.outputDirectory, 'presentation-metadata.json'), JSON.stringify({
     version: 1,
     video: finalPath,
+    fps: FPS,
     scenes: options.scenario.scenes.map((scene) => ({ id: scene.id, purpose: scene.purpose, ...presentationLayout(scene.presentation, profile.width, profile.height) })),
     edits,
     holds,
