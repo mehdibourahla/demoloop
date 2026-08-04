@@ -104,6 +104,31 @@ describe('capture privacy redactions', () => {
     await page.close();
   });
 
+  test('scrolls the content under the pointer, not the corner it started in', async () => {
+    const page = await browser.newPage();
+    await page.setViewportSize({ width: 800, height: 600 });
+    await page.setContent(`<div style="display:flex"><nav style="width:200px;height:600px">nav</nav>
+      <main id="scroller" style="width:600px;height:600px;overflow:auto"><div style="height:4000px">tall</div></main></div>`);
+
+    await executeAction(page, { type: 'scroll', deltaY: 400, timing: { cursorDurationMs: 400 } }, true);
+
+    expect(await page.locator('#scroller').evaluate((n) => n.scrollTop)).toBeGreaterThan(300);
+    await page.close();
+  });
+
+  test('scrolls for the duration the scenario asked for', async () => {
+    const page = await browser.newPage();
+    await page.setContent('<div style="height:4000px">tall</div>');
+    const started = Date.now();
+
+    await executeAction(page, { type: 'scroll', deltaY: 600, timing: { cursorDurationMs: 1_500 } }, true);
+
+    const elapsed = Date.now() - started;
+    expect(elapsed).toBeGreaterThan(1_200);
+    expect(elapsed).toBeLessThan(3_200);
+    await page.close();
+  });
+
   test('ignores only the request URLs the configuration allows', () => {
     const patterns = ['/api/telemetry', '\\.well-known/'];
 

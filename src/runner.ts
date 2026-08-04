@@ -288,7 +288,9 @@ export async function executeAction(page: Page, action: Action, human = false, c
   if (action.type === 'scroll') {
     if (locator) await locator.scrollIntoViewIfNeeded();
     else if (human) {
-      for (const entry of scrollMotion(action.deltaY ?? 500)) {
+      const viewport = page.viewportSize();
+      if (viewport) cursor = await approach(page, { x: 0, y: 0, width: viewport.width, height: viewport.height }, human, cursor);
+      for (const entry of scrollMotion(action.deltaY ?? 500, action.timing?.cursorDurationMs)) {
         await page.mouse.wheel(0, entry.deltaY);
         await page.waitForTimeout(entry.waitAfterMs);
       }

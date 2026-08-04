@@ -19,8 +19,9 @@ export function cursorMotion(from: Point, to: Point, durationMs: number, frameMs
   return cursorPath(from, to, steps).map((point, index) => ({ point, waitAfterMs: index === 0 ? 0 : waitAfterMs }));
 }
 
-export function scrollMotion(deltaY: number, durationMs = Math.max(420, Math.min(900, 420 + Math.abs(deltaY) * 0.25)), frameMs = 16): Array<{ deltaY: number; waitAfterMs: number }> {
+export function scrollMotion(deltaY: number, durationMs?: number, frameMs = 16): Array<{ deltaY: number; waitAfterMs: number }> {
   if (!Number.isFinite(deltaY)) throw new Error('deltaY must be finite');
+  durationMs ??= Math.max(420, Math.min(900, 420 + Math.abs(deltaY) * 0.25));
   if (!Number.isFinite(durationMs) || durationMs <= 0) throw new Error('durationMs must be positive');
   if (!Number.isFinite(frameMs) || frameMs <= 0) throw new Error('frameMs must be positive');
   const steps = Math.max(12, Math.ceil(durationMs / frameMs));
