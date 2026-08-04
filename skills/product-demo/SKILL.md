@@ -52,7 +52,7 @@ A public-facing video below 7/10 must be rejected and returned to planning or ed
 | Release | Only evidence-backed changed behavior |
 | Montage | Intentionally montage-shaped output; never a fallback |
 
-Use one caption mechanism. Keep the product viewport dominant, preserve small type, show a cursor without click circles or action labels, and ensure overlays avoid the region of interest. Make silence, local music, voiceover, or voiceover-plus-music explicit.
+Use one caption mechanism: a lower-third caption or burned subtitles, never both. Soft subtitle modes (`sidecar`, `embedded`) are safe alongside captions. Keep the product viewport dominant, preserve small type, show a cursor without click circles or action labels, and ensure overlays avoid the region of interest. Make silence, local music, voiceover, or voiceover-plus-music explicit.
 
 ## Safety and completion
 

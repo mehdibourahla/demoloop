@@ -139,6 +139,19 @@ Only narration text is sent to ElevenLabs. Audio is cached locally by content an
 
 Run `npm run product-demo -- help` for flags.
 
+## Subtitles
+
+Subtitles are generated from the same narration the voice reads, split one cue per sentence (long sentences break at a clause), and timed on the output timeline so they follow trimming and held frames. Set `subtitles` on the scenario:
+
+| Mode | Result |
+|---|---|
+| `none` | No subtitle file |
+| `sidecar` (default) | `subtitles.srt` beside the master, named in `edl.json` |
+| `embedded` | Also muxed as a toggleable `mov_text` track inside the MP4 |
+| `burned` | Also drawn into the picture; needs an ffmpeg built with libass |
+
+Cue timing is proportional to how much there is to read in each sentence, not word-level forced alignment — it tracks the narration closely but is not frame-exact. `burned` is refused when a scene uses a lower-third caption, because one caption mechanism per video is the rule; soft modes are fine alongside captions since the viewer can turn them off.
+
 ## Post-production with video-use
 
 `render` writes `edl.json` in the [video-use](https://github.com/browser-use/video-use) schema next to the master, naming each scene's raw recording and the ranges kept from it. For treatment this pipeline does not implement — colour grading, burned subtitles, animated overlays, reordered beats — hand that EDL to video-use, which is installed separately and never imported by this CLI.

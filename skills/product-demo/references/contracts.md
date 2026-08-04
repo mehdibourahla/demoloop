@@ -54,6 +54,12 @@ Narration is measured before capture and constrains both the take and the edit:
 - Trim cuts must be invisible: `evaluate` samples each one and fails `cut-seams` when the frames either side differ by more than `seamChangeMax`. Scene cuts are deliberate and are not held to that rule.
 - `evaluate` writes a contact sheet tiling the opening, every cut, every static span, and the close, and records those timestamps under `review` in the quality report. Read that one image before deciding whether any moment needs a closer look.
 
+## Subtitles
+
+- `subtitles` is `none`, `sidecar` (default), `embedded`, or `burned`. Cues come from the scene narration, one per sentence, timed on the output timeline after trimming and holds.
+- `sidecar` writes `subtitles.srt` and names it in `edl.json`; `embedded` also muxes a toggleable `mov_text` track; `burned` draws them into the picture and requires libass.
+- `burned` alongside a lower-third caption is rejected at parse time — one caption mechanism per video.
+
 ## Quality
 
 `quality-report.json` separates technical checks, deterministic editorial checks, and the Watch agent review. Deterministic analysis measures encoding, viewport, audio policy, sensitive information, distinct/discarded frames, static spans, hook, close, product dominance, ROI obstruction, and montage ratio.
