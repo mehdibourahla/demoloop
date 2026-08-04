@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { actionDelay, cursorMotion, cursorPath } from '../src/timing.js';
+import { actionDelay, cursorMotion, cursorPath, scrollMotion } from '../src/timing.js';
 
 describe('human timing', () => {
   test('creates a curved path with exact endpoints', () => {
@@ -21,5 +21,14 @@ describe('human timing', () => {
     expect(motion.at(-1)?.point).toEqual({ x: 410, y: 220 });
     expect(motion.reduce((total, entry) => total + entry.waitAfterMs, 0)).toBeCloseTo(600, 6);
     expect(motion.length).toBeGreaterThan(20);
+  });
+
+  test('schedules an eased scroll whose increments sum to the requested distance', () => {
+    const motion = scrollMotion(1200, 600);
+    expect(motion.length).toBeGreaterThanOrEqual(12);
+    expect(motion.reduce((total, entry) => total + entry.deltaY, 0)).toBeCloseTo(1200, 6);
+    expect(Math.abs(motion[0].deltaY)).toBeLessThan(Math.abs(motion[Math.floor(motion.length / 2)].deltaY));
+    expect(Math.abs(motion.at(-1)!.deltaY)).toBeLessThan(Math.abs(motion[Math.floor(motion.length / 2)].deltaY));
+    expect(motion.reduce((total, entry) => total + entry.waitAfterMs, 0)).toBeCloseTo(600, 6);
   });
 });

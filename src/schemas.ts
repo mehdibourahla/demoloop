@@ -12,7 +12,10 @@ export const TargetSchema = z.discriminatedUnion('by', [
   z.object({ by: z.literal('role'), role: z.enum(['button', 'link', 'textbox', 'checkbox', 'radio', 'heading', 'combobox', 'listitem', 'tab', 'menuitem']), value: z.string().min(1) }),
   z.object({ by: z.literal('label'), value: z.string().min(1) }),
   z.object({ by: z.literal('testId'), value: z.string().min(1) }),
-  z.object({ by: z.literal('text'), value: z.string().min(1) })
+  z.object({ by: z.literal('text'), value: z.string().min(1) }),
+  z.object({ by: z.literal('roleAny'), role: z.enum(['button', 'link', 'textbox', 'checkbox', 'radio', 'heading', 'combobox', 'listitem', 'tab', 'menuitem']), values: z.array(z.string().min(1)).min(2) }),
+  z.object({ by: z.literal('rolePattern'), role: z.enum(['button', 'link', 'textbox', 'checkbox', 'radio', 'heading', 'combobox', 'listitem', 'tab', 'menuitem']), pattern: z.string().min(1) }),
+  z.object({ by: z.literal('textPattern'), pattern: z.string().min(1) })
 ]);
 
 export const ActionTimingSchema = z.object({
@@ -22,7 +25,13 @@ export const ActionTimingSchema = z.object({
   pauseAfterMs: z.number().int().min(0).max(5_000).optional()
 });
 
-const ActionBase = z.object({ title: z.string().min(1).optional(), narration: z.string().min(1).optional(), timing: ActionTimingSchema.optional() });
+const ActionBase = z.object({
+  title: z.string().min(1).optional(),
+  narration: z.string().min(1).optional(),
+  timing: ActionTimingSchema.optional(),
+  optional: z.boolean().optional(),
+  timeoutMs: z.number().int().min(1).max(90_000).optional()
+});
 
 export const ActionSchema = z.discriminatedUnion('type', [
   ActionBase.extend({ type: z.literal('goto'), path: z.string().min(1) }),

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { promisify } from 'node:util';
 import { chromium, devices, type BrowserContext, type Locator, type Page } from 'playwright';
-import { actionDelay, cursorMotion, type Point } from './timing.js';
+import { actionDelay, cursorMotion, scrollMotion, type Point } from './timing.js';
 import { assertSafeTarget } from './safety.js';
 import { canRecord, scenarioDigest } from './receipt.js';
 import { ExecutionReportSchema, TimelineSchema, type Action, type DemoConfig, type Scenario, type Target, type TimelineEvent } from './schemas.js';
@@ -13,11 +13,29 @@ const execAsync = promisify(exec);
 
 export interface ExecuteOptions { scenario: Scenario; config: DemoConfig; mode: 'rehearse' | 'record'; outputDirectory: string; device: string; rehearsalReceiptPath?: string }
 
-function locatorFor(page: Page, target: Target): Locator {
+export function isIgnorableRequestFailure(errorText: string | undefined): boolean {
+  return errorText === 'net::ERR_ABORTED';
+}
+
+export function locatorFor(page: Page, target: Target): Locator {
   if (target.by === 'label') return page.getByLabel(target.value, { exact: true });
   if (target.by === 'testId') return page.getByTestId(target.value);
   if (target.by === 'text') return page.getByText(target.value, { exact: true }).first();
+  if (target.by === 'textPattern') return page.getByText(new RegExp(target.pattern, 'i')).first();
+  if (target.by === 'roleAny') {
+    const alternatives = target.values.map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    return page.getByRole(target.role, { name: new RegExp(`^(?:${alternatives.join('|')})$`) });
+  }
+  if (target.by === 'rolePattern') {
+    const matches = page.getByRole(target.role, { name: new RegExp(target.pattern, 'i') });
+    return target.role === 'button' ? matches.and(page.locator('button:not([disabled])')).last() : matches.last();
+  }
   return page.getByRole(target.role, { name: target.value, exact: true });
+}
+
+function targetLabel(target: Target): string {
+  if (target.by === 'roleAny') return target.values.join(' | ');
+  return target.by === 'rolePattern' || target.by === 'textPattern' ? target.pattern : target.value;
 }
 
 function capturedCursorScript(primary: string): string {
@@ -67,17 +85,33 @@ export async function installCapturedCursor(page: Page, primary: string): Promis
 export function textRedactionScript(pairs: Array<{ source: string; replacement: string }>): string {
   return `(() => {
     const pairs = ${JSON.stringify(pairs)};
+    const redactValue = (input) => {
+      let value = input;
+      for (const pair of pairs) value = value.split(pair.source).join(pair.replacement);
+      return value;
+    };
     const redactNode = (root) => {
       const redactText = (node) => {
-        let value = node.data;
-        for (const pair of pairs) value = value.split(pair.source).join(pair.replacement);
+        const value = redactValue(node.data);
         if (value !== node.data) node.data = value;
       };
+      const redactControl = (node) => {
+        if (!(node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement)) return;
+        const value = redactValue(node.value);
+        if (value !== node.value) node.value = value;
+        if (node.hasAttribute('value')) {
+          const attribute = node.getAttribute('value') ?? '';
+          const redacted = redactValue(attribute);
+          if (redacted !== attribute) node.setAttribute('value', redacted);
+        }
+      };
       if (root.nodeType === Node.TEXT_NODE) redactText(root);
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      if (root.nodeType === Node.ELEMENT_NODE) redactControl(root);
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
       let node = walker.nextNode();
       while (node) {
-        redactText(node);
+        if (node.nodeType === Node.TEXT_NODE) redactText(node);
+        else redactControl(node);
         node = walker.nextNode();
       }
     };
@@ -86,9 +120,10 @@ export function textRedactionScript(pairs: Array<{ source: string; replacement: 
       new MutationObserver((mutations) => {
         for (const mutation of mutations) {
           if (mutation.type === 'characterData') redactNode(mutation.target);
+          if (mutation.type === 'attributes') redactNode(mutation.target);
           for (const node of mutation.addedNodes) redactNode(node);
         }
-      }).observe(document, { childList: true, characterData: true, subtree: true });
+      }).observe(document, { attributes: true, childList: true, characterData: true, subtree: true });
     };
     if (document.documentElement) start();
     else document.addEventListener('DOMContentLoaded', start, { once: true });
@@ -115,7 +150,7 @@ async function ensureCapturedCursor(page: Page, primary: string): Promise<void> 
   await page.evaluate(capturedCursorScript(primary));
 }
 
-async function executeAction(page: Page, action: Action, human = false, cursor: Point = { x: 40, y: 40 }, screenshotPath?: string): Promise<{ box?: { x: number; y: number; width: number; height: number } | null; cursor: Point }> {
+export async function executeAction(page: Page, action: Action, human = false, cursor: Point = { x: 40, y: 40 }, screenshotPath?: string): Promise<{ box?: { x: number; y: number; width: number; height: number } | null; cursor: Point }> {
   if (action.type === 'goto') {
     await page.goto(action.path, { waitUntil: 'networkidle' });
     return { cursor };
@@ -126,7 +161,14 @@ async function executeAction(page: Page, action: Action, human = false, cursor: 
     return { cursor };
   }
   const locator = action.target ? locatorFor(page, action.target) : undefined;
-  if (locator) await locator.waitFor({ state: action.type === 'assert' && action.state === 'hidden' ? 'attached' : 'visible', timeout: 7_000 });
+  if (locator) {
+    try {
+      await locator.waitFor({ state: action.type === 'assert' && action.state === 'hidden' ? 'attached' : 'visible', timeout: action.timeoutMs ?? 90_000 });
+    } catch (error) {
+      if (action.optional) return { cursor };
+      throw error;
+    }
+  }
   const box = locator ? await locator.boundingBox() : undefined;
   if (human && box && ['click', 'fill', 'select'].includes(action.type)) {
     const target = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
@@ -148,15 +190,17 @@ async function executeAction(page: Page, action: Action, human = false, cursor: 
   if (action.type === 'scroll') {
     if (locator) await locator.scrollIntoViewIfNeeded();
     else if (human) {
-      const delta = (action.deltaY ?? 500) / 5;
-      for (let step = 0; step < 5; step += 1) { await page.mouse.wheel(0, delta); await page.waitForTimeout(60); }
+      for (const entry of scrollMotion(action.deltaY ?? 500)) {
+        await page.mouse.wheel(0, entry.deltaY);
+        await page.waitForTimeout(entry.waitAfterMs);
+      }
     } else await page.mouse.wheel(0, action.deltaY ?? 500);
   }
   if (action.type === 'assert') {
-    if (action.state === 'visible' && !await locator!.isVisible()) throw new Error(`Expected ${action.target.value} to be visible`);
-    if (action.state === 'hidden' && await locator!.isVisible()) throw new Error(`Expected ${action.target.value} to be hidden`);
-    if (action.state === 'checked' && !await locator!.isChecked()) throw new Error(`Expected ${action.target.value} to be checked`);
-    if (action.text && !((await locator!.textContent()) ?? '').includes(action.text)) throw new Error(`Expected ${action.target.value} to contain ${action.text}`);
+    if (action.state === 'visible' && !await locator!.isVisible()) throw new Error(`Expected ${targetLabel(action.target)} to be visible`);
+    if (action.state === 'hidden' && await locator!.isVisible()) throw new Error(`Expected ${targetLabel(action.target)} to be hidden`);
+    if (action.state === 'checked' && !await locator!.isChecked()) throw new Error(`Expected ${targetLabel(action.target)} to be checked`);
+    if (action.text && !((await locator!.textContent()) ?? '').includes(action.text)) throw new Error(`Expected ${targetLabel(action.target)} to contain ${action.text}`);
   }
   return { box, cursor };
 }
@@ -197,7 +241,10 @@ async function runPass(options: ExecuteOptions, pass: number) {
       await installTextRedactions(page, options.config.privacy.redactions);
       if (options.mode === 'record') await installCapturedCursor(page, options.scenario.branding.primary);
       page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
-      page.on('requestfailed', (request) => failedRequests.push({ url: request.url(), error: request.failure()?.errorText }));
+      page.on('requestfailed', (request) => {
+        const error = request.failure()?.errorText;
+        if (!isIgnorableRequestFailure(error)) failedRequests.push({ url: request.url(), error });
+      });
       page.on('response', (response) => { if (response.status() >= 400) failedRequests.push({ url: response.url(), status: response.status() }); });
       contexts.set(actor.id, context);
       pages.set(actor.id, page);
@@ -218,7 +265,7 @@ async function runPass(options: ExecuteOptions, pass: number) {
           cursors.set(scene.actor, cursor);
           events.push({ sceneId: scene.id, actionIndex, type: sourceAction.type, label: sourceAction.title ?? sourceAction.type, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, target: 'target' in sourceAction ? sourceAction.target : undefined, box, state: 'passed' });
         } catch (error) {
-          failed = error instanceof Error ? error.message : String(error);
+          failed = `${error instanceof Error ? error.message : String(error)}\nURL: ${page.url()}`;
           events.push({ sceneId: scene.id, actionIndex, type: sourceAction.type, label: sourceAction.title ?? sourceAction.type, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, target: 'target' in sourceAction ? sourceAction.target : undefined, state: 'failed' });
           break;
         }
@@ -242,7 +289,7 @@ async function runPass(options: ExecuteOptions, pass: number) {
           if (options.mode === 'record') await page.waitForTimeout(sourceAction.timing?.pauseAfterMs ?? actionDelay(sourceAction.type, sourceAction.type === 'fill' ? sourceAction.text : ''));
           events.push({ sceneId: scene.id, actionIndex, type: sourceAction.type, label: sourceAction.title ?? sourceAction.type, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, target: 'target' in sourceAction ? sourceAction.target : undefined, box, state: 'passed' });
         } catch (error) {
-          failed = error instanceof Error ? error.message : String(error);
+          failed = `${error instanceof Error ? error.message : String(error)}\nURL: ${page.url()}`;
           events.push({ sceneId: scene.id, actionIndex, type: sourceAction.type, label: sourceAction.title ?? sourceAction.type, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, target: 'target' in sourceAction ? sourceAction.target : undefined, state: 'failed' });
           break;
         }
