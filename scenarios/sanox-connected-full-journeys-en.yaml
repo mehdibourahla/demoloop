@@ -1,0 +1,357 @@
+version: 2
+id: sanox-connected-full-journeys-en
+title: SanoX — One patient story, carried into care
+outputType: public-master
+audience: clinics evaluating AI-assisted clinical operations
+locale: en-CA
+requestedDurationSeconds: 150
+audio:
+  policy: silent
+branding:
+  name: SanoX
+  primary: "#42c5d5"
+  background: "#171039"
+preconditions:
+  seedCommand: psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -X -f /Users/mehdibourahla/Documents/product-demo/artifacts/sanox-second-iteration-en/seed-english-demo.sql
+actors:
+  - id: patient
+    label: Patient
+    storageState: /Users/mehdibourahla/Documents/product-demo/artifacts/sanox-second-iteration-en/auth/patient.json
+  - id: doctor
+    label: Doctor
+    storageState: /Users/mehdibourahla/Documents/product-demo/artifacts/sanox-second-iteration-en/auth/doctor.json
+scenes:
+  - id: profile-context
+    title: "1 · Patient — Build the clinical context"
+    description: The patient records context once so intake and the doctor can use it.
+    purpose: hook
+    capabilityId: clinical-context-profile
+    proofSurfaceId: patient-profile
+    actor: patient
+    presentation:
+      maxStaticHoldMs: 2200
+      camera: { type: none }
+      loading: cut
+      transitionWeight: major
+      caption: { mode: lower-third, safeArea: bottom }
+      opening: product-promise
+    actions:
+      - type: goto
+        path: /en/profile
+      - type: assert
+        target: { by: role, role: heading, value: My Profile }
+        state: visible
+        timing: { pauseAfterMs: 1200 }
+      - type: click
+        target: { by: role, role: button, value: Chronic Conditions Add }
+        timing: { cursorDurationMs: 520, settleBeforeMs: 160, pauseAfterMs: 600 }
+      - type: click
+        target: { by: role, role: button, value: "+ Migraine" }
+        timing: { cursorDurationMs: 420, settleBeforeMs: 150, pauseAfterMs: 450 }
+      - type: click
+        target: { by: role, role: button, value: Save }
+        timing: { cursorDurationMs: 420, settleBeforeMs: 150, pauseAfterMs: 1000 }
+      - type: assert
+        target: { by: role, role: button, value: Chronic Conditions 1 entry }
+        state: visible
+        timing: { pauseAfterMs: 650 }
+      - type: click
+        target: { by: role, role: button, value: Current Medications Add }
+        timing: { cursorDurationMs: 480, settleBeforeMs: 160, pauseAfterMs: 600 }
+      - type: click
+        target: { by: role, role: button, value: "+ Ibuprofen" }
+        timing: { cursorDurationMs: 420, settleBeforeMs: 150, pauseAfterMs: 450 }
+      - type: click
+        target: { by: role, role: button, value: Save }
+        timing: { cursorDurationMs: 420, settleBeforeMs: 150, pauseAfterMs: 1100 }
+      - type: assert
+        target: { by: role, role: button, value: Current Medications 1 entry }
+        state: visible
+        timing: { pauseAfterMs: 1000 }
+
+  - id: intake-opening
+    title: "2 · Intake — Tell the story once"
+    description: The patient starts in their own words, then answers one focused question at a time.
+    purpose: interaction
+    capabilityId: adaptive-intake
+    proofSurfaceId: patient-intake
+    actor: patient
+    causalLink:
+      fromSceneId: profile-context
+      relationshipId: profile-to-intake
+      evidence:
+        - type: runtime
+          url: http://localhost:3005/en/triage/interview
+          observedAt: "2026-08-03T15:00:00.000Z"
+          detail: The live interview snapshots the selected Clinical Context Profile.
+    presentation:
+      maxStaticHoldMs: 2400
+      camera: { type: none }
+      loading: cut
+      transitionWeight: major
+      caption: { mode: lower-third, safeArea: bottom }
+      actorTransition: context-card
+    actions:
+      - type: goto
+        path: /en/triage/interview
+      - type: fill
+        target: { by: label, value: What brings you in today? }
+        text: I have had a worsening throbbing headache for three days, with nausea and sensitivity to light and sound.
+        timing: { cursorDurationMs: 520, settleBeforeMs: 170, keystrokeDelayMs: 16, pauseAfterMs: 700 }
+      - type: click
+        target: { by: role, role: button, value: Start }
+        timing: { cursorDurationMs: 420, settleBeforeMs: 150, pauseAfterMs: 800 }
+      - type: assert
+        target: { by: role, role: heading, value: Here is what happens next }
+        state: visible
+        timing: { pauseAfterMs: 1500 }
+      - type: click
+        target: { by: role, role: button, value: Start the questions }
+        timing: { cursorDurationMs: 430, settleBeforeMs: 150, pauseAfterMs: 1000 }
+      - type: click
+        target:
+          by: rolePattern
+          role: button
+          pattern: "^(?:It feels|This feels).*(?:usual|typical).*migraine"
+        timing: { cursorDurationMs: 440, settleBeforeMs: 900, pauseAfterMs: 700 }
+      - type: click
+        target:
+          by: rolePattern
+          role: button
+          pattern: "^No(?:,| ).*(?:vision|strength|weakness|movement|speech|usual pain|these symptoms)"
+        timing: { cursorDurationMs: 440, settleBeforeMs: 900, pauseAfterMs: 700 }
+      - type: click
+        target:
+          by: rolePattern
+          role: button
+          pattern: "^(?:Neither|No,.*(?:none|neither|fever|stiff|vision|usual aura)|I don't have)"
+        timing: { cursorDurationMs: 440, settleBeforeMs: 900, pauseAfterMs: 700 }
+      - type: click
+        target:
+          by: rolePattern
+          role: button
+          pattern: "^(?:(?:It|The pain) has been constant|I feel (?:nauseated|nauseous|sick).*(?:(?:not|haven't) vomit|drink|fluids)|I took(?!.*(?:did not|not help)).*help|Yes,(?!.*(?:did not|not help)).*help(?:ed|s)?|Once or twice|1 or 2 (?:doses|times)|1 to 3 tablets|(?:It|The pain) is better but still there|(?:It|The pain) is getting worse(?!.*despite)|I feel clear-headed|No,.*(?:thinking|speaking|clear|vision|usual aura|eyes.*normal|bruising|bleeding)|No,.*(?:built up|came on) gradually|It built up over hours|It stays the same regardless|It is about the same as.*usual|(?:No, )?I have had (?:them|migraines) last this long before|A few doses each day|The pain stayed but felt less intense|The pain only eased slightly|It only dulled the pain slightly|The pain comes back quickly|It comes back when the medicine wears off|3(?: to 5)? days|It has stayed about the same|It is helping(?: a little)?|It only got a little better|It is helping as much as usual|Just nausea|I have nausea.*no vomiting|No, I have had worse|Yes,.*relief|I have taken it once or twice.*|It helps(?: for )?a little.*|No, none of (?:these|those)|I can eat and drink normally|It is much more painful now|I have nausea.*have not vomited|It only took the edge off|Only ibuprofen|It never fully went away|It got better but never fully left|The medicine helps(?: a bit)?|(?:It|The medicine|The pain)(?!.*(?:did not|not help|worse despite)).*(?:help|better|relief|less|edge off)|I can keep fluids and pills down|This is (?:a )?typical.*|Yes, this is normal for me|My blood pressure is normal|No,.*(?:scalp|temple).*tender)"
+        timing: { cursorDurationMs: 440, settleBeforeMs: 900, pauseAfterMs: 750 }
+
+  - id: intake-completion
+    title: Complete the focused interview
+    description: The patient answers every remaining question, including the final safety check.
+    purpose: state-change
+    capabilityId: adaptive-intake
+    proofSurfaceId: patient-intake
+    actor: patient
+    presentation:
+      maxStaticHoldMs: 2400
+      camera: { type: none }
+      loading: cut
+      transitionWeight: meaningful
+      caption: { mode: none }
+    actions:
+      - type: click
+        target:
+          by: rolePattern
+          role: button
+          pattern: "^(?:(?:It|The pain) has been constant|I feel (?:nauseated|nauseous|sick).*(?:(?:not|haven't) vomit|drink|fluids)|I took(?!.*(?:did not|not help)).*help|Yes,(?!.*(?:did not|not help)).*help(?:ed|s)?|Once or twice|1 or 2 (?:doses|times)|1 to 3 tablets|(?:It|The pain) is better but still there|(?:It|The pain) is getting worse(?!.*despite)|I feel clear-headed|No,.*(?:thinking|speaking|clear|vision|usual aura|eyes.*normal|bruising|bleeding)|No,.*(?:built up|came on) gradually|It built up over hours|It stays the same regardless|It is about the same as.*usual|(?:No, )?I have had (?:them|migraines) last this long before|A few doses each day|The pain stayed but felt less intense|The pain only eased slightly|It only dulled the pain slightly|The pain comes back quickly|It comes back when the medicine wears off|3(?: to 5)? days|It has stayed about the same|It is helping(?: a little)?|It only got a little better|It is helping as much as usual|Just nausea|I have nausea.*no vomiting|No, I have had worse|Yes,.*relief|I have taken it once or twice.*|It helps(?: for )?a little.*|No, none of (?:these|those)|I can eat and drink normally|It is much more painful now|I have nausea.*have not vomited|It only took the edge off|Only ibuprofen|It never fully went away|It got better but never fully left|The medicine helps(?: a bit)?|(?:It|The medicine|The pain)(?!.*(?:did not|not help|worse despite)).*(?:help|better|relief|less|edge off)|I can keep fluids and pills down|This is (?:a )?typical.*|Yes, this is normal for me|My blood pressure is normal|No,.*(?:scalp|temple).*tender)"
+        timing: { cursorDurationMs: 440, settleBeforeMs: 900, pauseAfterMs: 700 }
+      - type: click
+        target:
+          by: rolePattern
+          role: button
+          pattern: "^(?:(?:It|The pain) has been constant|I feel (?:nauseated|nauseous|sick).*(?:(?:not|haven't) vomit|drink|fluids)|I took(?!.*(?:did not|not help)).*help|Yes,(?!.*(?:did not|not help)).*help(?:ed|s)?|Once or twice|1 or 2 (?:doses|times)|1 to 3 tablets|(?:It|The pain) is better but still there|(?:It|The pain) is getting worse(?!.*despite)|I feel clear-headed|No,.*(?:thinking|speaking|clear|vision|usual aura|eyes.*normal|bruising|bleeding)|No,.*(?:built up|came on) gradually|It built up over hours|It stays the same regardless|It is about the same as.*usual|(?:No, )?I have had (?:them|migraines) last this long before|A few doses each day|The pain stayed but felt less intense|The pain only eased slightly|It only dulled the pain slightly|The pain comes back quickly|It comes back when the medicine wears off|3(?: to 5)? days|It has stayed about the same|It is helping(?: a little)?|It only got a little better|It is helping as much as usual|Just nausea|I have nausea.*no vomiting|No, I have had worse|Yes,.*relief|I have taken it once or twice.*|It helps(?: for )?a little.*|No, none of (?:these|those)|I can eat and drink normally|It is much more painful now|I have nausea.*have not vomited|It only took the edge off|Only ibuprofen|It never fully went away|It got better but never fully left|The medicine helps(?: a bit)?|(?:It|The medicine|The pain)(?!.*(?:did not|not help|worse despite)).*(?:help|better|relief|less|edge off)|I can keep fluids and pills down|This is (?:a )?typical.*|Yes, this is normal for me|My blood pressure is normal|No,.*(?:scalp|temple).*tender)"
+        timing: { cursorDurationMs: 440, settleBeforeMs: 900, pauseAfterMs: 700 }
+      - type: click
+        target:
+          by: rolePattern
+          role: button
+          pattern: "^(?:(?:It|The pain) has been constant|I feel (?:nauseated|nauseous|sick).*(?:(?:not|haven't) vomit|drink|fluids)|I took(?!.*(?:did not|not help)).*help|Yes,(?!.*(?:did not|not help)).*help(?:ed|s)?|Once or twice|1 or 2 (?:doses|times)|1 to 3 tablets|(?:It|The pain) is better but still there|(?:It|The pain) is getting worse(?!.*despite)|I feel clear-headed|No,.*(?:thinking|speaking|clear|vision|usual aura|eyes.*normal|bruising|bleeding)|No,.*(?:built up|came on) gradually|It built up over hours|It stays the same regardless|It is about the same as.*usual|(?:No, )?I have had (?:them|migraines) last this long before|A few doses each day|The pain stayed but felt less intense|The pain only eased slightly|It only dulled the pain slightly|The pain comes back quickly|It comes back when the medicine wears off|3(?: to 5)? days|It has stayed about the same|It is helping(?: a little)?|It only got a little better|It is helping as much as usual|Just nausea|I have nausea.*no vomiting|No, I have had worse|Yes,.*relief|I have taken it once or twice.*|It helps(?: for )?a little.*|No, none of (?:these|those)|I can eat and drink normally|It is much more painful now|I have nausea.*have not vomited|It only took the edge off|Only ibuprofen|It never fully went away|It got better but never fully left|The medicine helps(?: a bit)?|(?:It|The medicine|The pain)(?!.*(?:did not|not help|worse despite)).*(?:help|better|relief|less|edge off)|I can keep fluids and pills down|This is (?:a )?typical.*|Yes, this is normal for me|My blood pressure is normal|No,.*(?:scalp|temple).*tender)"
+        timing: { cursorDurationMs: 440, settleBeforeMs: 900, pauseAfterMs: 700 }
+      - type: click
+        target:
+          by: rolePattern
+          role: button
+          pattern: "^(?:(?:It|The pain) has been constant|I feel (?:nauseated|nauseous|sick).*(?:(?:not|haven't) vomit|drink|fluids)|I took(?!.*(?:did not|not help)).*help|Yes,(?!.*(?:did not|not help)).*help(?:ed|s)?|Once or twice|1 or 2 (?:doses|times)|1 to 3 tablets|(?:It|The pain) is better but still there|(?:It|The pain) is getting worse(?!.*despite)|I feel clear-headed|No,.*(?:thinking|speaking|clear|vision|usual aura|eyes.*normal|bruising|bleeding)|No,.*(?:built up|came on) gradually|It built up over hours|It stays the same regardless|It is about the same as.*usual|(?:No, )?I have had (?:them|migraines) last this long before|A few doses each day|The pain stayed but felt less intense|The pain only eased slightly|It only dulled the pain slightly|The pain comes back quickly|It comes back when the medicine wears off|3(?: to 5)? days|It has stayed about the same|It is helping(?: a little)?|It only got a little better|It is helping as much as usual|Just nausea|I have nausea.*no vomiting|No, I have had worse|Yes,.*relief|I have taken it once or twice.*|It helps(?: for )?a little.*|No, none of (?:these|those)|I can eat and drink normally|It is much more painful now|I have nausea.*have not vomited|It only took the edge off|Only ibuprofen|It never fully went away|It got better but never fully left|The medicine helps(?: a bit)?|(?:It|The medicine|The pain)(?!.*(?:did not|not help|worse despite)).*(?:help|better|relief|less|edge off)|I can keep fluids and pills down|This is (?:a )?typical.*|Yes, this is normal for me|My blood pressure is normal|No,.*(?:scalp|temple).*tender)"
+        timing: { cursorDurationMs: 440, settleBeforeMs: 900, pauseAfterMs: 1000 }
+      - type: click
+        optional: true
+        timeoutMs: 30000
+        target:
+          by: rolePattern
+          role: button
+          pattern: "^No,.*"
+        timing: { cursorDurationMs: 440, settleBeforeMs: 900, pauseAfterMs: 1000 }
+      - type: assert
+        target: { by: role, role: heading, value: Your assessment }
+        state: visible
+        timing: { pauseAfterMs: 1600 }
+      - type: assert
+        target: { by: text, value: A consultation in the next few days is recommended. }
+        state: visible
+        timing: { pauseAfterMs: 1100 }
+
+  - id: patient-follow-up
+    title: "3 · Follow-up — Complete what the form missed"
+    description: The patient adds context, answers the follow-up, and refreshes the doctor handoff.
+    purpose: result
+    capabilityId: post-assessment-follow-up
+    proofSurfaceId: patient-result
+    actor: patient
+    causalLink:
+      fromSceneId: intake-completion
+      relationshipId: assessment-to-follow-up
+      evidence:
+        - type: runtime
+          url: http://localhost:3005/en/triage
+          observedAt: "2026-08-03T15:12:00.000Z"
+          detail: The live result offers a post-assessment completion chat and report revision.
+    presentation:
+      maxStaticHoldMs: 2600
+      camera: { type: none }
+      loading: cut
+      transitionWeight: major
+      caption: { mode: lower-third, safeArea: top }
+      actorTransition: context-card
+    actions:
+      - type: click
+        target: { by: role, role: button, value: Complete or correct }
+        timing: { cursorDurationMs: 450, settleBeforeMs: 150, pauseAfterMs: 900 }
+      - type: fill
+        target: { by: role, role: textbox, value: Describe your symptoms... }
+        text: The pain is on both sides, and I had a similar migraine about two months ago. Please continue in English.
+        timing: { cursorDurationMs: 450, settleBeforeMs: 150, keystrokeDelayMs: 18, pauseAfterMs: 650 }
+      - type: click
+        target: { by: role, role: button, value: Send }
+        timing: { cursorDurationMs: 400, settleBeforeMs: 150, pauseAfterMs: 900 }
+      - type: fill
+        target: { by: role, role: textbox, value: Describe your symptoms... }
+        text: I have had migraines since my twenties, and they have lasted three days before. I have no other medical conditions, recent head injury, or allergies beyond penicillin. My blood pressure was normal recently, and I only take ibuprofen during migraines. The pain built up gradually and is not worse with coughing, sneezing, bending over, or at a particular time of day. I also have no temple tenderness or jaw pain while eating or chewing. Please respond in English.
+        timing: { cursorDurationMs: 430, settleBeforeMs: 150, keystrokeDelayMs: 16, pauseAfterMs: 650 }
+      - type: click
+        target: { by: role, role: button, value: Send }
+        timing: { cursorDurationMs: 400, settleBeforeMs: 150, pauseAfterMs: 900 }
+      - type: click
+        optional: true
+        timeoutMs: 1000
+        target: { by: rolePattern, role: button, pattern: "^Send$" }
+        timing: { cursorDurationMs: 320, settleBeforeMs: 120, pauseAfterMs: 600 }
+      - type: assert
+        target: { by: textPattern, pattern: "summary was updated|shar(?:e|ing|ed).*(?:doctor|medical team)|summary will be shared|intake is now complete|doctor will review this summary|gathered all the necessary information" }
+        state: visible
+        timing: { pauseAfterMs: 1200 }
+      - type: click
+        target: { by: roleAny, role: button, values: [Back to your assessment, Review it] }
+        timing: { cursorDurationMs: 390, settleBeforeMs: 150, pauseAfterMs: 1200 }
+      - type: assert
+        target: { by: role, role: heading, value: Your assessment }
+        state: visible
+        timing: { pauseAfterMs: 1100 }
+      - type: click
+        target: { by: role, role: button, value: Join the queue }
+        timing: { cursorDurationMs: 470, settleBeforeMs: 160, pauseAfterMs: 1000 }
+      - type: assert
+        target: { by: textPattern, pattern: "Your place in line|You're next|In queue" }
+        state: visible
+        timing: { pauseAfterMs: 1800 }
+
+  - id: doctor-handoff
+    title: "4 · Doctor — The same story, already structured"
+    description: The doctor opens the patient created moments ago, with profile, brief and transcript intact.
+    purpose: handoff
+    capabilityId: doctor-brief
+    proofSurfaceId: doctor-today
+    actor: doctor
+    causalLink:
+      fromSceneId: patient-follow-up
+      relationshipId: patient-doctor-handoff
+      transitionId: queued-to-doctor-review
+      evidence:
+        - type: user
+          confirmedBy: product owner
+          confirmedAt: "2026-08-03T15:30:00.000Z"
+          detail: The public demo must follow the exact patient-created case into the doctor view.
+    presentation:
+      maxStaticHoldMs: 2500
+      camera: { type: none }
+      loading: cut
+      transitionWeight: major
+      caption: { mode: lower-third, safeArea: bottom }
+      actorTransition: split-causality
+    actions:
+      - type: goto
+        path: /en/doctor/today
+      - type: assert
+        target: { by: text, value: "Ordered by medical urgency, then wait time, not arrival order" }
+        state: visible
+        timing: { pauseAfterMs: 1200 }
+      - type: click
+        target: { by: text, value: "I have had a worsening throbbing headache for three days, with nausea and sensitivity to light and sound." }
+        timing: { cursorDurationMs: 540, settleBeforeMs: 170, pauseAfterMs: 1000 }
+      - type: assert
+        target: { by: text, value: Pre-consult brief }
+        state: visible
+        timing: { pauseAfterMs: 1500 }
+      - type: assert
+        target: { by: textPattern, pattern: "History of migraine.*Ibuprofen.*Penicillin" }
+        state: visible
+        timing: { pauseAfterMs: 1300 }
+      - type: click
+        target: { by: role, role: button, value: View full conversation }
+        timing: { cursorDurationMs: 480, settleBeforeMs: 150, pauseAfterMs: 900 }
+      - type: assert
+        target: { by: role, role: heading, value: Full conversation transcript }
+        state: visible
+        timing: { pauseAfterMs: 1800 }
+      - type: click
+        target: { by: role, role: button, value: Close }
+        timing: { cursorDurationMs: 420, settleBeforeMs: 150, pauseAfterMs: 800 }
+      - type: scroll
+        deltaY: 620
+        timing: { pauseAfterMs: 700 }
+      - type: click
+        target: { by: role, role: button, value: Correct }
+        timing: { cursorDurationMs: 430, settleBeforeMs: 150, pauseAfterMs: 900 }
+      - type: assert
+        target: { by: text, value: Clinical context }
+        state: visible
+        timing: { pauseAfterMs: 1200 }
+      - type: scroll
+        deltaY: 620
+        timing: { pauseAfterMs: 700 }
+      - type: assert
+        target: { by: role, role: heading, value: AI differential }
+        state: visible
+        timing: { pauseAfterMs: 1300 }
+      - type: scroll
+        deltaY: 620
+        timing: { pauseAfterMs: 700 }
+      - type: assert
+        target: { by: role, role: heading, value: Suggested workup }
+        state: visible
+        timing: { pauseAfterMs: 1500 }
+
+  - id: outcome-close
+    title: SanoX
+    description: One patient story. Structured, completed and carried into care.
+    purpose: close
+    capabilityId: doctor-brief
+    proofSurfaceId: doctor-consult
+    actor: doctor
+    causalLink:
+      fromSceneId: doctor-handoff
+      relationshipId: doctor-accountability
+      evidence:
+        - type: runtime
+          url: http://localhost:3005/en/doctor/today
+          observedAt: "2026-08-03T15:30:00.000Z"
+          detail: The doctor receives the same live conversation, clinical context and generated brief.
+    presentation:
+      maxStaticHoldMs: 2200
+      camera: { type: none }
+      loading: cut
+      transitionWeight: major
+      caption: { mode: lower-third, safeArea: top }
+      closing: outcome-recap
+    actions:
+      - type: assert
+        target: { by: role, role: heading, value: Suggested workup }
+        state: visible
+        timing: { pauseAfterMs: 2200 }

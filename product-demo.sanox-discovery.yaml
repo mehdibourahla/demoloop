@@ -1,0 +1,24 @@
+app:
+  url: http://localhost:3005
+  healthcheck: http://127.0.0.1:8001/health/ready
+  production: false
+repository:
+  root: artifacts/sanox-full-scope-en/discovery-source
+output:
+  directory: artifacts/sanox-full-scope-en/discovery
+privacy:
+  syntheticData: true
+  allowProduction: false
+  scanArtifacts: true
+runtime:
+  rehearsalPasses: 2
+  headless: true
+narration:
+  provider: none
+upload:
+  enabled: false
+devices:
+  desktop:
+    width: 1440
+    height: 900
+    isMobile: false

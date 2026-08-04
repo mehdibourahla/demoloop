@@ -12,6 +12,7 @@ import { presentationLayout } from './presentation.js';
 import type { DemoConfig, Scenario } from './schemas.js';
 
 const execFileAsync = promisify(execFile);
+const FPS = 30;
 
 interface RenderOptions {
   scenario: Scenario;
@@ -36,7 +37,7 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
     if (prepared.removedSeconds > 0) edits.push({ id: scene.id, removedSeconds: Number(prepared.removedSeconds.toFixed(3)) });
     const fileName = basename(prepared.path);
     await copyFile(prepared.path, join(publicDirectory, fileName));
-    const durationInFrames = Math.max(1, Math.ceil(prepared.durationSeconds * 30));
+    const durationInFrames = Math.max(1, Math.ceil(prepared.durationSeconds * FPS));
     let audioSrc: string | undefined;
     if (audioPolicy.voiceover) {
       if (!options.narrationProvider) throw new Error('Voiceover requested but no narration provider is configured');
@@ -44,8 +45,8 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
       const text = scripted.length ? scripted.join(' ') : [scene.title, scene.description].filter(Boolean).join('. ');
       const audioName = `voice-${scene.id}.mp3`;
       const speech = await options.narrationProvider.synthesize({ id: scene.id, text, locale: options.scenario.locale, outputPath: join(publicDirectory, audioName) });
-      const audioFrames = Math.ceil(speech.durationSeconds * 30);
-      if (audioFrames > durationInFrames) throw new Error(`Voiceover for scene ${scene.id} is ${speech.durationSeconds.toFixed(2)}s but the recording is only ${(durationInFrames / 30).toFixed(2)}s`);
+      const audioFrames = Math.ceil(speech.durationSeconds * FPS);
+      if (audioFrames > durationInFrames) throw new Error(`Voiceover for scene ${scene.id} is ${speech.durationSeconds.toFixed(2)}s but the recording is only ${(durationInFrames / FPS).toFixed(2)}s`);
       audioSrc = audioName;
     }
     clips.push({ src: fileName, durationInFrames, title: scene.title, description: scene.description, purpose: scene.purpose, presentation: scene.presentation, audioSrc });
@@ -54,7 +55,7 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
   if (audioPolicy.musicPath) {
     const musicName = `music-${basename(audioPolicy.musicPath)}`;
     await copyFile(audioPolicy.musicPath, join(publicDirectory, musicName));
-    music = { src: musicName, level: audioPolicy.musicLevel ?? 0.2, fadeInFrames: Math.round((audioPolicy.fadeInMs ?? 0) * 0.03), fadeOutFrames: Math.round((audioPolicy.fadeOutMs ?? 0) * 0.03) };
+    music = { src: musicName, level: audioPolicy.musicLevel ?? 0.2, fadeInFrames: Math.round(((audioPolicy.fadeInMs ?? 0) / 1_000) * FPS), fadeOutFrames: Math.round(((audioPolicy.fadeOutMs ?? 0) / 1_000) * FPS) };
   }
   const serveUrl = await bundle(resolve('remotion/index.tsx'), undefined, { publicDir: publicDirectory });
   const inputProps = { clips, brand: options.scenario.branding, music };
