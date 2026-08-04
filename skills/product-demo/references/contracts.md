@@ -36,6 +36,13 @@ The pipeline is `repository + app + request -> product model -> plan result -> s
 
 ElevenLabs reads its key from `ELEVENLABS_API_KEY`; never put secrets in scenarios or source control. Generated audio remains local and content-addressed.
 
+Narration is measured before editing and constrains it:
+
+- Trimming keeps at least the narration's duration, giving inactive time back proportionally rather than cutting a scene shorter than its script.
+- When narration still outruns the recording, the last frame is held to cover it and the hold is recorded in `presentation-metadata.json` and warned per scene. Holds are legitimate in small amounts and become a rejection through the distinct-frame and static-section checks when relied upon.
+- Non-silent output is normalized to `loudnorm=I=-16:TP=-1.5:LRA=11` at the final mux.
+- Narration is never cut mid-utterance: each scene's audio is a complete take played inside its own scene, so cuts never land inside speech.
+
 ## Editing
 
 - `render` writes `edl.json` (video-use schema) and records every cut on the output timeline in `presentation-metadata.json` as `{outputSeconds, kind, sceneId}`, where `kind` is `trim` (footage removed inside a scene) or `scene` (a boundary between scenes).

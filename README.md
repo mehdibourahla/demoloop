@@ -88,6 +88,10 @@ Audio is explicit and independent from captions:
 | `voiceover` | Narration from the configured provider |
 | `voiceover-and-music` | Narration with subordinate local music |
 
+Narration is synthesized before the clip is edited, so it drives the edit rather than being cut by it: trimming never removes footage a scene's narration still needs, and when narration outruns the recording the last frame is held to cover it. Every hold is listed in `presentation-metadata.json` and warned about by name in the quality report — a demo that leans on long holds becomes a slideshow and is rejected on distinct frames and static sections, which is the signal to shorten the narration or record a longer scene.
+
+All non-silent output is loudness-normalized to -16 LUFS with a -1.5 dBTP ceiling, so ElevenLabs, macOS narration, and music land at a comparable level.
+
 For ElevenLabs, keep the key in the environment and configure a voice ID:
 
 ```bash

@@ -43,7 +43,7 @@ Applications whose wording or step count varies between runs are handled by dete
 
 Rendering trims each clip before composition: with `loading: cut`, static spans longer than the scene's `maxStaticHoldMs` are cut back to that hold, so the evaluated master is the edited master. Remotion composes the approved scene controls. The product viewport occupies at least 70% of the frame; captions are optional and checked against the region of interest. FFmpeg normalizes H.264/yuv420p output. Raw WebM files are preserved.
 
-Audio policies are explicit: silent, local music, voiceover, or voiceover plus music. ElevenLabs and macOS narration implement the same provider interface. Music must be a real local file and includes level and fades. Silent output has no audio stream.
+Narration is synthesized before the clip is edited and constrains the edit: trimming may not shorten a scene below its narration, and narration that outruns the recording holds the last frame, recorded and warned per scene. The final mux is loudness-normalized. Audio policies are explicit: silent, local music, voiceover, or voiceover plus music. ElevenLabs and macOS narration implement the same provider interface. Music must be a real local file and includes level and fades. Silent output has no audio stream.
 
 ## Editing and post-production
 

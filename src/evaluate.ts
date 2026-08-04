@@ -71,7 +71,7 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
   ];
 
   const thresholds = options.config.editorial.thresholds[options.scenario.outputType];
-  const metadata = await optionalJson(options.presentationMetadataPath ?? join(dirname(options.videoPath), 'presentation-metadata.json')) as { scenes?: Array<{ viewport?: { width: number; height: number }; caption?: { x: number; y: number; width: number; height: number }; obstructions?: unknown[] }>; cuts?: Array<{ outputSeconds: number; kind: string; sceneId: string }> } | undefined;
+  const metadata = await optionalJson(options.presentationMetadataPath ?? join(dirname(options.videoPath), 'presentation-metadata.json')) as { scenes?: Array<{ viewport?: { width: number; height: number }; caption?: { x: number; y: number; width: number; height: number }; obstructions?: unknown[] }>; holds?: Array<{ id: string; heldSeconds: number }>; cuts?: Array<{ outputSeconds: number; kind: string; sceneId: string }> } | undefined;
   const captionPad = 0.015;
   const captionRegions = (metadata?.scenes ?? []).flatMap((scene) => scene.caption ? [{
     x: scene.caption.x / width - captionPad, y: scene.caption.y / height - captionPad,
@@ -97,6 +97,7 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
     { id: 'montage-ratio', passed: montageRatio <= thresholds.montageMaxRatio, value: Number(montageRatio.toFixed(3)) },
   ];
   const warnings = [
+    ...(metadata?.holds ?? []).map((hold) => ({ id: `narration-hold-${hold.id}`, passed: false, value: hold.heldSeconds, detail: 'Last frame held to cover narration that outran the recording' })),
     { id: 'distinct-frames-warning', passed: visual.distinctRatio >= thresholds.distinctWarnRatio, value: Number(visual.distinctRatio.toFixed(3)) },
     ...visual.staticSpans.map((span, index) => ({ id: `static-span-${index + 1}`, passed: false, value: Number(span.durationSeconds.toFixed(2)), timestamps: [span.startSeconds], detail: 'Static section exceeds the warning threshold' })),
   ];

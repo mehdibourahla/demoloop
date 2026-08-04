@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { describe, expect, test } from 'vitest';
-import { applyTrim, buildEdl, contactSheet, outputCuts, prepareClip, trimSegments } from '../src/editing.js';
+import { applyTrim, buildEdl, contactSheet, outputCuts, padClip, prepareClip, trimSegments } from '../src/editing.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -38,6 +38,22 @@ describe('edit decision list', () => {
       { outputSeconds: 5, kind: 'scene', sceneId: 'receive' }
     ]);
   });
+});
+
+describe('holding a clip for narration', () => {
+  test('extends the clip by freezing its last frame', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'product-demo-pad-'));
+    const source = join(directory, 'source.mp4');
+    const padded = join(directory, 'padded.mp4');
+    await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=320x240:d=1:r=30', '-f', 'lavfi', '-i', 'color=c=white:s=320x240:d=1:r=30',
+      '-filter_complex', '[0:v][1:v]concat=n=2:v=1', '-pix_fmt', 'yuv420p', source]);
+
+    await padClip(source, padded, 4);
+
+    expect(await durationOf(padded)).toBeGreaterThanOrEqual(3.9);
+    const { stdout } = await execFileAsync('ffmpeg', ['-loglevel', 'error', '-ss', '3.5', '-i', padded, '-frames:v', '1', '-vf', 'scale=1:1,format=gray', '-f', 'rawvideo', 'pipe:1'], { encoding: 'buffer' });
+    expect(stdout[0]).toBeGreaterThan(192);
+  }, 90_000);
 });
 
 describe('contact sheet', () => {
@@ -108,6 +124,31 @@ describe('static span trimming', () => {
     expect(preserved.path).toBe(source);
     expect(preserved.durationSeconds).toBeGreaterThan(10);
   }, 90_000);
+
+  test('gives inactive time back when narration needs the room', () => {
+    const spans = [{ startSeconds: 2, endSeconds: 8, durationSeconds: 6 }];
+
+    expect(trimSegments(10, spans, 1, 8)).toEqual([
+      { startSeconds: 0, endSeconds: 6 },
+      { startSeconds: 8, endSeconds: 10 }
+    ]);
+  });
+
+  test('keeps the whole clip when narration needs more than the trim would leave', () => {
+    const spans = [{ startSeconds: 2, endSeconds: 8, durationSeconds: 6 }];
+
+    expect(trimSegments(10, spans, 1, 12)).toEqual([{ startSeconds: 0, endSeconds: 10 }]);
+  });
+
+  test('spreads returned time across several inactive spans', () => {
+    const segments = trimSegments(20, [
+      { startSeconds: 2, endSeconds: 8, durationSeconds: 6 },
+      { startSeconds: 12, endSeconds: 18, durationSeconds: 6 }
+    ], 1, 14);
+
+    expect(segments.reduce((total, segment) => total + (segment.endSeconds - segment.startSeconds), 0)).toBeCloseTo(14, 6);
+    expect(segments).toHaveLength(3);
+  });
 
   test('never trims a clip down to nothing', () => {
     const segments = trimSegments(6, [{ startSeconds: 0, endSeconds: 6, durationSeconds: 6 }], 1);

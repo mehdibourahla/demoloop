@@ -6,12 +6,20 @@ const execFileAsync = promisify(execFile);
 
 export interface Segment { startSeconds: number; endSeconds: number }
 
-export function trimSegments(durationSeconds: number, staticSpans: VisualAnalysis['staticSpans'], maxHoldSeconds: number): Segment[] {
-  const drops = staticSpans
+export function trimSegments(durationSeconds: number, staticSpans: VisualAnalysis['staticSpans'], maxHoldSeconds: number, minKeepSeconds = 0): Segment[] {
+  let drops = staticSpans
     .filter((span) => span.durationSeconds > maxHoldSeconds)
     .map((span) => ({ startSeconds: span.startSeconds + maxHoldSeconds, endSeconds: Math.min(span.endSeconds, durationSeconds) }))
     .filter((drop) => drop.endSeconds > drop.startSeconds)
     .sort((a, b) => a.startSeconds - b.startSeconds);
+  const droppable = drops.reduce((total, drop) => total + (drop.endSeconds - drop.startSeconds), 0);
+  const deficit = minKeepSeconds - (durationSeconds - droppable);
+  if (deficit > 0 && droppable > 0) {
+    const returned = Math.min(1, deficit / droppable);
+    drops = drops
+      .map((drop) => ({ startSeconds: drop.startSeconds + (drop.endSeconds - drop.startSeconds) * returned, endSeconds: drop.endSeconds }))
+      .filter((drop) => drop.endSeconds - drop.startSeconds > 0.001);
+  }
   const segments: Segment[] = [];
   let cursor = 0;
   for (const drop of drops) {
@@ -61,17 +69,22 @@ export async function mediaDuration(path: string): Promise<number> {
   return value;
 }
 
-export async function prepareClip(rawPath: string, trimmedPath: string, presentation: { loading: 'preserve' | 'cut'; maxStaticHoldMs: number }): Promise<{ path: string; durationSeconds: number; removedSeconds: number; segments: Segment[] }> {
+export async function prepareClip(rawPath: string, trimmedPath: string, presentation: { loading: 'preserve' | 'cut'; maxStaticHoldMs: number }, minKeepSeconds = 0): Promise<{ path: string; durationSeconds: number; removedSeconds: number; segments: Segment[] }> {
   const durationSeconds = await mediaDuration(rawPath);
   if (presentation.loading === 'preserve') return { path: rawPath, durationSeconds, removedSeconds: 0, segments: [{ startSeconds: 0, endSeconds: durationSeconds }] };
   const maxHoldSeconds = presentation.maxStaticHoldMs / 1_000;
   const analysis = await analyzeVideo(rawPath, { staticWarnSeconds: maxHoldSeconds });
-  const segments = trimSegments(durationSeconds, analysis.staticSpans, maxHoldSeconds);
+  const segments = trimSegments(durationSeconds, analysis.staticSpans, maxHoldSeconds, minKeepSeconds);
   const keptSeconds = segments.reduce((total, segment) => total + (segment.endSeconds - segment.startSeconds), 0);
   if (keptSeconds >= durationSeconds - 0.05) return { path: rawPath, durationSeconds, removedSeconds: 0, segments: [{ startSeconds: 0, endSeconds: durationSeconds }] };
   await applyTrim(rawPath, trimmedPath, segments);
   const trimmedDuration = await mediaDuration(trimmedPath);
   return { path: trimmedPath, durationSeconds: trimmedDuration, removedSeconds: durationSeconds - trimmedDuration, segments };
+}
+
+export async function padClip(inputPath: string, outputPath: string, toSeconds: number): Promise<number> {
+  await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-i', inputPath, '-vf', `tpad=stop_mode=clone:stop_duration=${toSeconds.toFixed(3)}`, '-t', toSeconds.toFixed(3), '-an', outputPath]);
+  return mediaDuration(outputPath);
 }
 
 export async function contactSheet(videoPath: string, outputPath: string, moments: number[], tileWidth = 480): Promise<number[]> {
