@@ -2,8 +2,9 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
-const SAMPLE_WIDTH = 64;
-const SAMPLE_HEIGHT = 64;
+const SAMPLE_WIDTH = 128;
+const SAMPLE_HEIGHT = 128;
+const PIXEL_DELTA = 10;
 const FRAME_BYTES = SAMPLE_WIDTH * SAMPLE_HEIGHT;
 
 export interface VisualAnalysis {
@@ -17,7 +18,7 @@ export interface VisualAnalysis {
 
 export async function analyzeVideo(videoPath: string, options: { samplesPerSecond?: number; changeThreshold?: number; staticWarnSeconds?: number } = {}): Promise<VisualAnalysis> {
   const samplesPerSecond = options.samplesPerSecond ?? 2;
-  const changeThreshold = options.changeThreshold ?? 0.018;
+  const changeThreshold = options.changeThreshold ?? 0.0015;
   const staticWarnSeconds = options.staticWarnSeconds ?? 3;
   const { stdout } = await execFileAsync('ffmpeg', ['-loglevel', 'error', '-i', videoPath, '-vf', `fps=${samplesPerSecond},scale=${SAMPLE_WIDTH}:${SAMPLE_HEIGHT}:flags=area,format=gray`, '-f', 'rawvideo', 'pipe:1'], { encoding: 'buffer', maxBuffer: 128 * 1024 * 1024 });
   const frames: Buffer[] = [];
@@ -29,9 +30,9 @@ export async function analyzeVideo(videoPath: string, options: { samplesPerSecon
     const luminance = sum / (FRAME_BYTES * 255);
     let variance = 0;
     for (const value of frame) variance += ((value / 255) - luminance) ** 2;
-    let delta = index === 0 ? 1 : 0;
-    if (index > 0) for (let pixel = 0; pixel < FRAME_BYTES; pixel += 1) delta += Math.abs(frame[pixel] - frames[index - 1][pixel]) / 255;
-    return { timestampSeconds: index / samplesPerSecond, changeRatio: index === 0 ? 1 : delta / FRAME_BYTES, luminance, contrast: Math.sqrt(variance / FRAME_BYTES) };
+    let changedPixels = 0;
+    if (index > 0) for (let pixel = 0; pixel < FRAME_BYTES; pixel += 1) if (Math.abs(frame[pixel] - frames[index - 1][pixel]) > PIXEL_DELTA) changedPixels += 1;
+    return { timestampSeconds: index / samplesPerSecond, changeRatio: index === 0 ? 1 : changedPixels / FRAME_BYTES, luminance, contrast: Math.sqrt(variance / FRAME_BYTES) };
   });
   const changed = samples.map((sample, index) => index === 0 || sample.changeRatio >= changeThreshold);
   const staticSpans: VisualAnalysis['staticSpans'] = [];

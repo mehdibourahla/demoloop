@@ -20,6 +20,18 @@ describe('visual analysis', () => {
     expect(analysis.staticSpans[0].durationSeconds).toBeGreaterThanOrEqual(3);
   });
 
+  test('counts a small localized change as a distinct frame', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'demo-detail-'));
+    const video = join(directory, 'detail.mp4');
+    await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=1440x900:d=6:r=10',
+      '-vf', "drawbox=x=60:y=90:w=150:h=26:color=white:t=fill:enable='gt(t,3)'", '-pix_fmt', 'yuv420p', video]);
+
+    const analysis = await analyzeVideo(video, { samplesPerSecond: 2, staticWarnSeconds: 2 });
+
+    expect(analysis.samples.find((sample) => sample.timestampSeconds === 3)?.changeRatio).toBeGreaterThan(0);
+    expect(analysis.staticSpans.some((span) => span.startSeconds < 3 && span.endSeconds > 3)).toBe(false);
+  }, 60_000);
+
   test('recognizes meaningful motion', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'demo-motion-'));
     const video = join(directory, 'motion.mp4');
