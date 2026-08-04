@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { durationCheck, reviewMoments } from '../src/evaluate.js';
+import { durationCheck, passiveScenes, reviewMoments } from '../src/evaluate.js';
 
 describe('review moments', () => {
   test('samples after a cut has settled rather than on the transition frame', () => {
@@ -30,5 +30,21 @@ describe('duration check', () => {
 
   test('reports the requested target in its detail', () => {
     expect(durationCheck(200, 120).detail).toContain('120');
+  });
+});
+
+describe('passive scenes', () => {
+  const scene = (id: string, types: string[]) => ({ id, actions: types.map((type) => ({ type })) });
+
+  test('names the scenes that only look at a page', () => {
+    expect(passiveScenes([scene('look', ['goto', 'assert']), scene('do', ['goto', 'fill', 'click'])])).toEqual(['look']);
+  });
+
+  test('counts scrolling and waiting as passive', () => {
+    expect(passiveScenes([scene('browse', ['goto', 'scroll', 'waitFor', 'assert'])])).toEqual(['browse']);
+  });
+
+  test('treats a demonstrated scene as active', () => {
+    expect(passiveScenes([scene('pick', ['choose'])])).toEqual([]);
   });
 });

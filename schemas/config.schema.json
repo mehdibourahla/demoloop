@@ -115,7 +115,12 @@
         "startTimeoutMs": 60000,
         "actionTimeoutMs": 10000,
         "ignoreRequestPatterns": [],
-        "ignoreConsolePatterns": []
+        "ignoreConsolePatterns": [
+          "Vector Map",
+          "^ResizeObserver loop",
+          "WebGL",
+          "Failed to load resource: net::ERR_ABORTED"
+        ]
       },
       "type": "object",
       "properties": {
@@ -150,7 +155,12 @@
           }
         },
         "ignoreConsolePatterns": {
-          "default": [],
+          "default": [
+            "Vector Map",
+            "^ResizeObserver loop",
+            "WebGL",
+            "Failed to load resource: net::ERR_ABORTED"
+          ],
           "type": "array",
           "items": {
             "type": "string",

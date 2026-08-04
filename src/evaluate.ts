@@ -3,8 +3,9 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 import { scanCaptureArtifacts, scanSensitiveText } from './safety.js';
-import { EditorialReviewSchema, QualityReportSchema, TimelineSchema, type DemoConfig, type Scenario } from './schemas.js';
+import { EditorialReviewSchema, QualityReportSchema, TimelineSchema, type Action, type DemoConfig, type Scenario } from './schemas.js';
 import { contactSheet } from './editing.js';
+import { demonstrates } from './planner.js';
 import { analyzeVideo, seamChanges } from './visual-analysis.js';
 
 const execFileAsync = promisify(execFile);
@@ -34,6 +35,10 @@ export function reviewMoments(durationSeconds: number, cuts: Array<{ outputSecon
     durationSeconds - 0.5
   ];
   return [...new Set(moments.map((moment) => Number(moment.toFixed(2))).filter((moment) => moment >= 0 && moment < durationSeconds))].sort((a, b) => a - b);
+}
+
+export function passiveScenes(scenes: Array<{ id: string; actions: Array<{ type: string }> }>): string[] {
+  return scenes.filter((scene) => !demonstrates(scene as { actions: Action[] })).map((scene) => scene.id);
 }
 
 export function durationCheck(durationSeconds: number, requestedSeconds?: number) {
@@ -107,7 +112,9 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
     { id: 'cut-seams', passed: visibleSeams.length === 0, value: visibleSeams.length, detail: `${seams.length} trimmed cuts inspected`, timestamps: visibleSeams.map((seam) => seam.atSeconds) },
     { id: 'montage-ratio', passed: montageRatio <= thresholds.montageMaxRatio, value: Number(montageRatio.toFixed(3)) },
   ];
+  const passive = passiveScenes(options.scenario.scenes);
   const warnings = [
+    ...(passive.length ? [{ id: 'passive-scenes', passed: false, value: passive.length, detail: `Only navigation and assertions in: ${passive.join(', ')}` }] : []),
     ...(metadata?.holds ?? []).map((hold) => ({ id: `narration-hold-${hold.id}`, passed: false, value: hold.heldSeconds, detail: 'Last frame held to cover narration that outran the recording' })),
     { id: 'distinct-frames-warning', passed: visual.distinctRatio >= thresholds.distinctWarnRatio, value: Number(visual.distinctRatio.toFixed(3)) },
     ...visual.staticSpans.map((span, index) => ({ id: `static-span-${index + 1}`, passed: false, value: Number(span.durationSeconds.toFixed(2)), timestamps: [span.startSeconds], detail: 'Static section exceeds the warning threshold' })),

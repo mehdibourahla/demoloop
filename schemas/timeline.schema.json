@@ -82,6 +82,28 @@
                   "value": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -101,6 +123,28 @@
                   "value": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -119,6 +163,28 @@
                   "value": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -137,6 +203,28 @@
                   "value": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -174,6 +262,28 @@
                       "type": "string",
                       "minLength": 1
                     }
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -208,6 +318,28 @@
                   "pattern": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -227,6 +359,28 @@
                   "pattern": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "required": [

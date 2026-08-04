@@ -9,6 +9,7 @@ The pipeline is `repository + app + request -> product model -> plan result -> s
 - Evidence is source, runtime observation, or explicit user confirmation. Never replace unresolved actor ownership or behavior with a guess.
 - Planning returns `planned` or `needs-authoring`. Route-only discovery cannot become a public scenario.
 - Full planning creates a short public master, actor journey clips, coverage, and explicit omissions.
+- Coverage marks each capability `demonstrated` — true only when its scene clicks, fills, selects or chooses. A capability that is merely navigated to is displayed, not demonstrated. Scenes that only navigate and assert are listed in the quality report as `passive-scenes`; a demo where most scenes are passive is a slideshow, whatever the deterministic checks say.
 - Scene purposes are hook, context, interaction, exploration, state-change, handoff, result, proof, montage, and close.
 
 ## Capture and presentation
@@ -25,6 +26,9 @@ The pipeline is `repository + app + request -> product model -> plan result -> s
 - The scenario digest pins the program, not the path. When control flow varies between runs, `executedPath` in the execution report records every choice and branch actually taken.
 - Actors may declare a `preflight` target. A failed preflight reports an unusable actor session instead of a missing element.
 - `runtime.ignoreRequestPatterns` and `runtime.ignoreConsolePatterns` allow capture-environment noise (headless WebGL warnings, third-party beacons) without hiding it: ignored items are listed in the execution report as `ignoredRequests` / `ignoredConsoleErrors`. Never use them to silence a real application defect.
+- Any target may carry `within: { role, testId }` to scope it to a container. Use it whenever a label appears more than once — a dialog's save button and the page's save button are different targets.
+- `product-demo verify <scenario>` resolves every target against the running app and reports missing or ambiguous ones before a rehearsal is spent.
+- A demo that changes data needs `preconditions.resetCommand`: rehearsal runs twice and recording once, so without a reset each pass starts from the previous pass's leftovers.
 - Use separate browser contexts for actors. Never round-robin actors or merge distinct sessions.
 - Render one caption system only. Do not show action names, click circles, or capture-time chapter/brand overlays.
 

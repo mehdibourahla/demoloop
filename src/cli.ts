@@ -1,6 +1,8 @@
 #!/usr/bin/env node
-import { spawn, type ChildProcess } from 'node:child_process';
-import { parseArgs } from 'node:util';
+import { exec, spawn, type ChildProcess } from 'node:child_process';
+import { parseArgs, promisify } from 'node:util';
+
+const execAsync = promisify(exec);
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -10,7 +12,9 @@ import { evaluateDemo } from './evaluate.js';
 import { finalizeQuality } from './finalize.js';
 import { planDemo, type PlanOptions } from './planner.js';
 import { renderDemo } from './render.js';
-import { executeScenario } from './runner.js';
+import { browserContextOptions, executeAction, executeScenario } from './runner.js';
+import { verifyTargets } from './verify.js';
+import { chromium } from 'playwright';
 import { ElevenLabsNarrationProvider, MacOSNarrationProvider, narrationPlan } from './narration.js';
 import { ConfigSchema, EditorialReviewSchema, ExecutionReportSchema, ProductModelSchema, QualityReportSchema, ScenarioSchema, type DemoConfig, type Scenario } from './schemas.js';
 
@@ -19,6 +23,7 @@ const help = `product-demo <command> [scenario] [options]
 Commands:
   discover                         Build an evidence-backed product model
   plan --mode full                 Generate a versioned scenario manifest
+  verify <scenario>                Resolve every target against the running app
   rehearse <scenario>              Require two consecutive deterministic passes
   record <scenario>                Capture Playwright screencasts from a valid receipt
   render <scenario>                Compose and normalize an MP4 with Remotion and FFmpeg
@@ -137,7 +142,7 @@ async function record(config: DemoConfig, scenario: Scenario, device: string, re
 export async function runCli(args: string[]): Promise<number> {
   const command = args[0] ?? 'help';
   if (command === 'help' || command === '--help' || command === '-h') { console.log(help); return 0; }
-  const supported = new Set(['discover', 'plan', 'rehearse', 'record', 'render', 'evaluate', 'finalize', 'run']);
+  const supported = new Set(['discover', 'plan', 'verify', 'rehearse', 'record', 'render', 'evaluate', 'finalize', 'run']);
   if (!supported.has(command)) throw new Error(`Unknown command: ${command}`);
   const { values, positionals } = parse(args.slice(1));
   const config = await loadConfig(values.config ?? 'product-demo.config.yaml');
@@ -205,6 +210,27 @@ export async function runCli(args: string[]): Promise<number> {
     await writeFile(destination, JSON.stringify(finalized, null, 2));
     console.log(destination);
     return finalized.passed ? 0 : 1;
+  }
+
+  if (command === 'verify') {
+    const cleanup = await ensureApp(config);
+    const browser = await chromium.launch({ headless: config.runtime.headless });
+    try {
+      const actor = scenario.actors[0];
+      const context = await browser.newContext(browserContextOptions(config, device, actor, scenario.locale));
+      const page = await context.newPage();
+      if (scenario.preconditions.resetCommand) await execAsync(scenario.preconditions.resetCommand, { cwd: config.repository.root });
+      if (scenario.preconditions.seedCommand) await execAsync(scenario.preconditions.seedCommand, { cwd: config.repository.root });
+      await page.goto(config.app.url, { waitUntil: 'load' });
+      const findings = await verifyTargets(page, scenario, Math.min(config.runtime.actionTimeoutMs, 5_000), async (action) => {
+        const resolved = action.type === 'goto' ? { ...action, path: new URL(action.path, config.app.url).toString() } : action;
+        await executeAction(page, resolved, false, undefined, undefined, 5_000);
+      });
+      const broken = findings.filter((finding) => finding.status !== 'resolved');
+      for (const finding of broken) console.log(`${finding.status.padEnd(9)} ${finding.sceneId}[${finding.actionIndex}] ${finding.label} (${finding.matches} matches)`);
+      console.log(`${findings.length - broken.length}/${findings.length} targets resolved while walking the scenario`);
+      return broken.length ? 1 : 0;
+    } finally { await browser.close(); await cleanup(); }
   }
 
   if (command === 'rehearse') {

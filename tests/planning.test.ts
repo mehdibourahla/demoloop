@@ -101,3 +101,37 @@ describe('capability-aware planning', () => {
     expect(validateScenarioEditorially(invalid, model())).toContainEqual(expect.objectContaining({ code: 'missing-close' }));
   });
 });
+
+describe('coverage honesty', () => {
+  test('marks which capabilities the plan actually exercises rather than only displays', () => {
+    const model = ProductModelSchema.parse({
+      version: 2, product: 'Shop',
+      audiences: [{ id: 'buyers', name: 'Buyers', evidence: [{ type: 'source', path: 'a.ts' }] }],
+      actors: [{ id: 'shopper', name: 'Shopper', evidence: [{ type: 'source', path: 'a.ts' }] }],
+      capabilities: [
+        { id: 'browse', name: 'Browse', shape: 'read-only', outcomes: ['seen'], proofSurfaces: ['home'], safeActions: ['open'], evidence: [{ type: 'source', path: 'a.ts' }] },
+        { id: 'order', name: 'Order', shape: 'stateful', outcomes: ['seen'], proofSurfaces: ['home'], safeActions: ['open', 'buy'], evidence: [{ type: 'source', path: 'a.ts' }] }
+      ],
+      outcomes: [{ id: 'seen', name: 'Seen', evidence: [{ type: 'source', path: 'a.ts' }] }],
+      proofSurfaces: [{ id: 'home', name: 'Home', route: '/', evidence: [{ type: 'source', path: 'a.ts' }] }],
+      safeActions: [
+        { id: 'open', type: 'goto', path: '/', evidence: [{ type: 'source', path: 'a.ts' }] },
+        { id: 'buy', type: 'click', target: { by: 'role', role: 'button', value: 'Buy' }, evidence: [{ type: 'source', path: 'a.ts' }] }
+      ],
+      journeys: [{
+        id: 'shop', name: 'Shop', audienceIds: ['buyers'], capabilityIds: ['browse', 'order'], outcomeIds: ['seen'],
+        evidence: [{ type: 'source', path: 'a.ts' }],
+        steps: [
+          { id: 'look', capabilityId: 'browse', ownership: { status: 'resolved', actorId: 'shopper', evidence: [{ type: 'source', path: 'a.ts' }] }, proofSurfaceId: 'home', safeActionIds: ['open'] },
+          { id: 'purchase', capabilityId: 'order', ownership: { status: 'resolved', actorId: 'shopper', evidence: [{ type: 'source', path: 'a.ts' }] }, proofSurfaceId: 'home', safeActionIds: ['open', 'buy'] }
+        ]
+      }]
+    });
+
+    const result = planDemo(model, { mode: 'journey', journeyId: 'shop' });
+    if (result.status !== 'planned') throw new Error('Expected a planned journey');
+
+    expect(result.coverage.find((entry) => entry.capabilityId === 'browse')?.demonstrated).toBe(false);
+    expect(result.coverage.find((entry) => entry.capabilityId === 'order')?.demonstrated).toBe(true);
+  });
+});

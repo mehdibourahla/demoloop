@@ -129,6 +129,28 @@ describe('capture privacy redactions', () => {
     await page.close();
   });
 
+  test('scopes a target to the container the scenario named', async () => {
+    const page = await browser.newPage();
+    await page.setContent(`<main><button>Enregistrer</button></main>
+      <div role="dialog"><button>Enregistrer</button><p>dans la fenêtre</p></div>`);
+
+    const scoped = locatorFor(page, TargetSchema.parse({ by: 'role', role: 'button', value: 'Enregistrer', within: { role: 'dialog' } }));
+
+    expect(await scoped.count()).toBe(1);
+    expect(await scoped.evaluate((n) => n.closest('[role=dialog]') !== null)).toBe(true);
+    await page.close();
+  });
+
+  test('scopes a pattern target so an ambiguous label resolves inside its dialog', async () => {
+    const page = await browser.newPage();
+    await page.setContent(`<main><button>Intéressé</button></main><div role="dialog"><button>Intéressé</button></div>`);
+
+    const scoped = locatorFor(page, TargetSchema.parse({ by: 'rolePattern', role: 'button', pattern: '^Intéressé$', within: { role: 'dialog' } }));
+
+    expect(await scoped.evaluate((n) => n.closest('[role=dialog]') !== null)).toBe(true);
+    await page.close();
+  });
+
   test('ignores only the request URLs the configuration allows', () => {
     const patterns = ['/api/telemetry', '\\.well-known/'];
 
@@ -136,6 +158,14 @@ describe('capture privacy redactions', () => {
     expect(isIgnoredRequest('http://app.test/.well-known/probe', patterns)).toBe(true);
     expect(isIgnoredRequest('http://app.test/api/orders', patterns)).toBe(false);
     expect(isIgnoredRequest('http://app.test/api/telemetry', [])).toBe(false);
+  });
+
+  test('ignores known capture-environment noise without any configuration', () => {
+    const { runtime } = ConfigSchema.parse({ app: { url: 'http://127.0.0.1:4173' } });
+
+    expect(isIgnoredConsoleError('Attempted to load a Vector Map, but failed. Falling back to Raster', runtime.ignoreConsolePatterns)).toBe(true);
+    expect(isIgnoredConsoleError('ResizeObserver loop completed with undelivered notifications', runtime.ignoreConsolePatterns)).toBe(true);
+    expect(isIgnoredConsoleError('TypeError: cannot read property id of undefined', runtime.ignoreConsolePatterns)).toBe(false);
   });
 
   test('ignores only the console messages the configuration allows', () => {

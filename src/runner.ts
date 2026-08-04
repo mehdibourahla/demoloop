@@ -25,20 +25,29 @@ export function isIgnoredConsoleError(text: string, patterns: string[]): boolean
   return patterns.some((pattern) => new RegExp(pattern).test(text));
 }
 
+function scopeFor(page: Page, target: Target) {
+  const within = 'within' in target ? target.within : undefined;
+  if (!within) return page;
+  let scope = within.role ? page.getByRole(within.role) : page.locator('body');
+  if (within.testId) scope = (within.role ? scope : page).getByTestId(within.testId);
+  return scope.last();
+}
+
 export function locatorFor(page: Page, target: Target): Locator {
-  if (target.by === 'label') return page.getByLabel(target.value, { exact: true });
-  if (target.by === 'testId') return page.getByTestId(target.value);
-  if (target.by === 'text') return page.getByText(target.value, { exact: true }).first();
-  if (target.by === 'textPattern') return page.getByText(new RegExp(target.pattern, 'i')).first();
+  const scope = scopeFor(page, target);
+  if (target.by === 'label') return scope.getByLabel(target.value, { exact: true });
+  if (target.by === 'testId') return scope.getByTestId(target.value);
+  if (target.by === 'text') return scope.getByText(target.value, { exact: true }).first();
+  if (target.by === 'textPattern') return scope.getByText(new RegExp(target.pattern, 'i')).first();
   if (target.by === 'roleAny') {
     const alternatives = target.values.map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    return page.getByRole(target.role, { name: new RegExp(`^(?:${alternatives.join('|')})$`) });
+    return scope.getByRole(target.role, { name: new RegExp(`^(?:${alternatives.join('|')})$`) });
   }
   if (target.by === 'rolePattern') {
-    const matches = page.getByRole(target.role, { name: new RegExp(target.pattern, 'i') });
+    const matches = scope.getByRole(target.role, { name: new RegExp(target.pattern, 'i') });
     return target.role === 'button' ? matches.and(page.locator('button:not([disabled])')).last() : matches.last();
   }
-  return page.getByRole(target.role, { name: target.value, exact: true });
+  return scope.getByRole(target.role, { name: target.value, exact: true });
 }
 
 function targetLabel(target: Target): string {
@@ -172,16 +181,21 @@ async function approach(page: Page, box: { x: number; y: number; width: number; 
 }
 
 export function candidateLocator(page: Page, target: Target): Locator {
-  if (target.by === 'label') return page.getByLabel(target.value, { exact: true });
-  if (target.by === 'testId') return page.getByTestId(target.value);
-  if (target.by === 'text') return page.getByText(target.value, { exact: true });
-  if (target.by === 'textPattern') return page.getByText(new RegExp(target.pattern, 'i'));
+  const scope = scopeFor(page, target);
+  if (target.by === 'label') return scope.getByLabel(target.value, { exact: true });
+  if (target.by === 'testId') return scope.getByTestId(target.value);
+  if (target.by === 'text') return scope.getByText(target.value, { exact: true });
+  if (target.by === 'textPattern') return scope.getByText(new RegExp(target.pattern, 'i'));
   if (target.by === 'roleAny') {
     const alternatives = target.values.map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    return page.getByRole(target.role, { name: new RegExp(`^(?:${alternatives.join('|')})$`) });
+    return scope.getByRole(target.role, { name: new RegExp(`^(?:${alternatives.join('|')})$`) });
   }
-  if (target.by === 'rolePattern') return page.getByRole(target.role, { name: new RegExp(target.pattern, 'i') });
-  return page.getByRole(target.role, { name: target.value, exact: true });
+  if (target.by === 'rolePattern') return scope.getByRole(target.role, { name: new RegExp(target.pattern, 'i') });
+  return scope.getByRole(target.role, { name: target.value, exact: true });
+}
+
+export function targetDescription(target: Target): string {
+  return targetLabel(target);
 }
 
 export function selectByIntent(options: string[], prefer: string[], avoid: string[]): number | undefined {

@@ -8,14 +8,17 @@ export const EvidenceSchema = z.discriminatedUnion('type', [
 
 const EvidenceArraySchema = z.array(EvidenceSchema).min(1);
 
+const RoleSchema = z.enum(['button', 'link', 'textbox', 'checkbox', 'radio', 'heading', 'combobox', 'listitem', 'tab', 'menuitem']);
+const WithinSchema = z.object({ role: z.enum(['dialog', 'form', 'region', 'navigation', 'main', 'list', 'table']).optional(), testId: z.string().min(1).optional() });
+
 export const TargetSchema = z.discriminatedUnion('by', [
-  z.object({ by: z.literal('role'), role: z.enum(['button', 'link', 'textbox', 'checkbox', 'radio', 'heading', 'combobox', 'listitem', 'tab', 'menuitem']), value: z.string().min(1) }),
-  z.object({ by: z.literal('label'), value: z.string().min(1) }),
-  z.object({ by: z.literal('testId'), value: z.string().min(1) }),
-  z.object({ by: z.literal('text'), value: z.string().min(1) }),
-  z.object({ by: z.literal('roleAny'), role: z.enum(['button', 'link', 'textbox', 'checkbox', 'radio', 'heading', 'combobox', 'listitem', 'tab', 'menuitem']), values: z.array(z.string().min(1)).min(2) }),
-  z.object({ by: z.literal('rolePattern'), role: z.enum(['button', 'link', 'textbox', 'checkbox', 'radio', 'heading', 'combobox', 'listitem', 'tab', 'menuitem']), pattern: z.string().min(1) }),
-  z.object({ by: z.literal('textPattern'), pattern: z.string().min(1) })
+  z.object({ by: z.literal('role'), role: RoleSchema, value: z.string().min(1), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('label'), value: z.string().min(1), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('testId'), value: z.string().min(1), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('text'), value: z.string().min(1), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('roleAny'), role: RoleSchema, values: z.array(z.string().min(1)).min(2), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('rolePattern'), role: RoleSchema, pattern: z.string().min(1), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('textPattern'), pattern: z.string().min(1), within: WithinSchema.optional() })
 ]);
 
 export const ActionTimingSchema = z.object({
@@ -154,7 +157,7 @@ export const ScenarioSchema = z.object({
   });
 });
 
-const CoverageSchema = z.object({ capabilityId: z.string().min(1), outputIds: z.array(z.string()), omissionReason: z.string().min(1).optional() });
+const CoverageSchema = z.object({ capabilityId: z.string().min(1), outputIds: z.array(z.string()), demonstrated: z.boolean().default(false), omissionReason: z.string().min(1).optional() });
 const OmissionSchema = z.object({ id: z.string().min(1), reason: z.string().min(1), evidence: z.array(EvidenceSchema).default([]) });
 
 export const PlanResultSchema = z.discriminatedUnion('status', [
@@ -194,6 +197,8 @@ export const QualityReportSchema = z.object({
   encoding: z.object({ codec: z.string(), width: z.number(), height: z.number(), durationSeconds: z.number(), pixelFormat: z.string() }).optional()
 });
 
+const captureNoise = ['Vector Map', '^ResizeObserver loop', 'WebGL', 'Failed to load resource: net::ERR_ABORTED'];
+
 const ThresholdSchema = z.object({ distinctWarnRatio: z.number().min(0).max(1), distinctFailRatio: z.number().min(0).max(1), staticWarnSeconds: z.number().positive(), repeatedStaticFailCount: z.number().int().positive(), montageMaxRatio: z.number().min(0).max(1), seamChangeMax: z.number().min(0).max(1).default(0.05) });
 const defaultThreshold = { distinctWarnRatio: 0.5, distinctFailRatio: 0.4, staticWarnSeconds: 3, repeatedStaticFailCount: 2, montageMaxRatio: 0.25, seamChangeMax: 0.05 };
 const defaultThresholds = { 'public-master': defaultThreshold, 'actor-journey': defaultThreshold, 'feature-clip': defaultThreshold, 'release-demo': defaultThreshold, montage: { ...defaultThreshold, montageMaxRatio: 1 } };
@@ -203,7 +208,7 @@ export const ConfigSchema = z.object({
   repository: z.object({ root: z.string().default('.') }).default({ root: '.' }),
   output: z.object({ directory: z.string().default('artifacts') }).default({ directory: 'artifacts' }),
   privacy: z.object({ allowProduction: z.boolean().default(false), scanArtifacts: z.boolean().default(true), redactions: z.array(z.object({ sourceEnv: z.string().min(1), replacement: z.string().min(1) })).default([]) }).default({ allowProduction: false, scanArtifacts: true, redactions: [] }),
-  runtime: z.object({ rehearsalPasses: z.number().int().min(2).default(2), headless: z.boolean().default(true), startTimeoutMs: z.number().int().min(1_000).max(600_000).default(60_000), actionTimeoutMs: z.number().int().min(100).max(300_000).default(10_000), ignoreRequestPatterns: z.array(z.string().min(1)).default([]), ignoreConsolePatterns: z.array(z.string().min(1)).default([]) }).default({ rehearsalPasses: 2, headless: true, startTimeoutMs: 60_000, actionTimeoutMs: 10_000, ignoreRequestPatterns: [], ignoreConsolePatterns: [] }),
+  runtime: z.object({ rehearsalPasses: z.number().int().min(2).default(2), headless: z.boolean().default(true), startTimeoutMs: z.number().int().min(1_000).max(600_000).default(60_000), actionTimeoutMs: z.number().int().min(100).max(300_000).default(10_000), ignoreRequestPatterns: z.array(z.string().min(1)).default([]), ignoreConsolePatterns: z.array(z.string().min(1)).default(captureNoise) }).default({ rehearsalPasses: 2, headless: true, startTimeoutMs: 60_000, actionTimeoutMs: 10_000, ignoreRequestPatterns: [], ignoreConsolePatterns: captureNoise }),
   narration: z.object({
     provider: z.enum(['none', 'elevenlabs', 'macos']).default('none'),
     elevenlabs: z.object({

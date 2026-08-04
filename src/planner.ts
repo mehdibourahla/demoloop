@@ -24,6 +24,10 @@ function presentation(overrides: Partial<Scenario['scenes'][number]['presentatio
   };
 }
 
+export function demonstrates(scene: { actions: Action[] }): boolean {
+  return scene.actions.some((action) => ['click', 'fill', 'select', 'choose'].includes(action.type));
+}
+
 function title(value: string): string {
   return value.replace(/[-_]+/g, ' ').replace(/^./, (character) => character.toUpperCase());
 }
@@ -131,8 +135,9 @@ export function planDemo(model: ProductModel, options: PlanOptions): PlanResult 
     ? [scenarioForJourney(model, journeys[0], 'public-master', options), ...journeys.map((journey) => scenarioForJourney(model, journey, 'actor-journey', options))]
     : journeys.map((journey) => scenarioForJourney(model, journey, outputType, options));
   const coverage = model.capabilities.map((capability) => {
-    const matching = outputs.filter((output) => output.scenes.some((scene) => scene.capabilityId === capability.id)).map((output) => output.id);
-    return { capabilityId: capability.id, outputIds: matching, omissionReason: matching.length ? undefined : 'Not selected for this output set' };
+    const scenes = outputs.flatMap((output) => output.scenes.filter((scene) => scene.capabilityId === capability.id));
+    const matching = [...new Set(outputs.filter((output) => output.scenes.some((scene) => scene.capabilityId === capability.id)).map((output) => output.id))];
+    return { capabilityId: capability.id, outputIds: matching, demonstrated: scenes.some(demonstrates), omissionReason: matching.length ? undefined : 'Not selected for this output set' };
   });
   return PlanResultSchema.parse({ version: 2, status: 'planned', outputs, coverage, omissions: coverage.filter((entry) => !entry.outputIds.length).map((entry) => ({ id: entry.capabilityId, reason: entry.omissionReason })) });
 }

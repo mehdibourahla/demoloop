@@ -69,6 +69,30 @@ narration:
   provider: none
 ```
 
+### Demos that change data
+
+A demo that actually demonstrates will create records, and it runs three times (two rehearsals plus the take). Give the scenario a reset so every pass starts from the same state:
+
+```yaml
+preconditions:
+  resetCommand: ./scripts/reset-demo-data.sh
+  seedCommand: ./scripts/seed-demo-data.sh
+```
+
+Without one, each pass accumulates data and the demo eventually breaks on its own leftovers.
+
+### Check the locators before recording
+
+```bash
+npm run product-demo -- verify artifacts/plan/my-journey.yaml
+```
+
+`verify` opens the app once and resolves every target in the scenario, reporting each as resolved, missing, or ambiguous. It exits non-zero if any target is broken, which is far cheaper than discovering it during a rehearsal. When a label is ambiguous, scope it:
+
+```yaml
+target: { by: role, role: button, value: Enregistrer, within: { role: dialog } }
+```
+
 Then discover and plan:
 
 ```bash
@@ -129,6 +153,7 @@ Only narration text is sent to ElevenLabs. Audio is cached locally by content an
 | Command | Purpose |
 |---|---|
 | `discover` | Build an evidence-backed product model |
+| `verify` | Resolve every scenario target against the running app |
 | `plan` | Produce scenarios or `needs-authoring` |
 | `rehearse` | Require two consecutive deterministic passes |
 | `record` | Capture using an exact rehearsal receipt |
