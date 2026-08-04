@@ -9,6 +9,12 @@ describe('rehearsal receipt', () => {
     expect(canRecord(digest, { scenarioDigest: 'stale', consecutivePasses: 2, passed: true })).toBe(false);
   });
 
+  test('honours a stricter configured pass requirement', async () => {
+    const digest = await scenarioDigest({ id: 'a', scenes: [] });
+    expect(canRecord(digest, { scenarioDigest: digest, consecutivePasses: 2, passed: true }, 3)).toBe(false);
+    expect(canRecord(digest, { scenarioDigest: digest, consecutivePasses: 3, passed: true }, 3)).toBe(true);
+  });
+
   test('digest is stable across object key order', async () => {
     expect(await scenarioDigest({ b: 2, a: 1 })).toBe(await scenarioDigest({ a: 1, b: 2 }));
   });

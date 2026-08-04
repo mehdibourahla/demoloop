@@ -150,7 +150,7 @@ async function ensureCapturedCursor(page: Page, primary: string): Promise<void> 
   await page.evaluate(capturedCursorScript(primary));
 }
 
-export async function executeAction(page: Page, action: Action, human = false, cursor: Point = { x: 40, y: 40 }, screenshotPath?: string): Promise<{ box?: { x: number; y: number; width: number; height: number } | null; cursor: Point }> {
+export async function executeAction(page: Page, action: Action, human = false, cursor: Point = { x: 40, y: 40 }, screenshotPath?: string, defaultTimeoutMs = 10_000): Promise<{ box?: { x: number; y: number; width: number; height: number } | null; cursor: Point }> {
   if (action.type === 'goto') {
     await page.goto(action.path, { waitUntil: 'networkidle' });
     return { cursor };
@@ -163,7 +163,7 @@ export async function executeAction(page: Page, action: Action, human = false, c
   const locator = action.target ? locatorFor(page, action.target) : undefined;
   if (locator) {
     try {
-      await locator.waitFor({ state: action.type === 'assert' && action.state === 'hidden' ? 'attached' : 'visible', timeout: action.timeoutMs ?? 90_000 });
+      await locator.waitFor({ state: action.type === 'assert' && action.state === 'hidden' ? 'attached' : 'visible', timeout: action.timeoutMs ?? defaultTimeoutMs });
     } catch (error) {
       if (action.optional) return { cursor };
       throw error;
@@ -230,13 +230,11 @@ async function runPass(options: ExecuteOptions, pass: number) {
   const events: TimelineEvent[] = [];
   const sceneReports: Array<{ id: string; status: 'passed' | 'failed' | 'omitted'; failure?: string }> = [];
   const rawArtifacts: Record<string, string> = {};
-  const traceArtifacts: Record<string, string> = {};
   const passStart = performance.now();
   const cursors = new Map<string, Point>();
   try {
     for (const actor of options.scenario.actors) {
       const context = await browser.newContext(browserContextOptions(options.config, options.device, actor, options.scenario.locale));
-      if (options.mode === 'record') await context.tracing.start({ screenshots: false, snapshots: true, sources: true });
       const page = await context.newPage();
       await installTextRedactions(page, options.config.privacy.redactions);
       if (options.mode === 'record') await installCapturedCursor(page, options.scenario.branding.primary);
@@ -260,7 +258,7 @@ async function runPass(options: ExecuteOptions, pass: number) {
         const action = sourceAction.type === 'goto' ? { ...sourceAction, path: new URL(sourceAction.path, options.config.app.url).toString() } : sourceAction;
         const startedAtMs = performance.now() - passStart;
         try {
-          const { box, cursor } = await executeAction(page, action, false, cursors.get(scene.actor));
+          const { box, cursor } = await executeAction(page, action, false, cursors.get(scene.actor), undefined, options.config.runtime.actionTimeoutMs);
           if (sourceAction.type === 'goto') await ensureCapturedCursor(page, options.scenario.branding.primary);
           cursors.set(scene.actor, cursor);
           events.push({ sceneId: scene.id, actionIndex, type: sourceAction.type, label: sourceAction.title ?? sourceAction.type, actor: scene.actor, startedAtMs, endedAtMs: performance.now() - passStart, target: 'target' in sourceAction ? sourceAction.target : undefined, box, state: 'passed' });
@@ -282,7 +280,7 @@ async function runPass(options: ExecuteOptions, pass: number) {
         try {
           const screenshotName = sourceAction.type === 'screenshot' ? sourceAction.name : undefined;
           const screenshotPath = screenshotName ? join(options.outputDirectory, `${scene.id}-${screenshotName}.png`) : undefined;
-          const { box, cursor } = await executeAction(page, action, options.mode === 'record', cursors.get(scene.actor), screenshotPath);
+          const { box, cursor } = await executeAction(page, action, options.mode === 'record', cursors.get(scene.actor), screenshotPath, options.config.runtime.actionTimeoutMs);
           if (options.mode === 'record' && sourceAction.type === 'goto') await ensureCapturedCursor(page, options.scenario.branding.primary);
           cursors.set(scene.actor, cursor);
           if (screenshotPath && screenshotName) rawArtifacts[`evidence-${scene.id}-${screenshotName}`] = screenshotPath;
@@ -300,6 +298,9 @@ async function runPass(options: ExecuteOptions, pass: number) {
         const screenshotPath = join(options.outputDirectory, `final-${scene.id}.png`);
         await page.screenshot({ path: screenshotPath });
         rawArtifacts[`screenshot-${scene.id}`] = screenshotPath;
+        const textPath = join(options.outputDirectory, `text-${scene.id}.txt`);
+        await writeFile(textPath, await page.locator('body').innerText());
+        rawArtifacts[`text-${scene.id}`] = textPath;
       }
       sceneReports.push(failed ? { id: scene.id, status: 'failed', failure: failed } : { id: scene.id, status: 'passed' });
       if (failed) {
@@ -308,17 +309,10 @@ async function runPass(options: ExecuteOptions, pass: number) {
       }
     }
   } finally {
-    if (options.mode === 'record') {
-      for (const [actor, context] of contexts) {
-        const tracePath = join(options.outputDirectory, `trace-${actor}.zip`);
-        await context.tracing.stop({ path: tracePath });
-        traceArtifacts[`trace-${actor}`] = tracePath;
-      }
-    }
     await Promise.all([...contexts.values()].map((context) => context.close()));
     await browser.close();
   }
-  return { pass, passed: sceneReports.length === options.scenario.scenes.length && sceneReports.every((scene) => scene.status === 'passed') && consoleErrors.length === 0 && failedRequests.length === 0, sceneReports, consoleErrors, failedRequests, events, artifacts: { ...rawArtifacts, ...traceArtifacts } };
+  return { pass, passed: sceneReports.length === options.scenario.scenes.length && sceneReports.every((scene) => scene.status === 'passed') && consoleErrors.length === 0 && failedRequests.length === 0, sceneReports, consoleErrors, failedRequests, events, artifacts: rawArtifacts };
 }
 
 export async function executeScenario(options: ExecuteOptions): Promise<unknown> {
@@ -329,14 +323,15 @@ export async function executeScenario(options: ExecuteOptions): Promise<unknown>
   if (options.mode === 'record') {
     if (!options.rehearsalReceiptPath) throw new Error('Recording requires a rehearsal receipt');
     const receipt = JSON.parse(await readFile(options.rehearsalReceiptPath, 'utf8')) as unknown;
-    if (!canRecord(digest, receipt)) throw new Error('Recording requires two successful rehearsals for the exact scenario digest');
+    if (!canRecord(digest, receipt, options.config.runtime.rehearsalPasses)) throw new Error(`Recording requires ${options.config.runtime.rehearsalPasses} successful rehearsals for the exact scenario digest`);
   }
+  const requiredPasses = options.mode === 'rehearse' ? options.config.runtime.rehearsalPasses : 1;
   let consecutivePasses = 0;
   let result = await runPass(options, 1);
   consecutivePasses = result.passed ? 1 : 0;
-  if (options.mode === 'rehearse' && result.passed) {
-    result = await runPass(options, 2);
-    consecutivePasses = result.passed ? 2 : 0;
+  for (let pass = 2; pass <= requiredPasses && result.passed; pass += 1) {
+    result = await runPass(options, pass);
+    consecutivePasses = result.passed ? consecutivePasses + 1 : 0;
   }
   const profile = options.config.devices[options.device];
   const timelinePath = join(options.outputDirectory, 'timeline.json');

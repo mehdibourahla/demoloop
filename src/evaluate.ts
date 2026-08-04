@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
-import { scanSensitiveText } from './safety.js';
+import { scanCaptureArtifacts, scanSensitiveText } from './safety.js';
 import { EditorialReviewSchema, QualityReportSchema, TimelineSchema, type DemoConfig, type Scenario } from './schemas.js';
 import { analyzeVideo } from './visual-analysis.js';
 
@@ -24,6 +24,13 @@ async function optionalJson(path: string): Promise<unknown | undefined> {
   return readFile(path, 'utf8').then(JSON.parse).catch(() => undefined);
 }
 
+export function durationCheck(durationSeconds: number, requestedSeconds?: number) {
+  const passed = requestedSeconds
+    ? durationSeconds >= requestedSeconds * 0.5 && durationSeconds <= requestedSeconds * 1.25
+    : durationSeconds >= 1 && durationSeconds <= 180;
+  return { id: 'duration', passed, value: durationSeconds, detail: requestedSeconds ? `Requested ${requestedSeconds}s` : 'No requested duration; bounded to 1-180s' };
+}
+
 export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
   const { stdout } = await execFileAsync('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_type,codec_name,width,height,pix_fmt:format=duration', '-of', 'json', options.videoPath]);
   const probe = JSON.parse(stdout) as { streams: Array<{ codec_type: string; codec_name: string; width?: number; height?: number; pix_fmt?: string }>; format: { duration: string } };
@@ -43,7 +50,10 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
   const height = stream.height ?? 0;
   const gaps = timeline.events.slice(1).map((event, index) => Math.max(0, event.startedAtMs - timeline.events[index].endedAtMs));
   const maxGap = gaps.length ? Math.max(...gaps) : 0;
-  const sensitiveFindings = scanSensitiveText(JSON.stringify({ scenario: options.scenario, timeline, execution: options.executionReport }));
+  const sensitiveFindings = [
+    ...scanSensitiveText(JSON.stringify({ scenario: options.scenario, timeline, execution: options.executionReport })),
+    ...(options.config.privacy.scanArtifacts ? await scanCaptureArtifacts(options.executionReport.artifacts) : [])
+  ];
   const omittedScenes = options.executionReport.scenes.filter((scene) => scene.status !== 'passed').map((scene) => ({ id: scene.id, reason: scene.failure ?? scene.status }));
   const expectsAudio = options.scenario.audio.policy !== 'silent';
   const technicalChecks = [
@@ -53,7 +63,7 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
     { id: 'locator-stability', passed: timeline.events.every((event) => event.state === 'passed'), value: timeline.events.filter((event) => event.state !== 'passed').length },
     { id: 'encoding', passed: stream.codec_name === 'h264' && stream.pix_fmt === 'yuv420p', value: `${stream.codec_name}/${stream.pix_fmt}` },
     { id: 'viewport', passed: width === profile.width && height === profile.height, value: `${width}x${height}` },
-    { id: 'duration', passed: durationSeconds >= 1 && durationSeconds <= 180, value: durationSeconds },
+    durationCheck(durationSeconds, options.scenario.requestedDurationSeconds),
     { id: 'dead-time', passed: maxGap <= 5_000, value: Math.round(maxGap) },
     { id: 'sensitive-information', passed: sensitiveFindings.length === 0, value: sensitiveFindings.length },
     { id: 'audio-policy', passed: expectsAudio ? Boolean(audioStream && maxAudioDb !== undefined && maxAudioDb > -60) : !audioStream, value: audioStream ? `${audioStream.codec_name}/${maxAudioDb ?? 'unknown'}dB` : 'no-audio', detail: `Expected policy: ${options.scenario.audio.policy}` },

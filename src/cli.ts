@@ -59,18 +59,27 @@ async function loadScenario(reference: string): Promise<{ scenario: Scenario; pa
   return { scenario: ScenarioSchema.parse(YAML.parse(await readFile(path, 'utf8'))), path };
 }
 
-async function ensureApp(config: DemoConfig): Promise<() => void> {
+export async function ensureApp(config: DemoConfig): Promise<() => Promise<void>> {
   const healthcheck = config.app.healthcheck ?? config.app.url;
-  try { if ((await fetch(healthcheck)).ok) return () => {}; } catch {}
+  try { if ((await fetch(healthcheck)).ok) return async () => {}; } catch {}
   if (!config.app.startCommand) throw new Error(`Application is unreachable at ${healthcheck} and no startCommand is configured`);
-  const child: ChildProcess = spawn(config.app.startCommand, { cwd: config.app.commandCwd ?? config.repository.root, shell: true, stdio: 'inherit' });
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  const child: ChildProcess = spawn(config.app.startCommand, { cwd: config.app.commandCwd ?? config.repository.root, shell: true, stdio: 'inherit', detached: true });
+  const exited = new Promise<void>((resolveExit) => child.once('exit', () => resolveExit()));
+  const stop = async () => {
+    if (child.exitCode !== null || child.pid === undefined) return;
+    try { process.kill(-child.pid, 'SIGTERM'); } catch { child.kill('SIGTERM'); }
+    const escalation = setTimeout(() => { try { process.kill(-child.pid!, 'SIGKILL'); } catch {} }, 5_000);
+    await exited;
+    clearTimeout(escalation);
+  };
+  const deadline = Date.now() + config.runtime.startTimeoutMs;
+  while (Date.now() < deadline) {
     if (child.exitCode !== null) throw new Error(`Application command exited with code ${child.exitCode}`);
-    try { if ((await fetch(healthcheck)).ok) return () => child.kill('SIGTERM'); } catch {}
+    try { if ((await fetch(healthcheck)).ok) return stop; } catch {}
     await new Promise((resolveWait) => setTimeout(resolveWait, 100));
   }
-  child.kill('SIGTERM');
-  throw new Error(`Application did not become ready at ${healthcheck}`);
+  await stop();
+  throw new Error(`Application did not become ready at ${healthcheck} within ${config.runtime.startTimeoutMs}ms`);
 }
 
 function scenarioForArgs(scenario: Scenario, args: string[]): Scenario {
@@ -104,13 +113,13 @@ export function narrationProvider(config: DemoConfig, scenario: Scenario) {
 async function rehearse(config: DemoConfig, scenario: Scenario, device: string, output?: string) {
   const cleanup = await ensureApp(config);
   try { return ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'rehearse', outputDirectory: output ?? pathsFor(config, scenario, device).rehearsal, device })); }
-  finally { cleanup(); }
+  finally { await cleanup(); }
 }
 
 async function record(config: DemoConfig, scenario: Scenario, device: string, receipt: string, output?: string) {
   const cleanup = await ensureApp(config);
   try { return ExecutionReportSchema.parse(await executeScenario({ scenario, config, mode: 'record', outputDirectory: output ?? pathsFor(config, scenario, device).recording, device, rehearsalReceiptPath: receipt })); }
-  finally { cleanup(); }
+  finally { await cleanup(); }
 }
 
 export async function runCli(args: string[]): Promise<number> {
@@ -131,7 +140,7 @@ export async function runCli(args: string[]): Promise<number> {
       await writeFile(destination, JSON.stringify(model, null, 2));
       console.log(destination);
       return 0;
-    } finally { cleanup(); }
+    } finally { await cleanup(); }
   }
 
   if (command === 'plan') {
@@ -206,7 +215,7 @@ export async function runCli(args: string[]): Promise<number> {
       const quality = QualityReportSchema.parse(await evaluateDemo({ scenario, config, executionReport: freshRecording, videoPath: freshVideo, timelinePath: freshRecording.artifacts.timeline, outputPath: paths.quality, device }));
       console.log(JSON.stringify({ video: freshVideo, execution: freshRecording.artifacts.report, quality: paths.quality }));
       return quality.passed ? 0 : 1;
-    } finally { cleanup(); }
+    } finally { await cleanup(); }
   }
   const recordingReportPath = flag(args, 'report', join(paths.recording, 'execution-report.json'))!;
   const recordingReport = ExecutionReportSchema.parse(JSON.parse(await readFile(recordingReportPath, 'utf8')));

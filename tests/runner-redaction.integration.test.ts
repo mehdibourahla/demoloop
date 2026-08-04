@@ -84,6 +84,17 @@ describe('capture privacy redactions', () => {
     await page.close();
   });
 
+  test('fails a required target using the configured action timeout', async () => {
+    const page = await browser.newPage();
+    await page.setContent('<main>Complete</main>');
+    const started = Date.now();
+
+    await expect(executeAction(page, { type: 'click', target: { by: 'text', value: 'Never appears' } }, false, undefined, undefined, 300)).rejects.toThrow();
+
+    expect(Date.now() - started).toBeLessThan(5_000);
+    await page.close();
+  });
+
   test('targets text across allowed copy variants', async () => {
     const page = await browser.newPage();
     await page.setContent('<p>I will share all of this with your doctor.</p>');

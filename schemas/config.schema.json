@@ -64,17 +64,12 @@
     },
     "privacy": {
       "default": {
-        "syntheticData": true,
         "allowProduction": false,
         "scanArtifacts": true,
         "redactions": []
       },
       "type": "object",
       "properties": {
-        "syntheticData": {
-          "default": true,
-          "type": "boolean"
-        },
         "allowProduction": {
           "default": false,
           "type": "boolean"
@@ -107,7 +102,6 @@
         }
       },
       "required": [
-        "syntheticData",
         "allowProduction",
         "scanArtifacts",
         "redactions"
@@ -117,7 +111,9 @@
     "runtime": {
       "default": {
         "rehearsalPasses": 2,
-        "headless": true
+        "headless": true,
+        "startTimeoutMs": 60000,
+        "actionTimeoutMs": 10000
       },
       "type": "object",
       "properties": {
@@ -130,11 +126,25 @@
         "headless": {
           "default": true,
           "type": "boolean"
+        },
+        "startTimeoutMs": {
+          "default": 60000,
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 600000
+        },
+        "actionTimeoutMs": {
+          "default": 10000,
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 300000
         }
       },
       "required": [
         "rehearsalPasses",
-        "headless"
+        "headless",
+        "startTimeoutMs",
+        "actionTimeoutMs"
       ],
       "additionalProperties": false
     },
@@ -363,22 +373,6 @@
       ],
       "additionalProperties": false
     },
-    "upload": {
-      "default": {
-        "enabled": false
-      },
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "default": false,
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "enabled"
-      ],
-      "additionalProperties": false
-    },
     "devices": {
       "default": {
         "desktop": {
@@ -435,7 +429,6 @@
     "runtime",
     "narration",
     "editorial",
-    "upload",
     "devices"
   ],
   "additionalProperties": false

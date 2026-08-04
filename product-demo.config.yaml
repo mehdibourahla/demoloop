@@ -8,7 +8,6 @@ repository:
 output:
   directory: artifacts
 privacy:
-  syntheticData: true
   allowProduction: false
   scanArtifacts: true
 runtime:
@@ -16,8 +15,6 @@ runtime:
   headless: true
 narration:
   provider: none
-upload:
-  enabled: false
 devices:
   desktop:
     width: 1440

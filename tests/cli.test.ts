@@ -2,7 +2,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test, vi } from 'vitest';
-import { narrationProvider, runCli } from '../src/cli.js';
+import { ensureApp, narrationProvider, runCli } from '../src/cli.js';
 import { MacOSNarrationProvider } from '../src/narration.js';
 import { ConfigSchema, ScenarioSchema } from '../src/schemas.js';
 
@@ -28,6 +28,21 @@ describe('CLI', () => {
 
     expect(narrationProvider(config, scenario)).toBeInstanceOf(MacOSNarrationProvider);
   });
+
+  test('stops the whole application process tree it started', async () => {
+    const config = ConfigSchema.parse({
+      app: { url: 'http://127.0.0.1:4199', healthcheck: 'http://127.0.0.1:4199/health', startCommand: 'PORT=4199 node --import tsx fixtures/neutral/server.ts & wait', commandCwd: process.cwd() },
+      runtime: { startTimeoutMs: 30_000 }
+    });
+
+    const cleanup = await ensureApp(config);
+    expect((await fetch('http://127.0.0.1:4199/health')).ok).toBe(true);
+    await cleanup();
+
+    await expect.poll(async () => {
+      try { await fetch('http://127.0.0.1:4199/health'); return 'reachable'; } catch { return 'stopped'; }
+    }, { timeout: 10_000 }).toBe('stopped');
+  }, 60_000);
 
   test('writes needs-authoring instead of a route slideshow', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'product-demo-cli-'));

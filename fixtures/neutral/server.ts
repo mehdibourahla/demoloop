@@ -24,4 +24,4 @@ createServer((request, response) => {
   const key = url.pathname.split('/').filter(Boolean)[0] ?? 'stateful';
   response.setHeader('content-type', 'text/html; charset=utf-8');
   response.end(shell(pages[key] ?? pages.stateful));
-}).listen(4173, '127.0.0.1');
+}).listen(Number(process.env.PORT ?? 4173), '127.0.0.1');

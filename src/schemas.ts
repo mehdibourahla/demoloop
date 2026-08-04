@@ -180,15 +180,14 @@ export const ConfigSchema = z.object({
   app: z.object({ url: z.string().url(), startCommand: z.string().optional(), commandCwd: z.string().optional(), healthcheck: z.string().url().optional(), production: z.boolean().default(false) }),
   repository: z.object({ root: z.string().default('.') }).default({ root: '.' }),
   output: z.object({ directory: z.string().default('artifacts') }).default({ directory: 'artifacts' }),
-  privacy: z.object({ syntheticData: z.boolean().default(true), allowProduction: z.boolean().default(false), scanArtifacts: z.boolean().default(true), redactions: z.array(z.object({ sourceEnv: z.string().min(1), replacement: z.string().min(1) })).default([]) }).default({ syntheticData: true, allowProduction: false, scanArtifacts: true, redactions: [] }),
-  runtime: z.object({ rehearsalPasses: z.number().int().min(2).default(2), headless: z.boolean().default(true) }).default({ rehearsalPasses: 2, headless: true }),
+  privacy: z.object({ allowProduction: z.boolean().default(false), scanArtifacts: z.boolean().default(true), redactions: z.array(z.object({ sourceEnv: z.string().min(1), replacement: z.string().min(1) })).default([]) }).default({ allowProduction: false, scanArtifacts: true, redactions: [] }),
+  runtime: z.object({ rehearsalPasses: z.number().int().min(2).default(2), headless: z.boolean().default(true), startTimeoutMs: z.number().int().min(1_000).max(600_000).default(60_000), actionTimeoutMs: z.number().int().min(100).max(300_000).default(10_000) }).default({ rehearsalPasses: 2, headless: true, startTimeoutMs: 60_000, actionTimeoutMs: 10_000 }),
   narration: z.object({
     provider: z.enum(['none', 'elevenlabs', 'macos']).default('none'),
     elevenlabs: z.object({ voiceId: z.string().min(1).optional(), modelId: z.string().min(1).default('eleven_multilingual_v2'), outputFormat: z.string().min(1).default('mp3_44100_128'), apiKeyEnv: z.string().min(1).default('ELEVENLABS_API_KEY') }).default({ modelId: 'eleven_multilingual_v2', outputFormat: 'mp3_44100_128', apiKeyEnv: 'ELEVENLABS_API_KEY' }),
     macos: z.object({ voice: z.string().min(1).default('Samantha') }).default({ voice: 'Samantha' })
   }).default({ provider: 'none', elevenlabs: { modelId: 'eleven_multilingual_v2', outputFormat: 'mp3_44100_128', apiKeyEnv: 'ELEVENLABS_API_KEY' }, macos: { voice: 'Samantha' } }),
   editorial: z.object({ thresholds: z.record(OutputTypeSchema, ThresholdSchema).default(defaultThresholds) }).default({ thresholds: defaultThresholds }),
-  upload: z.object({ enabled: z.boolean().default(false) }).default({ enabled: false }),
   devices: z.record(z.string(), z.object({ width: z.number().int().positive(), height: z.number().int().positive(), device: z.string().optional(), isMobile: z.boolean().default(false) })).default({ desktop: { width: 1440, height: 900, isMobile: false }, mobile: { width: 390, height: 844, device: 'iPhone 13', isMobile: true } })
 });
 

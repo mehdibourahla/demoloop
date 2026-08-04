@@ -118,7 +118,7 @@ describe('version 2 contracts', () => {
 
   test('keeps local-first configuration defaults and configurable thresholds', () => {
     const config = ConfigSchema.parse({ app: { url: 'http://127.0.0.1:4173' } });
-    expect(config.privacy.syntheticData).toBe(true);
+    expect(config.privacy.scanArtifacts).toBe(true);
     expect(config.runtime.rehearsalPasses).toBe(2);
     expect(config.editorial.thresholds['public-master'].distinctWarnRatio).toBe(0.5);
     expect(config.editorial.thresholds['public-master'].distinctFailRatio).toBe(0.4);

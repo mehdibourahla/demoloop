@@ -44,6 +44,19 @@ describe('deterministic scenario runner', () => {
     expect(new Set(timeline.events.map((event) => event.actor))).toEqual(new Set(['origin-context', 'destination-context']));
   }, 60_000);
 
+  test('runs as many rehearsal passes as the configured requirement', async () => {
+    const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-passes-'));
+    const model = await discoverProduct(resolve('fixtures/neutral/handoff'));
+    const result = planDemo(model, { mode: 'journey', journeyId: 'deliver-item', locale: 'en' });
+    if (result.status !== 'planned') throw new Error('Expected planned handoff');
+    const config = ConfigSchema.parse({ app: { url: 'http://127.0.0.1:4173' }, runtime: { rehearsalPasses: 3 } });
+
+    const report = ExecutionReportSchema.parse(await executeScenario({ scenario: result.outputs[0], config, mode: 'rehearse', outputDirectory, device: 'desktop' }));
+
+    expect(report.consecutivePasses).toBe(3);
+    expect(report.passed).toBe(true);
+  }, 90_000);
+
   test('records real scene videos only with a matching two-pass receipt', async () => {
     const outputDirectory = await mkdtemp(join(tmpdir(), 'product-demo-record-'));
     const rehearsalDirectory = join(outputDirectory, 'rehearsal');

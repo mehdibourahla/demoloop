@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+
 export interface SensitiveFinding { kind: string; match: string }
 
 export function assertSafeTarget(url: string, allowProduction = false): void {
@@ -5,6 +7,15 @@ export function assertSafeTarget(url: string, allowProduction = false): void {
   const local = target.hostname === 'localhost' || target.hostname === '127.0.0.1' || target.hostname === '::1';
   const nonProduction = /(^|\.)((dev|test|staging|preview)\.)/i.test(target.hostname) || /[.-](dev|test|staging|preview)[.-]/i.test(target.hostname);
   if (!allowProduction && !local && !nonProduction) throw new Error(`Refusing production-like target ${target.origin}; set allowProduction explicitly`);
+}
+
+export async function scanCaptureArtifacts(artifacts: Record<string, string>): Promise<SensitiveFinding[]> {
+  const findings: SensitiveFinding[] = [];
+  for (const [key, path] of Object.entries(artifacts)) {
+    if (!key.startsWith('text-')) continue;
+    findings.push(...scanSensitiveText(await readFile(path, 'utf8')));
+  }
+  return findings;
 }
 
 export function scanSensitiveText(text: string): SensitiveFinding[] {
