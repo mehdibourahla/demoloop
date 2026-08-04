@@ -94,7 +94,7 @@ export async function contactSheet(videoPath: string, outputPath: string, moment
   const rows = Math.ceil(ordered.length / columns);
   const inputs = ordered.flatMap((moment) => ['-ss', moment.toFixed(3), '-i', videoPath]);
   const scaled = ordered.map((_, index) => `[${index}:v]trim=end_frame=1,setpts=PTS-STARTPTS,scale=${tileWidth}:-1,setsar=1[t${index}]`).join(';');
-  const chain = `${scaled};${ordered.map((_, index) => `[t${index}]`).join('')}concat=n=${ordered.length}:v=1[grid];[grid]tile=${columns}x${rows}`;
+  const chain = `${scaled};${ordered.map((_, index) => `[t${index}]`).join('')}concat=n=${ordered.length}:v=1[grid];[grid]tile=${columns}x${rows}:color=0x8a8a8a`;
   await execFileAsync('ffmpeg', ['-y', '-loglevel', 'error', ...inputs, '-filter_complex', chain, '-frames:v', '1', outputPath]);
   return ordered;
 }
