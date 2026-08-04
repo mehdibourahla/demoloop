@@ -108,7 +108,18 @@ narration:
     modelId: eleven_multilingual_v2
     outputFormat: mp3_44100_128
     apiKeyEnv: ELEVENLABS_API_KEY
+    seed: 1
+    voiceSettings:
+      stability: 0.45
+      similarityBoost: 0.75
+      style: 0
+      useSpeakerBoost: true
+      speed: 1
 ```
+
+Voice settings are sent with every request; the defaults above favour natural narration over flat, over-stabilized delivery. Each scene is also sent the previous and next scene's line as context, so a five-scene demo is delivered as one continuous read rather than five isolated clips. The seed keeps repeat renders identical — change it to resample the same script.
+
+Delivery quality is mostly a writing problem. Write each scene's `narration` as a complete spoken sentence; fragments written to fit a short scene sound clipped no matter which engine speaks them. The `macos` provider exists for offline development and sounds robotic by design — do not judge output quality from it.
 
 Only narration text is sent to ElevenLabs. Audio is cached locally by content and provider settings. Never put the key in YAML or source control.
 

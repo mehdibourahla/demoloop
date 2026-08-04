@@ -17,6 +17,6 @@ Two rules make this safe:
 
 - Playwright MCP: use for agent-led semantic exploration and screenshots. Convert findings to stable role, label, test-ID, or text locators before rehearsal; never compile ephemeral MCP refs.
 - Chrome DevTools MCP: use for deeper console, network, runtime, performance, accessibility, or Lighthouse investigation. It is evidence collection, not a final-take dependency.
-- Narration: the built-in ElevenLabs provider uses `ELEVENLABS_API_KEY`, a configured voice ID, measured MP3 durations, and a content-addressed local cache. Other providers can implement `NarrationProvider` from `src/adapters.ts`. Providers must return a local audio path and measured duration. Never silently send scripts or application data to a provider.
+- Narration: the built-in ElevenLabs provider uses `ELEVENLABS_API_KEY`, a configured voice ID, measured MP3 durations, and a content-addressed local cache. It sends `voice_settings`, a fixed `seed`, and the neighbouring scenes' lines as `previous_text`/`next_text` so delivery stays continuous across scenes; all of those participate in the cache key. The `macos` provider is for offline development only — its delivery is robotic and is not representative. Other providers can implement `NarrationProvider` from `src/adapters.ts`. Providers must return a local audio path and measured duration. Never silently send scripts or application data to a provider.
 
 Voiceover fails loudly when the ElevenLabs provider, API key, or voice ID is missing.
