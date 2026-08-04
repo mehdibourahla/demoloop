@@ -108,6 +108,16 @@
                 ],
                 "additionalProperties": false
               },
+              "subtitles": {
+                "default": "sidecar",
+                "type": "string",
+                "enum": [
+                  "none",
+                  "sidecar",
+                  "embedded",
+                  "burned"
+                ]
+              },
               "branding": {
                 "default": {
                   "name": "Product Demo",
@@ -748,6 +758,7 @@
               "audience",
               "locale",
               "audio",
+              "subtitles",
               "branding",
               "preconditions",
               "actors",

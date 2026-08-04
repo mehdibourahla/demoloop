@@ -9,6 +9,7 @@ import type { NarrationProvider } from './adapters.js';
 import { resolveAudioPolicy } from './audio.js';
 import { buildEdl, mediaFrameRate, outputCuts, padClip, prepareClip, type EdlClip } from './editing.js';
 import { sceneNarrationText } from './narration.js';
+import { formatSrt, subtitleCues, supportsBurnedSubtitles, type NarratedScene } from './subtitles.js';
 import { presentationLayout } from './presentation.js';
 import type { DemoConfig, Scenario } from './schemas.js';
 
@@ -35,6 +36,8 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
   const edits: Array<{ id: string; removedSeconds: number }> = [];
   const edlClips: EdlClip[] = [];
   const holds: Array<{ id: string; heldSeconds: number }> = [];
+  const narrated: NarratedScene[] = [];
+  let timelineSeconds = 0;
   const narrationLines = options.scenario.scenes.map(sceneNarrationText);
   for (const [sceneIndex, scene] of options.scenario.scenes.entries()) {
     const rawPath = options.executionReport.artifacts[`raw-${scene.id}`];
@@ -59,6 +62,8 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
       clipPath = heldPath;
       holds.push({ id: scene.id, heldSeconds: Number((narrationSeconds - prepared.durationSeconds).toFixed(3)) });
     }
+    if (narrationSeconds > 0) narrated.push({ text: narrationLines[sceneIndex], startSeconds: timelineSeconds, durationSeconds: narrationSeconds });
+    timelineSeconds += clipSeconds;
     const fileName = basename(clipPath);
     await copyFile(clipPath, join(publicDirectory, fileName));
     const durationInFrames = Math.max(1, Math.ceil(clipSeconds * FPS));
@@ -77,12 +82,29 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
   const composition = { ...selected, fps: FPS, width: profile.width, height: profile.height, durationInFrames: clips.reduce((sum, clip) => sum + clip.durationInFrames, 0) };
   const remotionPath = join(options.outputDirectory, 'remotion.mp4');
   await renderMedia({ composition, serveUrl, codec: 'h264', pixelFormat: 'yuv420p', outputLocation: remotionPath, inputProps, browserExecutable: chromium.executablePath(), overwrite: true, logLevel: 'error', crf: 20, concurrency: 2 });
+  const cues = options.scenario.subtitles === 'none' ? [] : subtitleCues(narrated);
+  let subtitlePath: string | null = null;
+  if (cues.length) {
+    subtitlePath = join(options.outputDirectory, 'subtitles.srt');
+    await writeFile(subtitlePath, formatSrt(cues));
+  }
   const finalPath = join(options.outputDirectory, `${options.scenario.id}-${options.device}.mp4`);
-  const normalization = ['-y', '-loglevel', 'error', '-i', remotionPath, '-map', '0:v:0'];
+  const embedding = options.scenario.subtitles === 'embedded' && subtitlePath;
+  const normalization = ['-y', '-loglevel', 'error', '-i', remotionPath];
+  if (embedding) normalization.push('-i', subtitlePath!);
+  normalization.push('-map', '0:v:0');
   if (options.scenario.audio.policy === 'silent') normalization.push('-an');
   else normalization.push('-map', '0:a:0', '-c:a', 'aac', '-b:a', '192k');
   if (options.scenario.audio.policy !== 'silent') normalization.push('-af', 'loudnorm=I=-16:TP=-1.5:LRA=11');
-  normalization.push('-vf', 'scale=in_range=full:out_range=tv,format=yuv420p', '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-color_range', 'tv', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', finalPath);
+  let burn = '';
+  if (options.scenario.subtitles === 'burned' && subtitlePath) {
+    if (!await supportsBurnedSubtitles()) throw new Error('Burning subtitles needs an ffmpeg built with libass (no subtitles filter available); use subtitles: embedded or sidecar');
+    const style = `FontSize=${Math.round(profile.height * 0.030)}\\,Outline=2\\,Shadow=0\\,MarginV=${Math.round(profile.height * 0.06)}`;
+    burn = `,subtitles=filename=${subtitlePath.replace(/([\\:'])/g, '\\$1')}:force_style=${style}`;
+  }
+  normalization.push('-vf', `scale=in_range=full:out_range=tv,format=yuv420p${burn}`, '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-color_range', 'tv', '-pix_fmt', 'yuv420p', '-movflags', '+faststart');
+  if (embedding) normalization.push('-map', '1:s:0', '-c:s', 'mov_text', '-metadata:s:s:0', `language=${options.scenario.locale.slice(0, 3)}`);
+  normalization.push(finalPath);
   await execFileAsync('ffmpeg', normalization);
   await writeFile(join(options.outputDirectory, 'presentation-metadata.json'), JSON.stringify({
     version: 1,
@@ -93,6 +115,6 @@ export async function renderDemo(options: RenderOptions): Promise<string> {
     holds,
     cuts: outputCuts(edlClips),
   }, null, 2));
-  await writeFile(join(options.outputDirectory, 'edl.json'), JSON.stringify(buildEdl(edlClips), null, 2));
+  await writeFile(join(options.outputDirectory, 'edl.json'), JSON.stringify({ ...buildEdl(edlClips), subtitles: subtitlePath }, null, 2));
   return finalPath;
 }

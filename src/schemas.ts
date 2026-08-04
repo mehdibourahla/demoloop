@@ -131,6 +131,7 @@ export const ScenarioSchema = z.object({
   locale: z.string().min(2).default('en'),
   requestedDurationSeconds: z.number().positive().optional(),
   audio: AudioPolicySchema.default({ policy: 'silent' }),
+  subtitles: z.enum(['none', 'sidecar', 'embedded', 'burned']).default('sidecar'),
   branding: z.object({ name: z.string().min(1), primary: z.string().min(1), background: z.string().min(1) }).default({ name: 'Product Demo', primary: '#2563eb', background: '#08111f' }),
   preconditions: z.object({ resetCommand: z.string().min(1).optional(), seedCommand: z.string().min(1).optional() }).default({}),
   actors: z.array(z.object({
@@ -147,6 +148,9 @@ export const ScenarioSchema = z.object({
   const actors = new Set(scenario.actors.map((actor) => actor.id));
   scenario.scenes.forEach((scene, index) => {
     if (!actors.has(scene.actor)) context.addIssue({ code: 'custom', path: ['scenes', index, 'actor'], message: 'scene actor must be declared' });
+    if (scenario.subtitles === 'burned' && scene.presentation.caption.mode === 'lower-third') {
+      context.addIssue({ code: 'custom', path: ['scenes', index, 'presentation', 'caption'], message: 'use one caption mechanism: burned subtitles cannot share the frame with a lower-third caption' });
+    }
   });
 });
 
