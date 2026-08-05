@@ -1069,3 +1069,23 @@ Two properties worth keeping:
 
 Five job kinds now exist — discover, plan, capture, render, evaluate — dispatched from one
 binary by `DEMOLOOP_KINDS`.
+
+## Customer journey closed 2026-08-05
+
+`test_customer_journey.py` drives the whole product loop through the public API: start
+reconnaissance, run discover and plan, read the Product Map back, start a production from the
+planned scenario, run capture, render and evaluate, then fetch the video. One observed run
+captured five scenes across two actors and returned an 79,797-byte master through a signed URL,
+with the quality report at `pending-agent-review`.
+
+**It found a real engine bug.** In `full` mode the planner stripped every `goto` from the public
+master, on the reasoning that the opening hook had already navigated. That holds only for the
+hook's own actor: `runner.ts` gives each actor its own browser context, which starts at
+`about:blank`, so any scene that begins with a click for a second actor could never resolve its
+target. Every two-actor full-scope master was unproduceable — and full scope is the PRD's
+headline output. The planner now drops navigation only for an actor whose page has already been
+sent somewhere.
+
+The engine's own suite could not have caught it: its multi-actor fixture gives the second actor
+no navigating safe action, so nothing was there to strip. It took an end-to-end run against a
+real application to surface it.

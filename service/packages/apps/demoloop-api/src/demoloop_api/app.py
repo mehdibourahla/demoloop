@@ -1,7 +1,7 @@
 from demoloop_core.settings import settings
 from fastapi import FastAPI
 
-from demoloop_api.routers import runner
+from demoloop_api.routers import runner, studio
 
 
 def create_app() -> FastAPI:
@@ -12,4 +12,5 @@ def create_app() -> FastAPI:
         return {"status": "ok", "env": settings().env}
 
     app.include_router(runner.router)
+    app.include_router(studio.router)
     return app

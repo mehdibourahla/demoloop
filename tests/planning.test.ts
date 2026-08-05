@@ -79,6 +79,37 @@ describe('capability-aware planning', () => {
     expect(result.outputs[0].scenes.find((scene) => scene.actor === 'destination-console')?.causalLink?.relationshipId).toBe('delivery');
   });
 
+  test('gives every actor its own navigation in the public master', () => {
+    const handoff = model({
+      actors: [{ id: 'origin-console', name: 'Origin console', evidence: [source] }, { id: 'destination-console', name: 'Destination console', evidence: [source] }],
+      capabilities: [
+        { id: 'send-item', name: 'Send item', shape: 'stateful', evidence: [runtime], states: [], outcomes: ['signal-visible'], proofSurfaces: ['signal-panel'], safeActions: ['open-panel', 'filter'] },
+        { id: 'receive-item', name: 'Receive item', shape: 'stateful', evidence: [runtime], states: [], outcomes: ['signal-visible'], proofSurfaces: ['signal-panel'], safeActions: ['open-destination', 'prove'] }
+      ],
+      safeActions: [
+        { id: 'open-panel', type: 'goto', path: '/workspace', evidence: [runtime] },
+        { id: 'open-destination', type: 'goto', path: '/inbox', evidence: [runtime] },
+        { id: 'filter', type: 'click', target: { by: 'role', role: 'button', value: 'Filter' }, evidence: [runtime] },
+        { id: 'prove', type: 'assert', target: { by: 'text', value: 'Signal' }, state: 'visible', evidence: [runtime] }
+      ],
+      relationships: [{ id: 'delivery', fromActorId: 'origin-console', toActorId: 'destination-console', description: 'Item delivery', evidence: [runtime] }],
+      journeys: [{ id: 'handoff-item', name: 'Handoff item', audienceIds: ['reviewers'], capabilityIds: ['send-item', 'receive-item'], outcomeIds: ['signal-visible'], steps: [
+        { id: 'send', capabilityId: 'send-item', ownership: { status: 'resolved', actorId: 'origin-console', evidence: [runtime] }, safeActionIds: ['open-panel', 'filter'] },
+        { id: 'receive', capabilityId: 'receive-item', ownership: { status: 'resolved', actorId: 'destination-console', evidence: [runtime] }, proofSurfaceId: 'signal-panel', safeActionIds: ['open-destination', 'prove'] }
+      ], evidence: [runtime] }]
+    });
+
+    const result = planDemo(handoff, { mode: 'full' });
+
+    expect(result.status).toBe('planned');
+    if (result.status !== 'planned') return;
+    const master = result.outputs.find((output) => output.outputType === 'public-master')!;
+    for (const actor of master.actors) {
+      const firstScene = master.scenes.find((scene) => scene.actor === actor.id)!;
+      expect(firstScene.actions[0].type).toBe('goto');
+    }
+  });
+
   test('full mode emits a concise public master, clips, and coverage separately', () => {
     const result = planDemo(model(), { mode: 'full' });
 
