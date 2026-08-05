@@ -23,5 +23,5 @@ export async function evaluate(payload: RenderPayload, context: StageContext): P
     outputPath, device
   }));
 
-  return { passed: quality.technical.passed, status: quality.status, artifacts: { 'quality-report': outputPath } };
+  return { passed: quality.technical.passed, status: quality.status, quality, artifacts: { 'quality-report': outputPath } };
 }

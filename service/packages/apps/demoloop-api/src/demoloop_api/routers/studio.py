@@ -2,6 +2,7 @@ import uuid
 
 from demoloop_core.db import workspace_session
 from demoloop_core.pipeline import start_production, start_reconnaissance, start_verification
+from demoloop_core.publication import PublicationRefused, publish
 from demoloop_core.storage import presign_get
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -56,11 +57,12 @@ async def begin_production(request: ProductionRequest, who: Caller = Depends(cal
 
 @router.get("/productions/{production_id}")
 async def read_production(production_id: uuid.UUID, who: Caller = Depends(caller)) -> dict:
-    row = await _row(who, "production", production_id, "id, status, video_key")
+    row = await _row(who, "production", production_id, "id, status, video_key, published_at")
     return {
         "id": str(row["id"]),
         "status": row["status"],
         "video": presign_get(row["video_key"]) if row["video_key"] else None,
+        "published": row["published_at"].isoformat() if row["published_at"] else None,
     }
 
 
@@ -81,3 +83,14 @@ async def read_verification(verification_id: uuid.UUID, who: Caller = Depends(ca
         "drifted": row["drifted"],
         "checkedAt": row["checked_at"].isoformat() if row["checked_at"] else None,
     }
+
+
+@router.post("/productions/{production_id}/publish")
+async def publish_production(production_id: uuid.UUID, who: Caller = Depends(caller)) -> dict:
+    await _row(who, "production", production_id, "id")
+    async with workspace_session(who.workspace_id) as session:
+        try:
+            await publish(session, production_id)
+        except PublicationRefused as refusal:
+            raise HTTPException(status_code=409, detail=str(refusal)) from refusal
+    return {"published": True}

@@ -1156,3 +1156,26 @@ system, not Demoloop's, and is deliberately not bound.
 
 Not built: the conversation half of the studio split (`.studio` / `.chat`), the storyboard, the
 library, the Product Map browser, and everything needing an agent.
+
+## Publication gate landed 2026-08-05
+
+PRD §4's central rule — *nothing publishes that was not watched* — is now enforced rather than
+described. `test_publication_gate_end_to_end.py` runs a real production to `complete`, confirms
+the master exists and is playable, and gets **409** on publish because no agent has reviewed it.
+
+The gate reads the quality report the engine already produces, so the rule is enforced by the
+same verdict the CLI reaches:
+
+| Quality status | Publish |
+|---|---|
+| `accepted` and passed | allowed |
+| `rejected` | refused, naming the gate |
+| `pending-agent-review` | refused — no agent has watched it |
+| production not complete | refused |
+
+A production reaching `complete` therefore means the pipeline finished, not that the video may be
+shared. Those are deliberately different states: the master is fetchable by its owner for review
+while remaining unpublishable, which is what the storyboard-and-approve loop needs.
+
+This is the gate the agent editorial review will satisfy. Until a reviewer exists, every
+production is correctly stuck at `pending-agent-review` — the honest state, not a bypass.

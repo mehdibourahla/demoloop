@@ -181,6 +181,11 @@ async def advance(session: AsyncSession, job_id: uuid.UUID) -> uuid.UUID | None:
 
     stage = NEXT_STAGE.get(row["kind"])
     if stage is None:
+        if result.get("quality") is not None:
+            await session.execute(
+                text("UPDATE production SET quality = CAST(:quality AS JSONB) WHERE id = :id"),
+                {"quality": json.dumps(result["quality"]), "id": production_id},
+            )
         await _set_status(session, production_id, "complete")
         return None
 
