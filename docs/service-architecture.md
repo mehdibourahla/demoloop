@@ -176,8 +176,18 @@ Leases are at-least-once: an expired lease requeues the job, so every job is ide
 is also the kill switch — a workspace that runs out of credit mid-run gets `abort` on the next
 beat rather than a silent overrun.
 
-Artifacts upload directly to object storage with pre-signed URLs issued alongside the job, so
-recordings never transit the API.
+Artifacts move directly between the worker and object storage over pre-signed URLs, so
+recordings never transit the API and no worker holds storage credentials. Grants are requested
+after a stage completes rather than issued with the job, because artifact names are not known
+until the stage produces them. Every grant is checked against the leased job and refuses any key
+outside that job's workspace prefix.
+
+**Cloud workers and customer runners are the same binary.** A job's `kind` selects the stage —
+capture, render, evaluate — and a worker leases only the kinds it is configured for. This is
+what makes "the CLI and the studio execute the same runtime" literal rather than aspirational:
+there is one image, and the deployment differs by configured kinds and by which network it sits
+in. An earlier draft gave cloud workers direct storage credentials; using pre-signed URLs
+throughout removed both a dependency and a credential-distribution problem for no loss.
 
 Trace context rides in the job payload, which is how a Node runner's spans join a Python trace.
 

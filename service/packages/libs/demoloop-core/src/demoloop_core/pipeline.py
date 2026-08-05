@@ -52,24 +52,25 @@ async def advance(session: AsyncSession, job_id: uuid.UUID) -> uuid.UUID | None:
         await _set_status(session, production_id, "failed")
         return None
 
+    payload_now = row["payload"] if isinstance(row["payload"], dict) else json.loads(row["payload"])
+    artifacts = {**payload_now.get("artifacts", {}), **result.get("artifacts", {})}
+    if artifacts.get("video"):
+        await session.execute(
+            text("UPDATE production SET video_key = :video WHERE id = :id"),
+            {"video": artifacts["video"], "id": production_id},
+        )
+
     stage = NEXT_STAGE.get(row["kind"])
     if stage is None:
-        if result.get("video"):
-            await session.execute(
-                text("UPDATE production SET video_key = :video WHERE id = :id"),
-                {"video": result["video"], "id": production_id},
-            )
         await _set_status(session, production_id, "complete")
         return None
 
-    payload = row["payload"] if isinstance(row["payload"], dict) else json.loads(row["payload"])
     follow_on = await enqueue(session, row["workspace_id"], stage, {
         "production_id": str(production_id),
-        "scenario": payload["scenario"],
-        "config": payload["config"],
-        "device": payload.get("device", "desktop"),
-        "artifacts": result.get("artifacts", {}),
-        "video": result.get("video"),
+        "scenario": payload_now["scenario"],
+        "config": payload_now["config"],
+        "device": payload_now.get("device", "desktop"),
+        "artifacts": artifacts,
     })
     await session.execute(
         text("UPDATE job SET production_id = :production WHERE id = :id"),

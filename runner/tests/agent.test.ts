@@ -8,7 +8,7 @@ const leased: LeasedJob = {
 };
 
 function deps(overrides: Partial<AgentDeps>): AgentDeps {
-  return { lease: async () => leased, beat: async () => true, upload: async () => ({}), capture: async () => ({}), finish: async () => {}, ...overrides };
+  return { lease: async () => leased, beat: async () => true, upload: async () => ({}), execute: async () => ({}), finish: async () => {}, ...overrides };
 }
 
 test('reports idle when the queue is empty', async () => {
@@ -19,7 +19,7 @@ test('withholds a capture that caught a credential', async () => {
   const reported: Array<Record<string, unknown>> = [];
 
   const result = await runOnce(deps({
-    capture: async () => ({ passed: true, sensitiveFindings: [{ kind: 'secret', source: 'text-login', count: 1 }] }),
+    execute: async () => ({ passed: true, sensitiveFindings: [{ kind: 'secret', source: 'text-login', count: 1 }] }),
     finish: async (_id, _token, body) => { reported.push(body); }
   }));
 
@@ -32,7 +32,7 @@ test('reports a capture that only saw personal data', async () => {
   const reported: Array<Record<string, unknown>> = [];
 
   const result = await runOnce(deps({
-    capture: async () => ({ passed: true, sensitiveFindings: [{ kind: 'email', source: 'text-contacts', count: 3 }] }),
+    execute: async () => ({ passed: true, sensitiveFindings: [{ kind: 'email', source: 'text-contacts', count: 3 }] }),
     finish: async (_id, _token, body) => { reported.push(body); }
   }));
 
@@ -45,7 +45,7 @@ test('holds the lease while a long capture runs', async () => {
 
   await runOnce(deps({
     beat: async (id) => { beats.push(id); return true; },
-    capture: async () => { await new Promise((wait) => setTimeout(wait, 120)); return {}; }
+    execute: async () => { await new Promise((wait) => setTimeout(wait, 120)); return {}; }
   }), 40);
 
   expect(beats.length).toBeGreaterThanOrEqual(2);
@@ -66,7 +66,7 @@ test('uploads nothing at all when the capture caught a credential', async () => 
   const uploads: string[] = [];
 
   const outcome = await runOnce(deps({
-    capture: async () => ({ passed: true, artifacts: { 'text-login': '/tmp/x' }, sensitiveFindings: [{ kind: 'secret', source: 'text-login', count: 1 }] }),
+    execute: async () => ({ passed: true, artifacts: { 'text-login': '/tmp/x' }, sensitiveFindings: [{ kind: 'secret', source: 'text-login', count: 1 }] }),
     upload: async (artifacts) => { uploads.push(...Object.keys(artifacts)); return {}; }
   }));
 
@@ -78,7 +78,7 @@ test('uploads artifacts and reports object keys when the capture is clean', asyn
   const reported: Array<Record<string, unknown>> = [];
 
   await runOnce(deps({
-    capture: async () => ({ passed: true, artifacts: { timeline: '/tmp/timeline.json' }, sensitiveFindings: [] }),
+    execute: async () => ({ passed: true, artifacts: { timeline: '/tmp/timeline.json' }, sensitiveFindings: [] }),
     upload: async () => ({ timeline: 'workspace/w/production/j/timeline' }),
     finish: async (_id, _token, body) => { reported.push(body); }
   }));

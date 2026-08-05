@@ -8,19 +8,19 @@ export interface AgentDeps {
   lease(kinds: string[]): Promise<LeasedJob | undefined>;
   beat(id: string, token: string): Promise<boolean>;
   upload(artifacts: Record<string, string>): Promise<Record<string, string>>;
-  capture(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
+  execute(kind: string, payload: Record<string, unknown>): Promise<Record<string, unknown>>;
   finish(id: string, token: string, body: Record<string, unknown>): Promise<void>;
 }
 
 export type RunOutcome = 'idle' | 'completed' | 'withheld';
 
-export async function runOnce(deps: AgentDeps, beatMs = 15_000): Promise<RunOutcome> {
-  const leased = await deps.lease(['capture']);
+export async function runOnce(deps: AgentDeps, beatMs = 15_000, kinds = ['capture']): Promise<RunOutcome> {
+  const leased = await deps.lease(kinds);
   if (!leased) return 'idle';
   const heartbeat = setInterval(() => { void deps.beat(leased.job.id, leased.lease_token); }, beatMs);
   let report: Record<string, unknown>;
   try {
-    report = await deps.capture(leased.job.payload);
+    report = await deps.execute(leased.job.kind, leased.job.payload);
   } finally {
     clearInterval(heartbeat);
   }

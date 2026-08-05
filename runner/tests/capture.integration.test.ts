@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { capture } from '../src/capture.js';
+import { capture } from '../src/stages/capture.js';
 import { discoverProduct } from '../../src/discovery.js';
 import { planDemo } from '../../src/planner.js';
 

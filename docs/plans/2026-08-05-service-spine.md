@@ -1029,3 +1029,25 @@ Two additions the slice forced:
 Still stubbed: artifacts stay on the runner's local disk. The `withheld` outcome currently
 reports a refusal rather than preventing an upload, because there is no upload yet. Plan 2
 closes that.
+
+## Production pipeline landed 2026-08-05
+
+`capture → render → evaluate` runs end to end through the real stack, proven by
+`test_production_pipeline.py`: a production is started, three workers are run, and the assertions
+read the database and object storage rather than the workers' own output.
+
+One observed run: production `complete`, a 24,596-byte master stored under the workspace prefix,
+and the quality report reading `pending-agent-review` — the engine's rule that nothing publishes
+without an agent watching it, surfacing correctly through the service.
+
+Design points settled while building it:
+
+- Artifacts accumulate across stages rather than being replaced. Evaluate needs the capture's
+  timeline and execution report alongside the render's video, so each stage's result is merged
+  over the payload it received.
+- Render publishes `presentation-metadata` as an artifact. Without it, evaluate's editorial
+  checks measure nothing and a good video fails product-dominance.
+- One binary, stages selected by job kind, kinds selected by configuration.
+
+Not yet built: the agent editorial review that moves a production past `pending-agent-review`,
+and retention.

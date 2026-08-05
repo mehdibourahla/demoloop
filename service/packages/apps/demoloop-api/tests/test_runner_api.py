@@ -1,3 +1,5 @@
+import uuid
+
 import httpx
 from demoloop_api.app import create_app
 
@@ -116,7 +118,7 @@ async def test_a_worker_cannot_download_another_workspaces_object(queued_capture
 
         refused = await http.post(
             f"/v1/jobs/{leased['job']['id']}/downloads",
-            json={"lease_token": leased["lease_token"], "keys": ["workspace/00000000-0000-0000-0000-000000000000/production/x/secret"]},
+            json={"lease_token": leased["lease_token"], "keys": [f"workspace/{uuid.uuid4()}/production/x/secret"]},
             headers=HEADERS,
         )
 

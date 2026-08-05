@@ -1,6 +1,8 @@
 import type { AgentDeps, LeasedJob } from './agent.js';
-import { capture } from './capture.js';
-import type { CapturePayload } from './capture.js';
+import { capture, type CapturePayload } from './stages/capture.js';
+import { render, type RenderPayload } from './stages/render.js';
+import { evaluate } from './stages/evaluate.js';
+import { downloadArtifacts } from './download.js';
 import { uploadArtifacts, type UploadGrant } from './upload.js';
 
 async function post(api: string, token: string, path: string, body: unknown): Promise<Response> {
@@ -42,8 +44,21 @@ export function httpDeps(api: string, token: string): AgentDeps {
         }
       );
     },
-    async capture(payload) {
-      return capture(payload as unknown as CapturePayload);
+    async execute(kind, payload) {
+      if (kind === 'capture') return capture(payload as unknown as CapturePayload);
+      if (kind === 'render' || kind === 'evaluate') {
+        if (!current) throw new Error('No job is leased');
+        const job = current;
+        const stage = kind === 'render' ? render : evaluate;
+        return stage(payload as unknown as RenderPayload, {
+          download: async (artifacts) => downloadArtifacts(artifacts, async (keys) => {
+            const response = await post(api, token, `/v1/jobs/${job.id}/downloads`, { lease_token: job.lease_token, keys });
+            if (!response.ok) throw new Error(`download grant failed (${response.status}): ${await response.text()}`);
+            return (await response.json() as { urls: Record<string, string> }).urls;
+          })
+        });
+      }
+      throw new Error(`Unsupported job kind: ${kind}`);
     },
     async finish(id, lease_token, body) {
       const response = await post(api, token, `/v1/jobs/${id}/finish`, { lease_token, ...body });

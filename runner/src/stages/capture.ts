@@ -1,8 +1,8 @@
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { executeScenario } from '../../src/runner.js';
-import { ConfigSchema, ExecutionReportSchema, ScenarioSchema } from '../../src/schemas.js';
+import { executeScenario } from '../../../src/runner.js';
+import { ConfigSchema, ExecutionReportSchema, ScenarioSchema } from '../../../src/schemas.js';
 
 export interface CapturePayload {
   scenario: unknown;
