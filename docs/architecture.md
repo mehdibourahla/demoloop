@@ -1,5 +1,7 @@
 # Demoloop architecture
 
+This describes the engine. The hosted service that wraps it is in `docs/service-architecture.md`.
+
 ## Boundary
 
 The Agent Skill owns evidence interpretation, story selection, presentation choices, repair, and final editorial judgment. The CLI owns schema validation, deterministic execution, capture, rendering, measurement, and report finalization. The final recording never calls an LLM.
