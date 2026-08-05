@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from demoloop_core.jobs import enqueue
 
-NEXT_STAGE = {"capture": "render", "render": "evaluate", "evaluate": None}
+NEXT_STAGE = {"capture": "render", "render": "evaluate", "evaluate": None, "discover": "plan", "plan": None}
 STATUS_FOR = {"render": "rendering", "evaluate": "evaluating"}
 
 
@@ -32,6 +32,62 @@ async def start_production(session: AsyncSession, workspace_id: uuid.UUID, scena
     return production_id
 
 
+async def start_reconnaissance(session: AsyncSession, workspace_id: uuid.UUID, config: dict) -> uuid.UUID:
+    recon_id = uuid.uuid4()
+    await session.execute(
+        text("""
+            INSERT INTO reconnaissance (id, workspace_id, config, status)
+            VALUES (:id, :workspace, CAST(:config AS JSONB), 'discovering')
+        """),
+        {"id": recon_id, "workspace": workspace_id, "config": json.dumps(config)},
+    )
+    job = await enqueue(session, workspace_id, "discover", {"reconnaissance_id": str(recon_id), "config": config})
+    await session.execute(
+        text("UPDATE job SET reconnaissance_id = :recon WHERE id = :id"),
+        {"recon": recon_id, "id": job.id},
+    )
+    return recon_id
+
+
+async def _advance_reconnaissance(session: AsyncSession, recon_id: uuid.UUID, row: dict, result: dict) -> None:
+    payload = row["payload"] if isinstance(row["payload"], dict) else json.loads(row["payload"])
+    if row["kind"] == "discover":
+        if not result.get("passed", False):
+            await _set_recon_status(session, recon_id, "failed")
+            return
+        await session.execute(
+            text("UPDATE reconnaissance SET model = CAST(:model AS JSONB) WHERE id = :id"),
+            {"model": json.dumps(result.get("model")), "id": recon_id},
+        )
+        follow_on = await enqueue(session, row["workspace_id"], "plan", {
+            "reconnaissance_id": str(recon_id),
+            "config": payload["config"],
+            "model": result.get("model"),
+            "mode": payload.get("mode", "full"),
+        })
+        await session.execute(
+            text("UPDATE job SET reconnaissance_id = :recon WHERE id = :id"),
+            {"recon": recon_id, "id": follow_on.id},
+        )
+        await _set_recon_status(session, recon_id, "planning")
+        return
+
+    await session.execute(
+        text("UPDATE reconnaissance SET plan = CAST(:plan AS JSONB) WHERE id = :id"),
+        {"plan": json.dumps(result.get("plan")), "id": recon_id},
+    )
+    await _set_recon_status(
+        session, recon_id, "complete" if result.get("passed", False) else "needs-authoring"
+    )
+
+
+async def _set_recon_status(session: AsyncSession, recon_id: uuid.UUID, status: str) -> None:
+    await session.execute(
+        text("UPDATE reconnaissance SET status = :status WHERE id = :id"),
+        {"status": status, "id": recon_id},
+    )
+
+
 async def _set_status(session: AsyncSession, production_id: uuid.UUID, status: str) -> None:
     await session.execute(
         text("UPDATE production SET status = :status WHERE id = :id"),
@@ -41,13 +97,21 @@ async def _set_status(session: AsyncSession, production_id: uuid.UUID, status: s
 
 async def advance(session: AsyncSession, job_id: uuid.UUID) -> uuid.UUID | None:
     row = (await session.execute(
-        text("SELECT workspace_id, kind, result, production_id, payload FROM job WHERE id = :id"), {"id": job_id}
+        text("""
+            SELECT workspace_id, kind, result, production_id, reconnaissance_id, payload
+            FROM job WHERE id = :id
+        """),
+        {"id": job_id},
     )).mappings().one()
+    result = row["result"] if isinstance(row["result"], dict) else json.loads(row["result"] or "{}")
+
+    if row["reconnaissance_id"] is not None:
+        await _advance_reconnaissance(session, row["reconnaissance_id"], dict(row), result)
+        return None
+
     production_id = row["production_id"]
     if production_id is None:
         return None
-
-    result = row["result"] if isinstance(row["result"], dict) else json.loads(row["result"] or "{}")
     if not result.get("passed", False):
         await _set_status(session, production_id, "failed")
         return None

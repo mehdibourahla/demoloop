@@ -2,6 +2,8 @@ import type { AgentDeps, LeasedJob } from './agent.js';
 import { capture, type CapturePayload } from './stages/capture.js';
 import { render, type RenderPayload } from './stages/render.js';
 import { evaluate } from './stages/evaluate.js';
+import { discover, type DiscoverPayload } from './stages/discover.js';
+import { plan, type PlanPayload } from './stages/plan.js';
 import { downloadArtifacts } from './download.js';
 import { uploadArtifacts, type UploadGrant } from './upload.js';
 
@@ -46,6 +48,8 @@ export function httpDeps(api: string, token: string): AgentDeps {
     },
     async execute(kind, payload) {
       if (kind === 'capture') return capture(payload as unknown as CapturePayload);
+      if (kind === 'discover') return discover(payload as unknown as DiscoverPayload);
+      if (kind === 'plan') return plan(payload as unknown as PlanPayload);
       if (kind === 'render' || kind === 'evaluate') {
         if (!current) throw new Error('No job is leased');
         const job = current;

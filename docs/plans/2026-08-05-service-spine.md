@@ -1051,3 +1051,21 @@ Design points settled while building it:
 
 Not yet built: the agent editorial review that moves a production past `pending-agent-review`,
 and retention.
+
+## Reconnaissance flow landed 2026-08-05
+
+`discover → plan` runs through the real stack, proven by `test_reconnaissance_end_to_end.py`
+against the neutral fixture: the model is confirmed against the running product, runtime evidence
+is recorded, and a scenario is planned. One observed run reached `complete` with
+`product = "Delivery Board"` and a `planned` result.
+
+Two properties worth keeping:
+
+- Discovery's evidence never carries runner-local paths into the stored model. Screenshots and
+  accessibility snapshots are rewritten to artifact names before the model leaves the runner, so
+  the Product Map references artifacts rather than a filesystem that no longer exists.
+- Planning that cannot be supported by evidence returns `needs-authoring`, and the flow records
+  that status rather than inventing a scenario. The engine's honesty rule survives the service.
+
+Five job kinds now exist — discover, plan, capture, render, evaluate — dispatched from one
+binary by `DEMOLOOP_KINDS`.
