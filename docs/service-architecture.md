@@ -192,8 +192,24 @@ Application-level scoping is one forgotten filter away from a cross-tenant leak,
 here is a map derived from a customer's source code plus recordings of their private
 application. RLS makes the failure mode a denied query rather than a disclosure.
 
-The admin console connects as a role that bypasses RLS. Every such connection is audited and
-every mutation through it writes to the audit log; that is a hard requirement, not a nicety.
+There are three database roles, and the distinction is load-bearing.
+
+| Role | Sees | Why |
+|---|---|---|
+| `demoloop_app` | one workspace per transaction | the application; neither superuser nor `BYPASSRLS` |
+| `demoloop_dispatch` | every row of `job`, nothing else | claiming crosses workspaces by nature |
+| owner | everything | migrations only |
+
+The dispatch role holds a permissive policy on `job` alone rather than `BYPASSRLS`, which would
+have exposed every tenant table to the claim path. It is refused `product` at the grant level,
+not merely filtered to zero rows, and that refusal is asserted by test.
+
+A superuser bypasses row-level security even under `FORCE`, so the application role must not be
+the owner. Enforcing this is what makes the isolation real rather than decorative.
+
+The admin console will connect as a fourth role that bypasses RLS. Every such connection is
+audited and every mutation through it writes to the audit log; that is a hard requirement, not a
+nicety.
 
 ---
 
