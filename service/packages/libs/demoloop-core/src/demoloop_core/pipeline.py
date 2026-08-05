@@ -10,7 +10,13 @@ NEXT_STAGE = {"capture": "render", "render": "evaluate", "evaluate": None, "disc
 STATUS_FOR = {"render": "rendering", "evaluate": "evaluating"}
 
 
-async def start_production(session: AsyncSession, workspace_id: uuid.UUID, scenario: dict, config: dict) -> uuid.UUID:
+async def start_production(
+    session: AsyncSession,
+    workspace_id: uuid.UUID,
+    scenario: dict,
+    config: dict,
+    estimated_credits: float = 0,
+) -> uuid.UUID:
     production_id = uuid.uuid4()
     await session.execute(
         text("""
@@ -23,7 +29,8 @@ async def start_production(session: AsyncSession, workspace_id: uuid.UUID, scena
         },
     )
     job = await enqueue(session, workspace_id, "capture", {
-        "production_id": str(production_id), "scenario": scenario, "config": config, "device": "desktop"
+        "production_id": str(production_id), "scenario": scenario, "config": config, "device": "desktop",
+        "estimated_credits": estimated_credits,
     })
     await session.execute(
         text("UPDATE job SET production_id = :production WHERE id = :id"),
@@ -183,6 +190,7 @@ async def advance(session: AsyncSession, job_id: uuid.UUID) -> uuid.UUID | None:
         "config": payload_now["config"],
         "device": payload_now.get("device", "desktop"),
         "artifacts": artifacts,
+        "estimated_credits": payload_now.get("estimated_credits", 0),
     })
     await session.execute(
         text("UPDATE job SET production_id = :production WHERE id = :id"),

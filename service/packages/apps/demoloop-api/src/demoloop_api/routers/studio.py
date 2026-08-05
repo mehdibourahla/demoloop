@@ -19,6 +19,7 @@ class ReconnaissanceRequest(BaseModel):
 class ProductionRequest(BaseModel):
     scenario: dict
     config: dict
+    estimated_credits: float = 0
 
 
 async def _row(who: Caller, table: str, identifier: uuid.UUID, columns: str) -> dict:
@@ -47,7 +48,9 @@ async def read_reconnaissance(recon_id: uuid.UUID, who: Caller = Depends(caller)
 @router.post("/productions", status_code=201)
 async def begin_production(request: ProductionRequest, who: Caller = Depends(caller)) -> dict:
     async with workspace_session(who.workspace_id) as session:
-        production = await start_production(session, who.workspace_id, request.scenario, request.config)
+        production = await start_production(
+            session, who.workspace_id, request.scenario, request.config, request.estimated_credits
+        )
     return {"id": str(production), "status": "capturing"}
 
 

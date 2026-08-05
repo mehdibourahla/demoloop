@@ -1109,3 +1109,27 @@ One trap avoided: a verify job must not hang off `production_id`. `advance` trea
 kind as terminal, so a verification would have marked the production it was merely inspecting as
 complete. Verifications carry their own foreign key and their own branch, and a test asserts that
 verifying leaves the production's status untouched.
+
+## Metering and the hard ceiling landed 2026-08-05
+
+Credits are reserved **at lease time**, inside the same statement that claims the job, so a
+workspace that cannot pay never has the work started. Reconciling afterwards would mean billing
+for work we meant to refuse.
+
+| Moment | Effect |
+|---|---|
+| claim | the estimate is reserved; a job whose workspace is short is simply not claimable |
+| heartbeat | a workspace whose balance has gone negative gets refused, which stops a run mid-flight |
+| finish | the reservation is released and the actual cost charged |
+
+Two things worth stating plainly.
+
+**The ceiling binds only where an estimate exists.** A job with no `estimated_credits` leases
+freely, because zero is always affordable. Productions now carry their estimate into every
+stage, so the chain is covered — but any future job kind that forgets to set one is silently
+free. That is a property to check when adding a kind, not something the schema enforces.
+
+**The pricing formula is not invented here.** `estimated_credits` is an input the caller
+supplies. Turning a scenario's scenes and duration into a number of credits is a product
+decision, and the PRD's example ("~1 min 50 s · 12 credits") implies a rate that has not been
+set. The mechanism is complete and tested; the rate is an open question.
