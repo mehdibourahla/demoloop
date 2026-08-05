@@ -4,6 +4,7 @@ import { render, type RenderPayload } from './stages/render.js';
 import { evaluate } from './stages/evaluate.js';
 import { discover, type DiscoverPayload } from './stages/discover.js';
 import { plan, type PlanPayload } from './stages/plan.js';
+import { verify, type VerifyPayload } from './stages/verify.js';
 import { downloadArtifacts } from './download.js';
 import { uploadArtifacts, type UploadGrant } from './upload.js';
 
@@ -50,6 +51,7 @@ export function httpDeps(api: string, token: string): AgentDeps {
       if (kind === 'capture') return capture(payload as unknown as CapturePayload);
       if (kind === 'discover') return discover(payload as unknown as DiscoverPayload);
       if (kind === 'plan') return plan(payload as unknown as PlanPayload);
+      if (kind === 'verify') return verify(payload as unknown as VerifyPayload);
       if (kind === 'render' || kind === 'evaluate') {
         if (!current) throw new Error('No job is leased');
         const job = current;

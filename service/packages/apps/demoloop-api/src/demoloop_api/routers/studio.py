@@ -1,7 +1,7 @@
 import uuid
 
 from demoloop_core.db import workspace_session
-from demoloop_core.pipeline import start_production, start_reconnaissance
+from demoloop_core.pipeline import start_production, start_reconnaissance, start_verification
 from demoloop_core.storage import presign_get
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -58,4 +58,23 @@ async def read_production(production_id: uuid.UUID, who: Caller = Depends(caller
         "id": str(row["id"]),
         "status": row["status"],
         "video": presign_get(row["video_key"]) if row["video_key"] else None,
+    }
+
+
+@router.post("/productions/{production_id}/verifications", status_code=201)
+async def begin_verification(production_id: uuid.UUID, who: Caller = Depends(caller)) -> dict:
+    await _row(who, "production", production_id, "id")
+    async with workspace_session(who.workspace_id) as session:
+        check = await start_verification(session, who.workspace_id, production_id)
+    return {"id": str(check), "status": "checking"}
+
+
+@router.get("/verifications/{verification_id}")
+async def read_verification(verification_id: uuid.UUID, who: Caller = Depends(caller)) -> dict:
+    row = await _row(who, "verification", verification_id, "id, status, drifted, checked_at")
+    return {
+        "id": str(row["id"]),
+        "status": row["status"],
+        "drifted": row["drifted"],
+        "checkedAt": row["checked_at"].isoformat() if row["checked_at"] else None,
     }

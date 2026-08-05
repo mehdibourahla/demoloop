@@ -81,6 +81,50 @@ async def _advance_reconnaissance(session: AsyncSession, recon_id: uuid.UUID, ro
     )
 
 
+async def start_verification(
+    session: AsyncSession, workspace_id: uuid.UUID, production_id: uuid.UUID
+) -> uuid.UUID:
+    check_id = uuid.uuid4()
+    row = (await session.execute(
+        text("SELECT scenario, config FROM production WHERE id = :id"), {"id": production_id}
+    )).mappings().one()
+    await session.execute(
+        text("""
+            INSERT INTO verification (id, workspace_id, production_id, status)
+            VALUES (:id, :workspace, :production, 'checking')
+        """),
+        {"id": check_id, "workspace": workspace_id, "production": production_id},
+    )
+    job = await enqueue(session, workspace_id, "verify", {
+        "verification_id": str(check_id),
+        "scenario": row["scenario"],
+        "config": row["config"],
+    })
+    await session.execute(
+        text("UPDATE job SET verification_id = :check WHERE id = :id"),
+        {"check": check_id, "id": job.id},
+    )
+    return check_id
+
+
+async def _advance_verification(session: AsyncSession, check_id: uuid.UUID, result: dict) -> None:
+    drifted = result.get("drifted", [])
+    if result.get("passed", False):
+        status = "fresh"
+    elif drifted and all(entry.get("status") == "ambiguous" for entry in drifted):
+        # An ambiguous target still exists, so the Product Map can re-resolve it without a human.
+        status = "repairable"
+    else:
+        status = "drifted"
+    await session.execute(
+        text("""
+            UPDATE verification SET status = :status, drifted = CAST(:drifted AS JSONB), checked_at = now()
+            WHERE id = :id
+        """),
+        {"status": status, "drifted": json.dumps(drifted), "id": check_id},
+    )
+
+
 async def _set_recon_status(session: AsyncSession, recon_id: uuid.UUID, status: str) -> None:
     await session.execute(
         text("UPDATE reconnaissance SET status = :status WHERE id = :id"),
@@ -98,12 +142,16 @@ async def _set_status(session: AsyncSession, production_id: uuid.UUID, status: s
 async def advance(session: AsyncSession, job_id: uuid.UUID) -> uuid.UUID | None:
     row = (await session.execute(
         text("""
-            SELECT workspace_id, kind, result, production_id, reconnaissance_id, payload
+            SELECT workspace_id, kind, result, production_id, reconnaissance_id, verification_id, payload
             FROM job WHERE id = :id
         """),
         {"id": job_id},
     )).mappings().one()
     result = row["result"] if isinstance(row["result"], dict) else json.loads(row["result"] or "{}")
+
+    if row["verification_id"] is not None:
+        await _advance_verification(session, row["verification_id"], result)
+        return None
 
     if row["reconnaissance_id"] is not None:
         await _advance_reconnaissance(session, row["reconnaissance_id"], dict(row), result)

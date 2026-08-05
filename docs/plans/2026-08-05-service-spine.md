@@ -1089,3 +1089,23 @@ sent somewhere.
 The engine's own suite could not have caught it: its multi-actor fixture gives the second actor
 no navigating safe action, so nothing was there to strip. It took an end-to-end run against a
 real application to surface it.
+
+## Drift detection landed 2026-08-05
+
+PRD §5.7 in its mechanical form: `verify` re-resolves every target of a produced demo against the
+current product and records health. Proven end to end by `test_drift_end_to_end.py` — a demo is
+`fresh` against the product it was recorded from, and a renamed control comes back `drifted`
+naming the scene and the label that moved.
+
+The PRD's three outcomes are distinguished by what the finding says, not by guesswork:
+
+| Finding | Health | Why |
+|---|---|---|
+| every target resolved | `fresh` | nothing to do |
+| only ambiguous targets | `repairable` | the element still exists, so the Product Map can re-resolve it |
+| anything missing | `drifted` | the capability may have changed materially; a human decides |
+
+One trap avoided: a verify job must not hang off `production_id`. `advance` treats an unknown
+kind as terminal, so a verification would have marked the production it was merely inspecting as
+complete. Verifications carry their own foreign key and their own branch, and a test asserts that
+verifying leaves the production's status untouched.
