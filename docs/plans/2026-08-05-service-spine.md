@@ -1006,3 +1006,26 @@ Three database roles exist, not two: `demoloop_app` (row-level security applies)
 console's audited bypass in the architecture is a fourth and is not yet built.
 
 `service/docker-compose.yml` starts the Postgres these tests require.
+
+## Vertical slice closed 2026-08-05
+
+The runner now executes real captures rather than a test stub, and the boundary is proven
+across both languages by `service/packages/apps/demoloop-api/tests/test_capture_end_to_end.py`.
+
+That test starts the fixture application and the API, enqueues a capture job in Postgres,
+runs the Node runner as a subprocess, and asserts the finished report in the database. One
+observed run: `mode=record`, `passed=true`, artifacts `raw-create`, `screenshot-create`,
+`text-create`, `timeline`, `report`, and provenance naming the actual HEAD with `dirty: true`.
+The screencast and page-text artifacts exist only in record mode, so the assertion is evidence
+of a real capture rather than a mocked one.
+
+Two additions the slice forced:
+
+- `runOnce` holds the lease with a heartbeat while capture runs. A real capture outlives the
+  sixty-second lease, so without it the job would be silently reclaimed mid-flight and run twice.
+- `capture` performs rehearse twice then record inside one job, so the rehearsal receipt never
+  leaves the runner. This is the atomicity the architecture requires, now implemented.
+
+Still stubbed: artifacts stay on the runner's local disk. The `withheld` outcome currently
+reports a refusal rather than preventing an upload, because there is no upload yet. Plan 2
+closes that.

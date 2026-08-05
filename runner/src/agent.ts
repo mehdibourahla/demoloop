@@ -6,16 +6,23 @@ export interface LeasedJob {
 
 export interface AgentDeps {
   lease(kinds: string[]): Promise<LeasedJob | undefined>;
+  beat(id: string, token: string): Promise<boolean>;
   capture(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
   finish(id: string, token: string, body: Record<string, unknown>): Promise<void>;
 }
 
 export type RunOutcome = 'idle' | 'completed' | 'withheld';
 
-export async function runOnce(deps: AgentDeps): Promise<RunOutcome> {
+export async function runOnce(deps: AgentDeps, beatMs = 15_000): Promise<RunOutcome> {
   const leased = await deps.lease(['capture']);
   if (!leased) return 'idle';
-  const report = await deps.capture(leased.job.payload);
+  const heartbeat = setInterval(() => { void deps.beat(leased.job.id, leased.lease_token); }, beatMs);
+  let report: Record<string, unknown>;
+  try {
+    report = await deps.capture(leased.job.payload);
+  } finally {
+    clearInterval(heartbeat);
+  }
   const findings = (report.sensitiveFindings ?? []) as Array<{ kind: string }>;
   if (findings.some((finding) => finding.kind === 'secret')) {
     await deps.finish(leased.job.id, leased.lease_token, {

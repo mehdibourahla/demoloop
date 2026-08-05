@@ -8,7 +8,7 @@ const leased: LeasedJob = {
 };
 
 function deps(overrides: Partial<AgentDeps>): AgentDeps {
-  return { lease: async () => leased, capture: async () => ({}), finish: async () => {}, ...overrides };
+  return { lease: async () => leased, beat: async () => true, capture: async () => ({}), finish: async () => {}, ...overrides };
 }
 
 test('reports idle when the queue is empty', async () => {
@@ -38,4 +38,26 @@ test('reports a capture that only saw personal data', async () => {
 
   expect(result).toBe('completed');
   expect((reported[0].result as { passed: boolean }).passed).toBe(true);
+});
+
+test('holds the lease while a long capture runs', async () => {
+  const beats: string[] = [];
+
+  await runOnce(deps({
+    beat: async (id) => { beats.push(id); return true; },
+    capture: async () => { await new Promise((wait) => setTimeout(wait, 120)); return {}; }
+  }), 40);
+
+  expect(beats.length).toBeGreaterThanOrEqual(2);
+  expect(beats.every((id) => id === 'job-1')).toBe(true);
+});
+
+test('stops beating once the capture returns', async () => {
+  let beats = 0;
+
+  await runOnce(deps({ beat: async () => { beats += 1; return true; } }), 20);
+  const settled = beats;
+  await new Promise((wait) => setTimeout(wait, 80));
+
+  expect(beats).toBe(settled);
 });
