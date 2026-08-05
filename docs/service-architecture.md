@@ -347,11 +347,24 @@ asking us to film. The judgement belongs to the owner at publish time; the incid
 The service design forces a small number of engine changes. They are engine work, not service
 work, and they belong to the TypeScript side.
 
-| Change | Why |
-|---|---|
-| Scan artifacts during capture, not evaluation | done; findings must not cross unexamined, and evaluation cannot read artifacts once they are object keys |
-| Findings carry kind, source and count | done; the literal match was being copied into a customer-facing report |
-| Report capture provenance | the published receipt claims a commit and an environment; only the runner observes them |
-| Register `Action` and `Scenario` in the Zod registry | generated Python is otherwise unusable and duplicated |
-| `demoloop validate` subcommand | the API needs one authoritative validity and digest call |
-| Sensitive patterns move to shared configuration | both languages need them, and they should be tunable per workspace |
+| Change | Status | Why |
+|---|---|---|
+| Scan artifacts during capture, not evaluation | done | findings must not cross unexamined, and evaluation cannot read artifacts once they are object keys |
+| Findings carry kind, source and count | done | the literal match was being copied into a customer-facing report |
+| Register `Action` and `Scenario` in the Zod registry | done | generated Python is otherwise anonymous and duplicated |
+| `demoloop validate` subcommand | done | the API needs one authoritative validity and digest call |
+| Report capture provenance | done | the published receipt claims a commit; only the runner observes it |
+| Split sensitive findings by severity | done | see below |
+| Sensitive patterns move to shared configuration | deferred | it has one consumer until the Python side exists; building it now would be a config file with a single reader |
+
+The severity split was not optional. The quality gate failed on *any* sensitive finding, so a
+single visible email address rejected the video — and the email and phone patterns match every
+CRM, support tool and healthcare application the product targets. Credentials now fail the
+technical check; personal data becomes an editorial warning the owner confirms before
+publishing. The security property is unchanged and the runner still refuses to upload a capture
+that caught a credential.
+
+Provenance records the commit, the target URL, and whether the working tree was dirty. The last
+matters because a receipt claiming a demo was recorded from a given commit is false if
+uncommitted changes were on disk at capture time. Absence of a commit is represented as absence,
+never as a default, so a receipt can say the commit is unknown rather than assert a wrong one.

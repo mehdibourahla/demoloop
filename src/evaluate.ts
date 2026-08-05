@@ -41,6 +41,12 @@ export function passiveScenes(scenes: Array<{ id: string; actions: Array<{ type:
   return scenes.filter((scene) => !demonstrates(scene as { actions: Action[] })).map((scene) => scene.id);
 }
 
+export function sensitiveInformationCheck(findings: SensitiveFinding[]) {
+  const secrets = findings.filter((finding) => finding.kind === 'secret');
+  const personal = findings.length - secrets.length;
+  return { id: 'sensitive-information', passed: secrets.length === 0, value: secrets.length, ...(personal ? { detail: `${personal} personal-data findings to confirm before publishing` } : {}) };
+}
+
 export function durationCheck(durationSeconds: number, requestedSeconds?: number) {
   const passed = requestedSeconds
     ? durationSeconds >= requestedSeconds * 0.5 && durationSeconds <= requestedSeconds * 1.25
@@ -79,7 +85,7 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
     { id: 'viewport', passed: width === profile.width && height === profile.height, value: `${width}x${height}` },
     durationCheck(durationSeconds, options.scenario.requestedDurationSeconds),
     { id: 'dead-time', passed: maxGap <= 5_000, value: Math.round(maxGap) },
-    { id: 'sensitive-information', passed: sensitiveFindings.length === 0, value: sensitiveFindings.length },
+    sensitiveInformationCheck(sensitiveFindings),
     { id: 'audio-policy', passed: expectsAudio ? Boolean(audioStream && maxAudioDb !== undefined && maxAudioDb > -60) : !audioStream, value: audioStream ? `${audioStream.codec_name}/${maxAudioDb ?? 'unknown'}dB` : 'no-audio', detail: `Expected policy: ${options.scenario.audio.policy}` },
   ];
 
@@ -111,6 +117,7 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
   ];
   const passive = passiveScenes(options.scenario.scenes);
   const warnings = [
+    ...sensitiveFindings.filter((finding) => finding.kind !== 'secret').map((finding) => ({ id: `sensitive-${finding.kind}-${finding.source}`, passed: false, value: finding.count, detail: 'Personal data is visible in the recording; confirm before publishing' })),
     ...(passive.length ? [{ id: 'passive-scenes', passed: false, value: passive.length, detail: `Only navigation and assertions in: ${passive.join(', ')}` }] : []),
     ...(metadata?.holds ?? []).map((hold) => ({ id: `narration-hold-${hold.id}`, passed: false, value: hold.heldSeconds, detail: 'Last frame held to cover narration that outran the recording' })),
     { id: 'distinct-frames-warning', passed: visual.distinctRatio >= thresholds.distinctWarnRatio, value: Number(visual.distinctRatio.toFixed(3)) },

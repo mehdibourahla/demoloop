@@ -1,5 +1,22 @@
 import { describe, expect, test } from 'vitest';
-import { durationCheck, passiveScenes, reviewMoments } from '../src/evaluate.js';
+import { durationCheck, passiveScenes, reviewMoments, sensitiveInformationCheck } from '../src/evaluate.js';
+
+describe('sensitive information', () => {
+  test('rejects a recording that captured a credential', () => {
+    expect(sensitiveInformationCheck([{ kind: 'secret', source: 'text-login', count: 1 }]).passed).toBe(false);
+  });
+
+  test('does not reject a product that legitimately displays personal data', () => {
+    const check = sensitiveInformationCheck([{ kind: 'email', source: 'text-contacts', count: 4 }, { kind: 'phone', source: 'text-contacts', count: 2 }]);
+
+    expect(check.passed).toBe(true);
+    expect(check.value).toBe(0);
+  });
+
+  test('passes cleanly when nothing was found', () => {
+    expect(sensitiveInformationCheck([])).toEqual({ id: 'sensitive-information', passed: true, value: 0 });
+  });
+});
 
 describe('review moments', () => {
   test('samples after a cut has settled rather than on the transition frame', () => {
