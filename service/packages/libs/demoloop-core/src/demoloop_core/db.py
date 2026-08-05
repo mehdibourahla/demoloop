@@ -30,6 +30,18 @@ async def workspace_session(workspace_id: uuid.UUID) -> AsyncIterator[AsyncSessi
             yield session
 
 
+@lru_cache
+def dispatch_engine() -> AsyncEngine:
+    return create_async_engine(settings().dispatch_database_url, pool_pre_ping=True)
+
+
+@asynccontextmanager
+async def dispatch_session() -> AsyncIterator[AsyncSession]:
+    async with AsyncSession(dispatch_engine(), expire_on_commit=False) as session:
+        async with session.begin():
+            yield session
+
+
 @asynccontextmanager
 async def privileged_session() -> AsyncIterator[AsyncSession]:
     async with AsyncSession(engine(), expire_on_commit=False) as session:
