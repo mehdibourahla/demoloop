@@ -5,7 +5,7 @@ import { performance } from 'node:perf_hooks';
 import { promisify } from 'node:util';
 import { chromium, devices, type BrowserContext, type Locator, type Page } from 'playwright';
 import { actionDelay, cursorMotion, scrollMotion, type Point } from './timing.js';
-import { assertSafeTarget } from './safety.js';
+import { assertSafeTarget, scanCaptureArtifacts, scanSensitiveText } from './safety.js';
 import { canRecord, scenarioDigest } from './receipt.js';
 import { ExecutionReportSchema, TimelineSchema, type Action, type ActionTiming, type Condition, type DemoConfig, type Scenario, type Target, type TimelineEvent } from './schemas.js';
 
@@ -486,7 +486,12 @@ export async function executeScenario(options: ExecuteOptions): Promise<unknown>
   const timelinePath = join(options.outputDirectory, 'timeline.json');
   const reportPath = join(options.outputDirectory, 'execution-report.json');
   await writeFile(timelinePath, JSON.stringify(TimelineSchema.parse({ version: 2, scenarioId: options.scenario.id, viewport: { width: profile.width, height: profile.height }, events: result.events }), null, 2));
-  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, ignoredConsoleErrors: result.ignoredConsoleErrors, narrationSeconds: options.narrationSeconds ?? {}, executedPath: result.executedPath, failedRequests: result.failedRequests, ignoredRequests: result.ignoredRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
+  const sensitiveFindings = [
+    ...scanSensitiveText(JSON.stringify(result.events), 'timeline'),
+    ...scanSensitiveText(JSON.stringify({ consoleErrors: result.consoleErrors, failedRequests: result.failedRequests, executedPath: result.executedPath }), 'execution-report'),
+    ...(options.config.privacy.scanArtifacts ? await scanCaptureArtifacts(result.artifacts) : [])
+  ];
+  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, ignoredConsoleErrors: result.ignoredConsoleErrors, sensitiveFindings, narrationSeconds: options.narrationSeconds ?? {}, executedPath: result.executedPath, failedRequests: result.failedRequests, ignoredRequests: result.ignoredRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
   await writeFile(reportPath, JSON.stringify(report, null, 2));
   return report;
 }

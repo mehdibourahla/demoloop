@@ -39,6 +39,7 @@ describe('capture artifacts', () => {
     const textKeys = Object.keys(recording.artifacts).filter((key) => key.startsWith('text-'));
     expect(textKeys).toHaveLength(result.outputs[0].scenes.length);
     expect(await readFile(recording.artifacts[textKeys[0]], 'utf8')).toContain('Delivery board');
+    expect(recording.sensitiveFindings).toEqual([]);
   }, 120_000);
 
   test('never persists the redaction source value that capture is configured to hide', async () => {

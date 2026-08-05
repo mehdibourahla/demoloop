@@ -20,11 +20,28 @@ describe('privacy guard', () => {
 
     const findings = await scanCaptureArtifacts({ 'text-result': textPath, 'screenshot-result': screenshotPath });
 
-    expect(findings).toEqual([{ kind: 'email', match: 'real.person@example.com' }]);
+    expect(findings).toEqual([{ kind: 'email', source: 'text-result', count: 1 }]);
+  });
+
+  test('never reports the matched literal', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-leak-'));
+    const textPath = join(directory, 'text-leak.txt');
+    await writeFile(textPath, 'token sk-live-12345678901234567890 for real.person@example.com');
+
+    const findings = await scanCaptureArtifacts({ 'text-leak': textPath });
+
+    expect(JSON.stringify(findings)).not.toContain('sk-live-12345678901234567890');
+    expect(JSON.stringify(findings)).not.toContain('real.person@example.com');
+  });
+
+  test('aggregates repeated matches of one kind into a single counted finding', () => {
+    const findings = scanSensitiveText('a@example.com b@example.com c@example.com', 'timeline');
+
+    expect(findings).toEqual([{ kind: 'email', source: 'timeline', count: 3 }]);
   });
 
   test('finds secrets and personal identifiers', () => {
-    const findings = scanSensitiveText('email real.person@example.com token sk-live-12345678901234567890 health card ABCD-1234-5678');
+    const findings = scanSensitiveText('email real.person@example.com token sk-live-12345678901234567890 health card ABCD-1234-5678', 'scenario');
     expect(findings.map((f) => f.kind)).toEqual(expect.arrayContaining(['email', 'secret', 'health-id']));
   });
 });

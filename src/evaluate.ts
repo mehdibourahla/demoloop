@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
-import { scanCaptureArtifacts, scanSensitiveText } from './safety.js';
+import { scanSensitiveText, type SensitiveFinding } from './safety.js';
 import { EditorialReviewSchema, QualityReportSchema, TimelineSchema, type Action, type DemoConfig, type Scenario } from './schemas.js';
 import { contactSheet } from './editing.js';
 import { demonstrates } from './planner.js';
@@ -13,7 +13,7 @@ const execFileAsync = promisify(execFile);
 interface EvaluateOptions {
   scenario: Scenario;
   config: DemoConfig;
-  executionReport: { passed: boolean; scenes: Array<{ id: string; status: string; failure?: string }>; consoleErrors: string[]; failedRequests: unknown[]; artifacts: Record<string, string> };
+  executionReport: { passed: boolean; scenes: Array<{ id: string; status: string; failure?: string }>; consoleErrors: string[]; failedRequests: unknown[]; artifacts: Record<string, string>; sensitiveFindings: SensitiveFinding[] };
   videoPath: string;
   timelinePath: string;
   outputPath: string;
@@ -67,10 +67,7 @@ export async function evaluateDemo(options: EvaluateOptions): Promise<unknown> {
   const height = stream.height ?? 0;
   const gaps = timeline.events.slice(1).map((event, index) => Math.max(0, event.startedAtMs - timeline.events[index].endedAtMs));
   const maxGap = gaps.length ? Math.max(...gaps) : 0;
-  const sensitiveFindings = [
-    ...scanSensitiveText(JSON.stringify({ scenario: options.scenario, timeline, execution: options.executionReport })),
-    ...(options.config.privacy.scanArtifacts ? await scanCaptureArtifacts(options.executionReport.artifacts) : [])
-  ];
+  const sensitiveFindings = [...scanSensitiveText(JSON.stringify(options.scenario), 'scenario'), ...options.executionReport.sensitiveFindings];
   const omittedScenes = options.executionReport.scenes.filter((scene) => scene.status !== 'passed').map((scene) => ({ id: scene.id, reason: scene.failure ?? scene.status }));
   const expectsAudio = options.scenario.audio.policy !== 'silent';
   const technicalChecks = [

@@ -173,6 +173,8 @@ export const PlanResultSchema = z.discriminatedUnion('status', [
 
 const CheckSchema = z.object({ id: z.string().min(1), passed: z.boolean(), value: z.union([z.string(), z.number(), z.boolean()]), detail: z.string().min(1).optional(), timestamps: z.array(z.number().nonnegative()).optional() });
 
+export const SensitiveFindingSchema = z.object({ kind: z.string().min(1), source: z.string().min(1), count: z.number().int().positive() });
+
 export const EditorialReviewSchema = z.object({
   version: z.literal(1), tool: z.literal('watch'), videoPath: z.string().startsWith('/'), videoSha256: z.string().regex(/^[a-f0-9]{64}$/), detail: z.enum(['balanced', 'token-burner']), resolution: z.number().int().positive().optional(),
   transcriptStatus: z.enum(['available', 'not-required', 'unavailable']), score: z.number().min(0).max(10),
@@ -191,7 +193,7 @@ export const QualityReportSchema = z.object({
     z.object({ status: z.literal('missing'), reason: z.string().min(1) }),
     z.object({ status: z.literal('complete'), review: EditorialReviewSchema })
   ]),
-  sensitiveFindings: z.array(z.object({ kind: z.string(), match: z.string() })),
+  sensitiveFindings: z.array(SensitiveFindingSchema),
   review: z.object({ contactSheet: z.string().min(1), moments: z.array(z.number().nonnegative()) }).optional(),
   omittedScenes: z.array(z.object({ id: z.string(), reason: z.string() })),
   encoding: z.object({ codec: z.string(), width: z.number(), height: z.number(), durationSeconds: z.number(), pixelFormat: z.string() }).optional()
@@ -230,7 +232,7 @@ export const TimelineSchema = z.object({ version: z.literal(2), scenarioId: z.st
 export const ExecutionReportSchema = z.object({
   version: z.literal(2), scenarioId: z.string(), mode: z.enum(['rehearse', 'record']), passed: z.boolean(), consecutivePasses: z.number().int().nonnegative(), startedAt: z.string(), endedAt: z.string(),
   scenarioDigest: z.string(), scenes: z.array(z.object({ id: z.string(), status: z.enum(['passed', 'failed', 'omitted']), failure: z.string().optional() })),
-  consoleErrors: z.array(z.string()), ignoredConsoleErrors: z.array(z.string()).default([]), narrationSeconds: z.record(z.string(), z.number()).default({}), executedPath: z.array(z.object({ sceneId: z.string(), actionIndex: z.number().int().nonnegative(), detail: z.string() })).default([]), failedRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })), ignoredRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })).default([]), artifacts: z.record(z.string(), z.string())
+  consoleErrors: z.array(z.string()), ignoredConsoleErrors: z.array(z.string()).default([]), sensitiveFindings: z.array(SensitiveFindingSchema).default([]), narrationSeconds: z.record(z.string(), z.number()).default({}), executedPath: z.array(z.object({ sceneId: z.string(), actionIndex: z.number().int().nonnegative(), detail: z.string() })).default([]), failedRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })), ignoredRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })).default([]), artifacts: z.record(z.string(), z.string())
 });
 
 export type Evidence = z.infer<typeof EvidenceSchema>;
