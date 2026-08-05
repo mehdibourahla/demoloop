@@ -1,4 +1,20 @@
+import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
+
+export interface CaptureProvenance { commit?: string; dirty?: boolean; appUrl: string }
+
+export async function captureProvenance(repositoryRoot: string, appUrl: string): Promise<CaptureProvenance> {
+  try {
+    const { stdout: commit } = await execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: repositoryRoot });
+    const { stdout: status } = await execFileAsync('git', ['status', '--porcelain'], { cwd: repositoryRoot });
+    return { commit: commit.trim(), dirty: status.trim().length > 0, appUrl };
+  } catch {
+    return { appUrl };
+  }
+}
 
 function stable(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stable);

@@ -16,7 +16,8 @@ import { browserContextOptions, executeAction, executeScenario } from './runner.
 import { verifyTargets } from './verify.js';
 import { chromium } from 'playwright';
 import { ElevenLabsNarrationProvider, MacOSNarrationProvider, narrationPlan } from './narration.js';
-import { ConfigSchema, EditorialReviewSchema, ExecutionReportSchema, ProductModelSchema, QualityReportSchema, ScenarioSchema, type DemoConfig, type Scenario } from './schemas.js';
+import { scenarioDigest } from './receipt.js';
+import { ConfigSchema, contractSchemas, EditorialReviewSchema, ExecutionReportSchema, ProductModelSchema, QualityReportSchema, ScenarioSchema, type DemoConfig, type Scenario } from './schemas.js';
 
 const help = `demoloop <command> [scenario] [options]
 
@@ -30,6 +31,7 @@ Commands:
   evaluate <scenario>              Write the machine-readable quality report
   finalize <scenario>              Apply a Watch editorial review to a quality report
   run <scenario>                   Rehearse, record, render, and evaluate
+  validate <contract> <path>       Parse a document against its schema and print the digest
 
 Options: --config <path> --device <desktop|mobile> --locale <locale> --audience <name> --duration-seconds <number> --audio <silent|music|voiceover|voiceover-and-music> --output <path>`;
 
@@ -142,6 +144,19 @@ async function record(config: DemoConfig, scenario: Scenario, device: string, re
 export async function runCli(args: string[]): Promise<number> {
   const command = args[0] ?? 'help';
   if (command === 'help' || command === '--help' || command === '-h') { console.log(help); return 0; }
+  if (command === 'validate') {
+    const kind = args[1] as keyof typeof contractSchemas;
+    const schema = contractSchemas[kind];
+    if (!schema) throw new Error(`validate requires a contract name: ${Object.keys(contractSchemas).join(', ')}`);
+    if (!args[2]) throw new Error('validate requires a path to the document');
+    const parsed = schema.safeParse(YAML.parse(await readFile(resolve(args[2]), 'utf8')));
+    if (!parsed.success) {
+      console.log(JSON.stringify({ valid: false, issues: parsed.error.issues.map((issue) => ({ path: issue.path.join('.'), message: issue.message })) }));
+      return 1;
+    }
+    console.log(JSON.stringify({ valid: true, ...(kind === 'scenario' ? { digest: await scenarioDigest(parsed.data) } : {}) }));
+    return 0;
+  }
   const supported = new Set(['discover', 'plan', 'verify', 'rehearse', 'record', 'render', 'evaluate', 'finalize', 'run']);
   if (!supported.has(command)) throw new Error(`Unknown command: ${command}`);
   const { values, positionals } = parse(args.slice(1));

@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import { chromium, devices, type BrowserContext, type Locator, type Page } from 'playwright';
 import { actionDelay, cursorMotion, scrollMotion, type Point } from './timing.js';
 import { assertSafeTarget, scanCaptureArtifacts, scanSensitiveText } from './safety.js';
-import { canRecord, scenarioDigest } from './receipt.js';
+import { canRecord, captureProvenance, scenarioDigest } from './receipt.js';
 import { ExecutionReportSchema, TimelineSchema, type Action, type ActionTiming, type Condition, type DemoConfig, type Scenario, type Target, type TimelineEvent } from './schemas.js';
 
 const execAsync = promisify(exec);
@@ -491,7 +491,7 @@ export async function executeScenario(options: ExecuteOptions): Promise<unknown>
     ...scanSensitiveText(JSON.stringify({ consoleErrors: result.consoleErrors, failedRequests: result.failedRequests, executedPath: result.executedPath }), 'execution-report'),
     ...(options.config.privacy.scanArtifacts ? await scanCaptureArtifacts(result.artifacts) : [])
   ];
-  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, scenes: result.sceneReports, consoleErrors: result.consoleErrors, ignoredConsoleErrors: result.ignoredConsoleErrors, sensitiveFindings, narrationSeconds: options.narrationSeconds ?? {}, executedPath: result.executedPath, failedRequests: result.failedRequests, ignoredRequests: result.ignoredRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
+  const report = ExecutionReportSchema.parse({ version: 2, scenarioId: options.scenario.id, mode: options.mode, passed: result.passed && (options.mode === 'record' || consecutivePasses >= options.config.runtime.rehearsalPasses), consecutivePasses, startedAt, endedAt: new Date().toISOString(), scenarioDigest: digest, provenance: await captureProvenance(options.config.repository.root, options.config.app.url), scenes: result.sceneReports, consoleErrors: result.consoleErrors, ignoredConsoleErrors: result.ignoredConsoleErrors, sensitiveFindings, narrationSeconds: options.narrationSeconds ?? {}, executedPath: result.executedPath, failedRequests: result.failedRequests, ignoredRequests: result.ignoredRequests, artifacts: { timeline: timelinePath, report: reportPath, ...result.artifacts } });
   await writeFile(reportPath, JSON.stringify(report, null, 2));
   return report;
 }

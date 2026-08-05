@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, test, vi } from 'vitest';
 import { ensureApp, exitCodeForQuality, narrationProvider, runCli } from '../src/cli.js';
 import { MacOSNarrationProvider } from '../src/narration.js';
+import { scenarioDigest } from '../src/receipt.js';
 import { ConfigSchema, ScenarioSchema } from '../src/schemas.js';
 
 describe('CLI', () => {
@@ -57,6 +58,45 @@ describe('CLI', () => {
       try { await fetch('http://127.0.0.1:4199/health'); return 'reachable'; } catch { return 'stopped'; }
     }, { timeout: 10_000 }).toBe('stopped');
   }, 60_000);
+
+  test('validates a scenario and returns the digest the runtime will pin', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-validate-'));
+    const path = join(directory, 'scenario.yaml');
+    const scenario = {
+      version: 2, id: 'valid-run', title: 'Valid run', outputType: 'feature-clip', audience: 'operators',
+      actors: [{ id: 'operator', label: 'Operator' }],
+      scenes: [{ id: 'open', title: 'Open', purpose: 'proof', actor: 'operator', actions: [{ type: 'goto', path: '/' }] }]
+    };
+    await writeFile(path, JSON.stringify(scenario));
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const code = await runCli(['validate', 'scenario', path]);
+
+    const printed = JSON.parse(log.mock.calls.flat().join(''));
+    log.mockRestore();
+    expect(code).toBe(0);
+    expect(printed.valid).toBe(true);
+    expect(printed.digest).toBe(await scenarioDigest(ScenarioSchema.parse(scenario)));
+  });
+
+  test('reports the cross-field rules that a JSON Schema cannot express', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-invalid-'));
+    const path = join(directory, 'scenario.yaml');
+    await writeFile(path, JSON.stringify({
+      version: 2, id: 'undeclared', title: 'Undeclared actor', outputType: 'feature-clip', audience: 'operators',
+      actors: [{ id: 'operator', label: 'Operator' }],
+      scenes: [{ id: 'open', title: 'Open', purpose: 'proof', actor: 'stranger', actions: [{ type: 'goto', path: '/' }] }]
+    }));
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const code = await runCli(['validate', 'scenario', path]);
+
+    const printed = JSON.parse(log.mock.calls.flat().join(''));
+    log.mockRestore();
+    expect(code).toBe(1);
+    expect(printed.valid).toBe(false);
+    expect(printed.issues).toContainEqual({ path: 'scenes.0.actor', message: 'scene actor must be declared' });
+  });
 
   test('writes needs-authoring instead of a route slideshow', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'demoloop-cli-'));

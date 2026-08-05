@@ -40,6 +40,7 @@ describe('capture artifacts', () => {
     expect(textKeys).toHaveLength(result.outputs[0].scenes.length);
     expect(await readFile(recording.artifacts[textKeys[0]], 'utf8')).toContain('Delivery board');
     expect(recording.sensitiveFindings).toEqual([]);
+    expect(recording.provenance.appUrl).toBe('http://127.0.0.1:4173');
   }, 120_000);
 
   test('never persists the redaction source value that capture is configured to hide', async () => {

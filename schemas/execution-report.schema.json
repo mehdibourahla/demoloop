@@ -33,6 +33,26 @@
     "scenarioDigest": {
       "type": "string"
     },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "commit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dirty": {
+          "type": "boolean"
+        },
+        "appUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "appUrl"
+      ],
+      "additionalProperties": false
+    },
     "scenes": {
       "type": "array",
       "items": {
@@ -199,6 +219,7 @@
     "startedAt",
     "endedAt",
     "scenarioDigest",
+    "provenance",
     "scenes",
     "consoleErrors",
     "ignoredConsoleErrors",
