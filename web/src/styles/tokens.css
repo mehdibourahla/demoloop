@@ -1,0 +1,239 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap');
+
+/* Demoloop UI system — Swiss technical.
+   No radius, no shadow, no tinted fills. Hairline rules divide; type ranks; a single
+   signal red marks failure and nothing else. Status is a word plus a marker, so it
+   survives greyscale, print and colour-blindness without a legend. */
+
+:root {
+  --paper: #FBFAF7;
+  --card:  #FFFFFF;
+  --sunk:  #F4F2EC;
+  --line:  #E0DCD2;
+  --line2: #B8B3A6;
+  --rule:  #111110;
+
+  --ink:  #111110;
+  --ink2: #55534D;
+  --ink3: #767369;
+
+  /* One signal. Failure, and nothing decorative — so a red pixel always means stop. */
+  --signal: #C8341E;
+  --ok:     #2F6B3F;
+  --warn:   #8A6516;
+  --bad:    var(--signal);
+  --info:   #2B4C9B;
+
+  /* Data identity only. Never chrome. */
+  --actor-1: #2B4C9B;
+  --actor-2: #A32A6D;
+  --actor-3: #8A6516;
+
+  --sans: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  --r-card: 0;
+  --r-ctl:  0;
+  --r-chip: 0;
+  --sh:     none;
+  --sh-pop: 0 0 0 1px var(--rule);
+
+  /* Compatibility aliases for surfaces authored before the flattening. */
+  --page: var(--paper);
+  --btn: var(--ink);
+  --btn-fg: var(--card);
+  --btn-hov: #33322E;
+  --link: var(--ink);
+  --brand: var(--ink);
+  --brand-wash: var(--sunk);
+  --brand-line: var(--line2);
+  --ok-bg: transparent;   --ok-line: var(--line);
+  --warn-bg: transparent; --warn-line: var(--line);
+  --bad-bg: transparent;  --bad-line: var(--signal);
+  --info-bg: transparent; --info-line: var(--line);
+  --shot-fill: #F0EDE5;
+  --shot-stripe: rgba(17,17,16,0.05);
+}
+
+[data-theme="dark"] {
+  --paper: #100F0E;
+  --card:  #171614;
+  --sunk:  #1E1D1A;
+  --line:  #2B2A26;
+  --line2: #4A483F;
+  --rule:  #F2F0EA;
+
+  --ink:  #F2F0EA;
+  --ink2: #A3A096;
+  --ink3: #8B887E;
+
+  --signal: #E8604A;
+  --ok:     #63A97C;
+  --warn:   #C9A227;
+  --info:   #7FA3E0;
+
+  --actor-1: #7FA3E0;
+  --actor-2: #E07FB8;
+
+  --btn: var(--ink);
+  --btn-fg: #100F0E;
+  --btn-hov: #D8D5CD;
+  --bad-line: var(--signal);
+  --shot-fill: #201F1C;
+  --shot-stripe: rgba(242,240,234,0.06);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
+}
+
+a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+a:hover { color: var(--signal); }
+
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.02em; line-height: 1.22; }
+h1 { font-size: 21px; }
+h2 { font-size: 15px; }
+h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink3); }
+p { margin: 0; }
+
+.mono { font-family: var(--mono); font-size: 11.5px; letter-spacing: -0.02em; }
+.dim  { color: var(--ink2); }
+.dim3 { color: var(--ink3); }
+
+.label {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink3);
+}
+
+/* Buttons — squared. Primary is solid ink; secondary is a hairline box; tertiary is text. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 30px; padding: 0 13px;
+  font-family: var(--sans); font-size: 12.5px; font-weight: 500;
+  color: var(--ink); background: transparent;
+  border: 1px solid var(--line2); border-radius: 0;
+  box-shadow: none; cursor: pointer; white-space: nowrap;
+  transition: background 90ms, border-color 90ms, color 90ms;
+}
+.btn:hover { border-color: var(--rule); background: var(--sunk); }
+.btn.pri { background: var(--ink); border-color: var(--ink); color: var(--btn-fg); font-weight: 600; }
+.btn.pri:hover { background: var(--btn-hov); border-color: var(--btn-hov); }
+.btn.ghost { border-color: transparent; color: var(--ink2); padding: 0 6px; }
+.btn.ghost:hover { background: transparent; color: var(--signal); text-decoration: underline; text-underline-offset: 3px; }
+.btn.sm { height: 26px; padding: 0 10px; font-size: 12px; }
+.btn.xs { height: 22px; padding: 0 8px; font-size: 11px; }
+.btn.danger { color: var(--signal); border-color: var(--signal); }
+.btn.danger:hover { background: transparent; color: var(--signal); }
+
+/* Status — a marker and a word, set in mono. No fill, no border, no pill.
+   Colour is reinforcement here, never the carrier. */
+.chip {
+  display: inline-flex; align-items: baseline; gap: 5px;
+  padding: 0; height: auto;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  background: transparent; border: 0; border-radius: 0;
+  color: var(--ink3); white-space: nowrap;
+}
+.chip::before { content: "·"; color: var(--line2); }
+.chip.ok::before   { content: "OK"; color: var(--ok); letter-spacing: 0; }
+.chip.warn::before { content: "!";  color: var(--warn); }
+.chip.bad::before  { content: "×";  color: var(--signal); }
+.chip.info::before { content: "—";  color: var(--ink3); }
+.chip.ok   { color: var(--ok); }
+.chip.warn { color: var(--warn); }
+.chip.bad  { color: var(--signal); }
+.chip.info { color: var(--ink2); }
+.chip .dot, .chip .gl { display: none; }
+
+.dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: none; }
+
+.gl { font-family: var(--mono); font-size: 10.5px; font-weight: 600; flex: none; letter-spacing: 0; }
+.gl.ok { color: var(--ok); }
+.gl.warn { color: var(--warn); }
+.gl.bad { color: var(--signal); }
+.gl.idle { color: var(--ink3); }
+
+/* A card is a ruled block, not a floating object. */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.input {
+  height: 32px; width: 100%; padding: 0 10px;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--line2); border-radius: 0;
+  font-family: var(--sans); font-size: 12.5px;
+}
+.input:focus { outline: none; border-color: var(--rule); box-shadow: inset 0 -2px 0 var(--rule); }
+.input::placeholder { color: var(--ink3); }
+
+.kbd {
+  font-family: var(--mono); font-size: 10px;
+  padding: 1px 4px; border: 1px solid var(--line);
+  border-radius: 0; color: var(--ink3); background: transparent;
+}
+
+.kv { display: flex; gap: 38px; flex-wrap: wrap; }
+.kv > div { display: flex; flex-direction: column; gap: 4px; }
+.kv .k { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.11em; color: var(--ink3); }
+.kv .v { font-size: 12.5px; font-weight: 500; }
+
+.tabs { display: flex; gap: 22px; }
+.tab {
+  padding: 9px 1px; font-size: 12.5px; color: var(--ink3);
+  border-bottom: 1px solid transparent; cursor: pointer; margin-bottom: -1px;
+}
+.tab:hover { color: var(--ink); }
+.tab.on { color: var(--ink); font-weight: 600; border-bottom-color: var(--rule); border-bottom-width: 2px; }
+
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th {
+  text-align: left; font-family: var(--mono); font-size: 10px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.11em; color: var(--ink3);
+  padding: 7px 12px; border-bottom: 1px solid var(--rule); background: transparent;
+}
+.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 12.5px; vertical-align: middle; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl tr:hover td { background: var(--sunk); }
+
+/* Customer screenshots are never faked. Striped, labelled, and that is the point. */
+.shot {
+  position: relative;
+  background:
+    repeating-linear-gradient(135deg, var(--shot-stripe) 0 7px, transparent 7px 14px),
+    var(--shot-fill);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink3); font-family: var(--mono); font-size: 10.5px;
+  text-align: center; padding: 8px; overflow: hidden;
+}
+
+.scroll { overflow-y: auto; }
+.scroll::-webkit-scrollbar { width: 9px; }
+.scroll::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 0; border: 3px solid var(--paper); }
+.scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* Residual roundness and float, swept at the app root.
+   Screens declare their own component styles, so squaring has to outrank them here
+   rather than be chased file by file — the file I miss is the one that stays round. */
+.app *, .page * { border-radius: 0; box-shadow: none; }
+
+/* The three shapes that stay round, because roundness is their meaning: the record dot
+   in the mark, a spinner, and a live-state indicator. */
+.app .spin, .page .spin { border-radius: 50%; }
+.app .dot, .page .dot { border-radius: 50%; }
+.app .ws .mk::after { border-radius: 50%; }

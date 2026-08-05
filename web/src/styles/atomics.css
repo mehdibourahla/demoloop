@@ -1,0 +1,10 @@
+/* Not part of the design handoff. The .dc.html screens get these from the Claude Design
+   runtime (support.js); rebuilding in React means supplying them, so they live apart from
+   app.css to keep that file a verbatim copy that can be re-synced. */
+.fx { display: flex; }
+.fx.ac { align-items: center; }
+.fx.ab { align-items: baseline; }
+.fx.jb { justify-content: space-between; }
+.fx.col { flex-direction: column; }
+.fx.wrap { flex-wrap: wrap; }
+.grow { flex: 1; }

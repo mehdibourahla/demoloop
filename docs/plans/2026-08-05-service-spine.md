@@ -1133,3 +1133,26 @@ free. That is a property to check when adding a kind, not something the schema e
 supplies. Turning a scenario's scenes and duration into a number of credits is a product
 decision, and the PRD's example ("~1 min 50 s · 12 credits") implies a rate that has not been
 set. The mechanism is complete and tested; the rate is an open question.
+
+## Studio scaffolded 2026-08-05
+
+`web/` is a React 19 + Vite + TypeScript deployable carrying three surfaces backed by APIs that
+actually exist: Reconnaissance, Productions with the player, and Health. It typechecks, builds,
+and its six tests pass.
+
+`tokens.css` and `app.css` are **verbatim copies** of the design handoff, as instructed. The flex
+atomics the `.dc.html` screens get from the Claude Design runtime live in a separate
+`atomics.css`, so neither file drifts from its source and a re-sync cannot clobber additions.
+
+Three of the six rules that fail silently are held by tests rather than by intention:
+
+- status is asserted through its word, not its colour;
+- the theme moves on the app root, which is where colour as well as background is re-established;
+- a production without a master renders the striped `.shot` placeholder and no `<video>` element,
+  because a drawn stand-in for a customer's screen is the one lie this product exists to avoid.
+
+The `_ds/sanox-design-system-*` directory in the design project is the customer application's
+system, not Demoloop's, and is deliberately not bound.
+
+Not built: the conversation half of the studio split (`.studio` / `.chat`), the storyboard, the
+library, the Product Map browser, and everything needing an agent.
