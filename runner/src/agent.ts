@@ -7,6 +7,7 @@ export interface LeasedJob {
 export interface AgentDeps {
   lease(kinds: string[]): Promise<LeasedJob | undefined>;
   beat(id: string, token: string): Promise<boolean>;
+  upload(artifacts: Record<string, string>): Promise<Record<string, string>>;
   capture(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
   finish(id: string, token: string, body: Record<string, unknown>): Promise<void>;
 }
@@ -30,6 +31,7 @@ export async function runOnce(deps: AgentDeps, beatMs = 15_000): Promise<RunOutc
     });
     return 'withheld';
   }
-  await deps.finish(leased.job.id, leased.lease_token, { result: report });
+  const artifacts = (report.artifacts ?? {}) as Record<string, string>;
+  await deps.finish(leased.job.id, leased.lease_token, { result: { ...report, artifacts: await deps.upload(artifacts) } });
   return 'completed';
 }

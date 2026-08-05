@@ -57,3 +57,14 @@ async def finish(session: AsyncSession, job_id: uuid.UUID, lease_token: uuid.UUI
         {"id": job_id, "token": str(lease_token), "result": json.dumps(result)},
     )
     return outcome.rowcount == 1
+
+
+async def leased_job(session: AsyncSession, job_id: uuid.UUID, lease_token: uuid.UUID | str) -> dict | None:
+    row = (await session.execute(
+        text("""
+            SELECT id, workspace_id FROM job
+            WHERE id = :id AND lease_token = CAST(:token AS uuid) AND status = 'leased'
+        """),
+        {"id": job_id, "token": str(lease_token)},
+    )).mappings().one_or_none()
+    return dict(row) if row else None

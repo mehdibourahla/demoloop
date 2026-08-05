@@ -10,6 +10,8 @@ import pytest
 import pytest_asyncio
 from demoloop_core.db import admin_engine, workspace_session
 from demoloop_core.jobs import enqueue
+from demoloop_core.settings import settings
+from demoloop_core.storage import client as storage_client
 from sqlalchemy import text
 
 REPO = Path(__file__).resolve().parents[5]
@@ -83,7 +85,7 @@ async def enqueued_capture():
             "config": {"app": {"url": f"http://127.0.0.1:{APP_PORT}"}},
             "device": "desktop",
         })
-        return job.id
+        return workspace, job.id
 
 
 async def test_a_capture_job_flows_through_the_runner_and_back(running_stack, enqueued_capture):
@@ -97,9 +99,10 @@ async def test_a_capture_job_flows_through_the_runner_and_back(running_stack, en
     assert completed.returncode == 0, completed.stderr
     assert "completed" in completed.stdout
 
+    workspace_id, job_id = enqueued_capture
     async with admin_engine().begin() as connection:
         row = (await connection.execute(
-            text("SELECT status, result FROM job WHERE id = :id"), {"id": enqueued_capture}
+            text("SELECT status, result FROM job WHERE id = :id"), {"id": job_id}
         )).mappings().one()
 
     assert row["status"] == "done"
@@ -107,3 +110,10 @@ async def test_a_capture_job_flows_through_the_runner_and_back(running_stack, en
     assert result["passed"] is True
     assert result["mode"] == "record"
     assert result["provenance"]["appUrl"] == f"http://127.0.0.1:{APP_PORT}"
+
+    artifacts = result["artifacts"]
+    assert artifacts, "the capture reported no artifacts"
+    for name, key in artifacts.items():
+        assert key == f"workspace/{workspace_id}/production/{job_id}/{name}"
+        head = storage_client().head_object(Bucket=settings().storage_bucket, Key=key)
+        assert head["ContentLength"] > 0, f"{name} uploaded as an empty object"

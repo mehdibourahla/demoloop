@@ -8,7 +8,7 @@ const leased: LeasedJob = {
 };
 
 function deps(overrides: Partial<AgentDeps>): AgentDeps {
-  return { lease: async () => leased, beat: async () => true, capture: async () => ({}), finish: async () => {}, ...overrides };
+  return { lease: async () => leased, beat: async () => true, upload: async () => ({}), capture: async () => ({}), finish: async () => {}, ...overrides };
 }
 
 test('reports idle when the queue is empty', async () => {
@@ -60,4 +60,29 @@ test('stops beating once the capture returns', async () => {
   await new Promise((wait) => setTimeout(wait, 80));
 
   expect(beats).toBe(settled);
+});
+
+test('uploads nothing at all when the capture caught a credential', async () => {
+  const uploads: string[] = [];
+
+  const outcome = await runOnce(deps({
+    capture: async () => ({ passed: true, artifacts: { 'text-login': '/tmp/x' }, sensitiveFindings: [{ kind: 'secret', source: 'text-login', count: 1 }] }),
+    upload: async (artifacts) => { uploads.push(...Object.keys(artifacts)); return {}; }
+  }));
+
+  expect(outcome).toBe('withheld');
+  expect(uploads).toEqual([]);
+});
+
+test('uploads artifacts and reports object keys when the capture is clean', async () => {
+  const reported: Array<Record<string, unknown>> = [];
+
+  await runOnce(deps({
+    capture: async () => ({ passed: true, artifacts: { timeline: '/tmp/timeline.json' }, sensitiveFindings: [] }),
+    upload: async () => ({ timeline: 'workspace/w/production/j/timeline' }),
+    finish: async (_id, _token, body) => { reported.push(body); }
+  }));
+
+  const result = reported[0].result as { artifacts: Record<string, string> };
+  expect(result.artifacts).toEqual({ timeline: 'workspace/w/production/j/timeline' });
 });
