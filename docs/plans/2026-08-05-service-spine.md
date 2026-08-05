@@ -979,3 +979,30 @@ git commit -m "Add the runner agent with a credential withholding gate"
 - A capture job enqueued for one workspace is invisible to another, proven by test, not by review.
 - A runner without the shared secret receives no job payload.
 - A capture that caught a credential reports failure and uploads nothing.
+
+---
+
+## Executed 2026-08-05
+
+All six tasks are implemented and committed. `uv run pytest` reports 10 passed, `ruff check`
+is clean, and the engine suite is 160 passing across 35 files.
+
+Nine corrections were found by executing the plan. They apply to plans 2 through 6.
+
+| # | Correction |
+|---|---|
+| 1 | Both workspace member `pyproject.toml` files must exist before any test can run, because `uv` resolves the workspace globs first. Scaffolding precedes the first red test. |
+| 2 | Tasks 2 and 3 are one task. The isolation test needs both the schema and the scoped session, so neither is independently testable. |
+| 3 | asyncpg refuses multiple commands in one prepared statement. Every migration issues one statement per `op.execute`. |
+| 4 | A Postgres superuser bypasses RLS even with `FORCE`. The application connects as `demoloop_app`, which has neither `rolsuper` nor `rolbypassrls`; testing isolation as the owner would have proven nothing. |
+| 5 | Async sessions need `expire_on_commit=False`, or reading an attribute after the transaction closes raises `DetachedInstanceError`. |
+| 6 | With cached engines, pytest-asyncio needs `asyncio_default_fixture_loop_scope` and `asyncio_default_test_loop_scope` set to `session`, or the second test hits a closed event loop. |
+| 7 | The claim path cannot use an unscoped session, because RLS on `job` denies it. It uses a `demoloop_dispatch` role with a permissive policy on `job` alone — narrower than `BYPASSRLS`, which would expose every tenant table. The role is refused `product` at the grant level, which is asserted. |
+| 8 | FastAPI cannot derive a response model from `dict | Response`; the lease route declares `response_model=None`. |
+| 9 | Tests that touch the database use `httpx.AsyncClient` over ASGI rather than `TestClient`, so the app and the cached engines share one event loop. |
+
+Three database roles exist, not two: `demoloop_app` (row-level security applies),
+`demoloop_dispatch` (cross-workspace on `job` only), and the owner (migrations). The admin
+console's audited bypass in the architecture is a fourth and is not yet built.
+
+`service/docker-compose.yml` starts the Postgres these tests require.
