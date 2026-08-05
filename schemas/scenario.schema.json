@@ -872,7 +872,7 @@
             "minItems": 1,
             "type": "array",
             "items": {
-              "$ref": "#/definitions/__schema0"
+              "$ref": "#/definitions/Action"
             }
           }
         },
@@ -904,7 +904,7 @@
   ],
   "additionalProperties": false,
   "definitions": {
-    "__schema0": {
+    "Action": {
       "anyOf": [
         {
           "oneOf": [
@@ -4242,7 +4242,7 @@
               "minItems": 1,
               "type": "array",
               "items": {
-                "$ref": "#/definitions/__schema0"
+                "$ref": "#/definitions/Action"
               }
             }
           },
@@ -4661,14 +4661,14 @@
               "minItems": 1,
               "type": "array",
               "items": {
-                "$ref": "#/definitions/__schema0"
+                "$ref": "#/definitions/Action"
               }
             },
             "otherwise": {
               "default": [],
               "type": "array",
               "items": {
-                "$ref": "#/definitions/__schema0"
+                "$ref": "#/definitions/Action"
               }
             }
           },

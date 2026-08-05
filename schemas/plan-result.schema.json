@@ -16,909 +16,7 @@
           "minItems": 1,
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "version": {
-                "type": "number",
-                "const": 2
-              },
-              "id": {
-                "type": "string",
-                "pattern": "^[a-z0-9-]+$"
-              },
-              "title": {
-                "type": "string",
-                "minLength": 1
-              },
-              "outputType": {
-                "type": "string",
-                "enum": [
-                  "public-master",
-                  "actor-journey",
-                  "feature-clip",
-                  "release-demo",
-                  "montage"
-                ]
-              },
-              "audience": {
-                "type": "string",
-                "minLength": 1
-              },
-              "locale": {
-                "default": "en",
-                "type": "string",
-                "minLength": 2
-              },
-              "requestedDurationSeconds": {
-                "type": "number",
-                "exclusiveMinimum": 0
-              },
-              "audio": {
-                "default": {
-                  "policy": "silent"
-                },
-                "type": "object",
-                "properties": {
-                  "policy": {
-                    "type": "string",
-                    "enum": [
-                      "silent",
-                      "music",
-                      "voiceover",
-                      "voiceover-and-music"
-                    ]
-                  },
-                  "music": {
-                    "type": "object",
-                    "properties": {
-                      "path": {
-                        "type": "string",
-                        "minLength": 1
-                      },
-                      "level": {
-                        "default": 0.2,
-                        "type": "number",
-                        "minimum": 0,
-                        "maximum": 1
-                      },
-                      "fadeInMs": {
-                        "default": 500,
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 10000
-                      },
-                      "fadeOutMs": {
-                        "default": 500,
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 10000
-                      }
-                    },
-                    "required": [
-                      "path",
-                      "level",
-                      "fadeInMs",
-                      "fadeOutMs"
-                    ],
-                    "additionalProperties": false
-                  }
-                },
-                "required": [
-                  "policy"
-                ],
-                "additionalProperties": false
-              },
-              "subtitles": {
-                "default": "sidecar",
-                "type": "string",
-                "enum": [
-                  "none",
-                  "sidecar",
-                  "embedded",
-                  "burned"
-                ]
-              },
-              "branding": {
-                "default": {
-                  "name": "Demoloop",
-                  "primary": "#2563eb",
-                  "background": "#08111f"
-                },
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "primary": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "background": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "required": [
-                  "name",
-                  "primary",
-                  "background"
-                ],
-                "additionalProperties": false
-              },
-              "preconditions": {
-                "default": {},
-                "type": "object",
-                "properties": {
-                  "resetCommand": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "seedCommand": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "additionalProperties": false
-              },
-              "actors": {
-                "minItems": 1,
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "label": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "storageState": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "preflight": {
-                      "type": "object",
-                      "properties": {
-                        "path": {
-                          "default": "/",
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "target": {
-                          "oneOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "by": {
-                                  "type": "string",
-                                  "const": "role"
-                                },
-                                "role": {
-                                  "type": "string",
-                                  "enum": [
-                                    "button",
-                                    "link",
-                                    "textbox",
-                                    "checkbox",
-                                    "radio",
-                                    "heading",
-                                    "combobox",
-                                    "listitem",
-                                    "tab",
-                                    "menuitem"
-                                  ]
-                                },
-                                "value": {
-                                  "type": "string",
-                                  "minLength": 1
-                                },
-                                "within": {
-                                  "type": "object",
-                                  "properties": {
-                                    "role": {
-                                      "type": "string",
-                                      "enum": [
-                                        "dialog",
-                                        "form",
-                                        "region",
-                                        "navigation",
-                                        "main",
-                                        "list",
-                                        "table"
-                                      ]
-                                    },
-                                    "testId": {
-                                      "type": "string",
-                                      "minLength": 1
-                                    }
-                                  },
-                                  "additionalProperties": false
-                                }
-                              },
-                              "required": [
-                                "by",
-                                "role",
-                                "value"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "by": {
-                                  "type": "string",
-                                  "const": "label"
-                                },
-                                "value": {
-                                  "type": "string",
-                                  "minLength": 1
-                                },
-                                "within": {
-                                  "type": "object",
-                                  "properties": {
-                                    "role": {
-                                      "type": "string",
-                                      "enum": [
-                                        "dialog",
-                                        "form",
-                                        "region",
-                                        "navigation",
-                                        "main",
-                                        "list",
-                                        "table"
-                                      ]
-                                    },
-                                    "testId": {
-                                      "type": "string",
-                                      "minLength": 1
-                                    }
-                                  },
-                                  "additionalProperties": false
-                                }
-                              },
-                              "required": [
-                                "by",
-                                "value"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "by": {
-                                  "type": "string",
-                                  "const": "testId"
-                                },
-                                "value": {
-                                  "type": "string",
-                                  "minLength": 1
-                                },
-                                "within": {
-                                  "type": "object",
-                                  "properties": {
-                                    "role": {
-                                      "type": "string",
-                                      "enum": [
-                                        "dialog",
-                                        "form",
-                                        "region",
-                                        "navigation",
-                                        "main",
-                                        "list",
-                                        "table"
-                                      ]
-                                    },
-                                    "testId": {
-                                      "type": "string",
-                                      "minLength": 1
-                                    }
-                                  },
-                                  "additionalProperties": false
-                                }
-                              },
-                              "required": [
-                                "by",
-                                "value"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "by": {
-                                  "type": "string",
-                                  "const": "text"
-                                },
-                                "value": {
-                                  "type": "string",
-                                  "minLength": 1
-                                },
-                                "within": {
-                                  "type": "object",
-                                  "properties": {
-                                    "role": {
-                                      "type": "string",
-                                      "enum": [
-                                        "dialog",
-                                        "form",
-                                        "region",
-                                        "navigation",
-                                        "main",
-                                        "list",
-                                        "table"
-                                      ]
-                                    },
-                                    "testId": {
-                                      "type": "string",
-                                      "minLength": 1
-                                    }
-                                  },
-                                  "additionalProperties": false
-                                }
-                              },
-                              "required": [
-                                "by",
-                                "value"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "by": {
-                                  "type": "string",
-                                  "const": "roleAny"
-                                },
-                                "role": {
-                                  "type": "string",
-                                  "enum": [
-                                    "button",
-                                    "link",
-                                    "textbox",
-                                    "checkbox",
-                                    "radio",
-                                    "heading",
-                                    "combobox",
-                                    "listitem",
-                                    "tab",
-                                    "menuitem"
-                                  ]
-                                },
-                                "values": {
-                                  "minItems": 2,
-                                  "type": "array",
-                                  "items": {
-                                    "type": "string",
-                                    "minLength": 1
-                                  }
-                                },
-                                "within": {
-                                  "type": "object",
-                                  "properties": {
-                                    "role": {
-                                      "type": "string",
-                                      "enum": [
-                                        "dialog",
-                                        "form",
-                                        "region",
-                                        "navigation",
-                                        "main",
-                                        "list",
-                                        "table"
-                                      ]
-                                    },
-                                    "testId": {
-                                      "type": "string",
-                                      "minLength": 1
-                                    }
-                                  },
-                                  "additionalProperties": false
-                                }
-                              },
-                              "required": [
-                                "by",
-                                "role",
-                                "values"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "by": {
-                                  "type": "string",
-                                  "const": "rolePattern"
-                                },
-                                "role": {
-                                  "type": "string",
-                                  "enum": [
-                                    "button",
-                                    "link",
-                                    "textbox",
-                                    "checkbox",
-                                    "radio",
-                                    "heading",
-                                    "combobox",
-                                    "listitem",
-                                    "tab",
-                                    "menuitem"
-                                  ]
-                                },
-                                "pattern": {
-                                  "type": "string",
-                                  "minLength": 1
-                                },
-                                "within": {
-                                  "type": "object",
-                                  "properties": {
-                                    "role": {
-                                      "type": "string",
-                                      "enum": [
-                                        "dialog",
-                                        "form",
-                                        "region",
-                                        "navigation",
-                                        "main",
-                                        "list",
-                                        "table"
-                                      ]
-                                    },
-                                    "testId": {
-                                      "type": "string",
-                                      "minLength": 1
-                                    }
-                                  },
-                                  "additionalProperties": false
-                                }
-                              },
-                              "required": [
-                                "by",
-                                "role",
-                                "pattern"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "by": {
-                                  "type": "string",
-                                  "const": "textPattern"
-                                },
-                                "pattern": {
-                                  "type": "string",
-                                  "minLength": 1
-                                },
-                                "within": {
-                                  "type": "object",
-                                  "properties": {
-                                    "role": {
-                                      "type": "string",
-                                      "enum": [
-                                        "dialog",
-                                        "form",
-                                        "region",
-                                        "navigation",
-                                        "main",
-                                        "list",
-                                        "table"
-                                      ]
-                                    },
-                                    "testId": {
-                                      "type": "string",
-                                      "minLength": 1
-                                    }
-                                  },
-                                  "additionalProperties": false
-                                }
-                              },
-                              "required": [
-                                "by",
-                                "pattern"
-                              ],
-                              "additionalProperties": false
-                            }
-                          ]
-                        },
-                        "state": {
-                          "default": "visible",
-                          "type": "string",
-                          "enum": [
-                            "visible",
-                            "hidden"
-                          ]
-                        },
-                        "timeoutMs": {
-                          "default": 10000,
-                          "type": "integer",
-                          "minimum": 100,
-                          "maximum": 120000
-                        }
-                      },
-                      "required": [
-                        "path",
-                        "target",
-                        "state",
-                        "timeoutMs"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "label"
-                  ],
-                  "additionalProperties": false
-                }
-              },
-              "scenes": {
-                "minItems": 1,
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "pattern": "^[a-z0-9-]+$"
-                    },
-                    "title": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "description": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "purpose": {
-                      "type": "string",
-                      "enum": [
-                        "hook",
-                        "context",
-                        "interaction",
-                        "exploration",
-                        "state-change",
-                        "handoff",
-                        "result",
-                        "proof",
-                        "montage",
-                        "close"
-                      ]
-                    },
-                    "capabilityId": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "proofSurfaceId": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "actor": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "causalLink": {
-                      "type": "object",
-                      "properties": {
-                        "fromSceneId": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "relationshipId": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "transitionId": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "evidence": {
-                          "minItems": 1,
-                          "type": "array",
-                          "items": {
-                            "oneOf": [
-                              {
-                                "type": "object",
-                                "properties": {
-                                  "type": {
-                                    "type": "string",
-                                    "const": "source"
-                                  },
-                                  "path": {
-                                    "type": "string",
-                                    "minLength": 1
-                                  },
-                                  "line": {
-                                    "type": "integer",
-                                    "exclusiveMinimum": 0,
-                                    "maximum": 9007199254740991
-                                  },
-                                  "detail": {
-                                    "type": "string",
-                                    "minLength": 1
-                                  }
-                                },
-                                "required": [
-                                  "type",
-                                  "path"
-                                ],
-                                "additionalProperties": false
-                              },
-                              {
-                                "type": "object",
-                                "properties": {
-                                  "type": {
-                                    "type": "string",
-                                    "const": "runtime"
-                                  },
-                                  "url": {
-                                    "type": "string",
-                                    "format": "uri"
-                                  },
-                                  "observedAt": {
-                                    "type": "string",
-                                    "format": "date-time",
-                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-                                  },
-                                  "screenshot": {
-                                    "type": "string",
-                                    "minLength": 1
-                                  },
-                                  "ariaSnapshot": {
-                                    "type": "string",
-                                    "minLength": 1
-                                  },
-                                  "detail": {
-                                    "type": "string",
-                                    "minLength": 1
-                                  }
-                                },
-                                "required": [
-                                  "type",
-                                  "url",
-                                  "observedAt"
-                                ],
-                                "additionalProperties": false
-                              },
-                              {
-                                "type": "object",
-                                "properties": {
-                                  "type": {
-                                    "type": "string",
-                                    "const": "user"
-                                  },
-                                  "confirmedBy": {
-                                    "type": "string",
-                                    "minLength": 1
-                                  },
-                                  "confirmedAt": {
-                                    "type": "string",
-                                    "format": "date-time",
-                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-                                  },
-                                  "detail": {
-                                    "type": "string",
-                                    "minLength": 1
-                                  }
-                                },
-                                "required": [
-                                  "type",
-                                  "confirmedBy",
-                                  "confirmedAt",
-                                  "detail"
-                                ],
-                                "additionalProperties": false
-                              }
-                            ]
-                          }
-                        }
-                      },
-                      "required": [
-                        "fromSceneId",
-                        "evidence"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "presentation": {
-                      "default": {
-                        "maxStaticHoldMs": 3000,
-                        "camera": {
-                          "type": "none"
-                        },
-                        "loading": "cut",
-                        "transitionWeight": "light",
-                        "caption": {
-                          "mode": "none"
-                        }
-                      },
-                      "type": "object",
-                      "properties": {
-                        "maxStaticHoldMs": {
-                          "default": 3000,
-                          "type": "integer",
-                          "minimum": 250,
-                          "maximum": 15000
-                        },
-                        "regionOfInterest": {
-                          "type": "object",
-                          "properties": {
-                            "x": {
-                              "type": "number",
-                              "minimum": 0,
-                              "maximum": 1
-                            },
-                            "y": {
-                              "type": "number",
-                              "minimum": 0,
-                              "maximum": 1
-                            },
-                            "width": {
-                              "type": "number",
-                              "exclusiveMinimum": 0,
-                              "maximum": 1
-                            },
-                            "height": {
-                              "type": "number",
-                              "exclusiveMinimum": 0,
-                              "maximum": 1
-                            }
-                          },
-                          "required": [
-                            "x",
-                            "y",
-                            "width",
-                            "height"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "camera": {
-                          "default": {
-                            "type": "none"
-                          },
-                          "type": "object",
-                          "properties": {
-                            "type": {
-                              "type": "string",
-                              "enum": [
-                                "none",
-                                "crop",
-                                "pan",
-                                "zoom"
-                              ]
-                            },
-                            "scale": {
-                              "type": "number",
-                              "minimum": 1,
-                              "maximum": 3
-                            },
-                            "to": {
-                              "type": "object",
-                              "properties": {
-                                "x": {
-                                  "type": "number",
-                                  "minimum": 0,
-                                  "maximum": 1
-                                },
-                                "y": {
-                                  "type": "number",
-                                  "minimum": 0,
-                                  "maximum": 1
-                                },
-                                "width": {
-                                  "type": "number",
-                                  "exclusiveMinimum": 0,
-                                  "maximum": 1
-                                },
-                                "height": {
-                                  "type": "number",
-                                  "exclusiveMinimum": 0,
-                                  "maximum": 1
-                                }
-                              },
-                              "required": [
-                                "x",
-                                "y",
-                                "width",
-                                "height"
-                              ],
-                              "additionalProperties": false
-                            }
-                          },
-                          "required": [
-                            "type"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "loading": {
-                          "default": "cut",
-                          "type": "string",
-                          "enum": [
-                            "preserve",
-                            "cut"
-                          ]
-                        },
-                        "transitionWeight": {
-                          "default": "light",
-                          "type": "string",
-                          "enum": [
-                            "light",
-                            "meaningful",
-                            "major"
-                          ]
-                        },
-                        "caption": {
-                          "default": {
-                            "mode": "none"
-                          },
-                          "type": "object",
-                          "properties": {
-                            "mode": {
-                              "type": "string",
-                              "enum": [
-                                "none",
-                                "lower-third"
-                              ]
-                            },
-                            "safeArea": {
-                              "type": "string",
-                              "enum": [
-                                "top",
-                                "bottom"
-                              ]
-                            }
-                          },
-                          "required": [
-                            "mode"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "maxStaticHoldMs",
-                        "camera",
-                        "loading",
-                        "transitionWeight",
-                        "caption"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "actions": {
-                      "minItems": 1,
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/definitions/__schema0"
-                      }
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "title",
-                    "purpose",
-                    "actor",
-                    "presentation",
-                    "actions"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            },
-            "required": [
-              "version",
-              "id",
-              "title",
-              "outputType",
-              "audience",
-              "locale",
-              "audio",
-              "subtitles",
-              "branding",
-              "preconditions",
-              "actors",
-              "scenes"
-            ],
-            "additionalProperties": false
+            "$ref": "#/definitions/Scenario"
           }
         },
         "coverage": {
@@ -1414,7 +512,912 @@
     }
   ],
   "definitions": {
-    "__schema0": {
+    "Scenario": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "number",
+          "const": 2
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "outputType": {
+          "type": "string",
+          "enum": [
+            "public-master",
+            "actor-journey",
+            "feature-clip",
+            "release-demo",
+            "montage"
+          ]
+        },
+        "audience": {
+          "type": "string",
+          "minLength": 1
+        },
+        "locale": {
+          "default": "en",
+          "type": "string",
+          "minLength": 2
+        },
+        "requestedDurationSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "audio": {
+          "default": {
+            "policy": "silent"
+          },
+          "type": "object",
+          "properties": {
+            "policy": {
+              "type": "string",
+              "enum": [
+                "silent",
+                "music",
+                "voiceover",
+                "voiceover-and-music"
+              ]
+            },
+            "music": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "level": {
+                  "default": 0.2,
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "fadeInMs": {
+                  "default": 500,
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 10000
+                },
+                "fadeOutMs": {
+                  "default": 500,
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 10000
+                }
+              },
+              "required": [
+                "path",
+                "level",
+                "fadeInMs",
+                "fadeOutMs"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "policy"
+          ],
+          "additionalProperties": false
+        },
+        "subtitles": {
+          "default": "sidecar",
+          "type": "string",
+          "enum": [
+            "none",
+            "sidecar",
+            "embedded",
+            "burned"
+          ]
+        },
+        "branding": {
+          "default": {
+            "name": "Demoloop",
+            "primary": "#2563eb",
+            "background": "#08111f"
+          },
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "primary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "background": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "name",
+            "primary",
+            "background"
+          ],
+          "additionalProperties": false
+        },
+        "preconditions": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "resetCommand": {
+              "type": "string",
+              "minLength": 1
+            },
+            "seedCommand": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "actors": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "storageState": {
+                "type": "string",
+                "minLength": 1
+              },
+              "preflight": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "default": "/",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "target": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "by": {
+                            "type": "string",
+                            "const": "role"
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "button",
+                              "link",
+                              "textbox",
+                              "checkbox",
+                              "radio",
+                              "heading",
+                              "combobox",
+                              "listitem",
+                              "tab",
+                              "menuitem"
+                            ]
+                          },
+                          "value": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "within": {
+                            "type": "object",
+                            "properties": {
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "dialog",
+                                  "form",
+                                  "region",
+                                  "navigation",
+                                  "main",
+                                  "list",
+                                  "table"
+                                ]
+                              },
+                              "testId": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "by",
+                          "role",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "by": {
+                            "type": "string",
+                            "const": "label"
+                          },
+                          "value": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "within": {
+                            "type": "object",
+                            "properties": {
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "dialog",
+                                  "form",
+                                  "region",
+                                  "navigation",
+                                  "main",
+                                  "list",
+                                  "table"
+                                ]
+                              },
+                              "testId": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "by",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "by": {
+                            "type": "string",
+                            "const": "testId"
+                          },
+                          "value": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "within": {
+                            "type": "object",
+                            "properties": {
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "dialog",
+                                  "form",
+                                  "region",
+                                  "navigation",
+                                  "main",
+                                  "list",
+                                  "table"
+                                ]
+                              },
+                              "testId": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "by",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "by": {
+                            "type": "string",
+                            "const": "text"
+                          },
+                          "value": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "within": {
+                            "type": "object",
+                            "properties": {
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "dialog",
+                                  "form",
+                                  "region",
+                                  "navigation",
+                                  "main",
+                                  "list",
+                                  "table"
+                                ]
+                              },
+                              "testId": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "by",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "by": {
+                            "type": "string",
+                            "const": "roleAny"
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "button",
+                              "link",
+                              "textbox",
+                              "checkbox",
+                              "radio",
+                              "heading",
+                              "combobox",
+                              "listitem",
+                              "tab",
+                              "menuitem"
+                            ]
+                          },
+                          "values": {
+                            "minItems": 2,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "within": {
+                            "type": "object",
+                            "properties": {
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "dialog",
+                                  "form",
+                                  "region",
+                                  "navigation",
+                                  "main",
+                                  "list",
+                                  "table"
+                                ]
+                              },
+                              "testId": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "by",
+                          "role",
+                          "values"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "by": {
+                            "type": "string",
+                            "const": "rolePattern"
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "button",
+                              "link",
+                              "textbox",
+                              "checkbox",
+                              "radio",
+                              "heading",
+                              "combobox",
+                              "listitem",
+                              "tab",
+                              "menuitem"
+                            ]
+                          },
+                          "pattern": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "within": {
+                            "type": "object",
+                            "properties": {
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "dialog",
+                                  "form",
+                                  "region",
+                                  "navigation",
+                                  "main",
+                                  "list",
+                                  "table"
+                                ]
+                              },
+                              "testId": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "by",
+                          "role",
+                          "pattern"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "by": {
+                            "type": "string",
+                            "const": "textPattern"
+                          },
+                          "pattern": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "within": {
+                            "type": "object",
+                            "properties": {
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "dialog",
+                                  "form",
+                                  "region",
+                                  "navigation",
+                                  "main",
+                                  "list",
+                                  "table"
+                                ]
+                              },
+                              "testId": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "by",
+                          "pattern"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "state": {
+                    "default": "visible",
+                    "type": "string",
+                    "enum": [
+                      "visible",
+                      "hidden"
+                    ]
+                  },
+                  "timeoutMs": {
+                    "default": 10000,
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 120000
+                  }
+                },
+                "required": [
+                  "path",
+                  "target",
+                  "state",
+                  "timeoutMs"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "scenes": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]+$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "purpose": {
+                "type": "string",
+                "enum": [
+                  "hook",
+                  "context",
+                  "interaction",
+                  "exploration",
+                  "state-change",
+                  "handoff",
+                  "result",
+                  "proof",
+                  "montage",
+                  "close"
+                ]
+              },
+              "capabilityId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "proofSurfaceId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "actor": {
+                "type": "string",
+                "minLength": 1
+              },
+              "causalLink": {
+                "type": "object",
+                "properties": {
+                  "fromSceneId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "relationshipId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "transitionId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "evidence": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "source"
+                            },
+                            "path": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "line": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "detail": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "path"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "runtime"
+                            },
+                            "url": {
+                              "type": "string",
+                              "format": "uri"
+                            },
+                            "observedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            "screenshot": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "ariaSnapshot": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "detail": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "url",
+                            "observedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "user"
+                            },
+                            "confirmedBy": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "confirmedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            "detail": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "confirmedBy",
+                            "confirmedAt",
+                            "detail"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "fromSceneId",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "presentation": {
+                "default": {
+                  "maxStaticHoldMs": 3000,
+                  "camera": {
+                    "type": "none"
+                  },
+                  "loading": "cut",
+                  "transitionWeight": "light",
+                  "caption": {
+                    "mode": "none"
+                  }
+                },
+                "type": "object",
+                "properties": {
+                  "maxStaticHoldMs": {
+                    "default": 3000,
+                    "type": "integer",
+                    "minimum": 250,
+                    "maximum": 15000
+                  },
+                  "regionOfInterest": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "y": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "width": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 1
+                      },
+                      "height": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y",
+                      "width",
+                      "height"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "camera": {
+                    "default": {
+                      "type": "none"
+                    },
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "none",
+                          "crop",
+                          "pan",
+                          "zoom"
+                        ]
+                      },
+                      "scale": {
+                        "type": "number",
+                        "minimum": 1,
+                        "maximum": 3
+                      },
+                      "to": {
+                        "type": "object",
+                        "properties": {
+                          "x": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "y": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "width": {
+                            "type": "number",
+                            "exclusiveMinimum": 0,
+                            "maximum": 1
+                          },
+                          "height": {
+                            "type": "number",
+                            "exclusiveMinimum": 0,
+                            "maximum": 1
+                          }
+                        },
+                        "required": [
+                          "x",
+                          "y",
+                          "width",
+                          "height"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "loading": {
+                    "default": "cut",
+                    "type": "string",
+                    "enum": [
+                      "preserve",
+                      "cut"
+                    ]
+                  },
+                  "transitionWeight": {
+                    "default": "light",
+                    "type": "string",
+                    "enum": [
+                      "light",
+                      "meaningful",
+                      "major"
+                    ]
+                  },
+                  "caption": {
+                    "default": {
+                      "mode": "none"
+                    },
+                    "type": "object",
+                    "properties": {
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "none",
+                          "lower-third"
+                        ]
+                      },
+                      "safeArea": {
+                        "type": "string",
+                        "enum": [
+                          "top",
+                          "bottom"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "mode"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "maxStaticHoldMs",
+                  "camera",
+                  "loading",
+                  "transitionWeight",
+                  "caption"
+                ],
+                "additionalProperties": false
+              },
+              "actions": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Action"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "purpose",
+              "actor",
+              "presentation",
+              "actions"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "version",
+        "id",
+        "title",
+        "outputType",
+        "audience",
+        "locale",
+        "audio",
+        "subtitles",
+        "branding",
+        "preconditions",
+        "actors",
+        "scenes"
+      ],
+      "additionalProperties": false
+    },
+    "Action": {
       "anyOf": [
         {
           "oneOf": [
@@ -4752,7 +4755,7 @@
               "minItems": 1,
               "type": "array",
               "items": {
-                "$ref": "#/definitions/__schema0"
+                "$ref": "#/definitions/Action"
               }
             }
           },
@@ -5171,14 +5174,14 @@
               "minItems": 1,
               "type": "array",
               "items": {
-                "$ref": "#/definitions/__schema0"
+                "$ref": "#/definitions/Action"
               }
             },
             "otherwise": {
               "default": [],
               "type": "array",
               "items": {
-                "$ref": "#/definitions/__schema0"
+                "$ref": "#/definitions/Action"
               }
             }
           },

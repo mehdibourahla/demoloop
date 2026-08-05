@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { z } from 'zod';
 import {
   ActorOwnershipSchema,
   ConfigSchema,
@@ -114,6 +115,19 @@ describe('version 2 contracts', () => {
 
     expect(report.technical.passed).toBe(true);
     expect(report.agentReview.status).toBe('complete');
+  });
+
+  test('exports shared and recursive definitions under stable names', () => {
+    const exported = z.toJSONSchema(PlanResultSchema, { target: 'draft-7' }) as { definitions?: Record<string, unknown> };
+
+    expect(Object.keys(exported.definitions ?? {})).toEqual(expect.arrayContaining(['Action', 'Scenario']));
+  });
+
+  test('references the scenario definition instead of inlining every copy', () => {
+    const exported = JSON.stringify(z.toJSONSchema(PlanResultSchema, { target: 'draft-7' }));
+
+    expect(exported).toContain('#/definitions/Scenario');
+    expect(exported).not.toContain('__schema');
   });
 
   test('keeps local-first configuration defaults and configurable thresholds', () => {

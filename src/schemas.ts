@@ -157,6 +157,9 @@ export const ScenarioSchema = z.object({
   });
 });
 
+z.globalRegistry.add(ActionSchema, { id: 'Action' });
+z.globalRegistry.add(ScenarioSchema, { id: 'Scenario' });
+
 const CoverageSchema = z.object({ capabilityId: z.string().min(1), outputIds: z.array(z.string()), demonstrated: z.boolean().default(false), omissionReason: z.string().min(1).optional() });
 const OmissionSchema = z.object({ id: z.string().min(1), reason: z.string().min(1), evidence: z.array(EvidenceSchema).default([]) });
 
