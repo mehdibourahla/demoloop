@@ -1,6 +1,5 @@
-from fastapi.testclient import TestClient
-
 from demoloop_api.app import create_app
+from fastapi.testclient import TestClient
 
 
 def test_health_reports_the_running_environment():

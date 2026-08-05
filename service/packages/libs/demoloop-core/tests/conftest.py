@@ -1,10 +1,9 @@
 import uuid
 
 import pytest_asyncio
-from sqlalchemy import text
-
 from demoloop_core.db import admin_engine, workspace_session
 from demoloop_core.models import Product
+from sqlalchemy import text
 
 
 @pytest_asyncio.fixture

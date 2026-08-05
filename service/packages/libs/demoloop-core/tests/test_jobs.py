@@ -45,10 +45,9 @@ async def test_a_stale_lease_token_cannot_finish_the_job(seeded_workspaces):
 
 async def test_the_dispatch_role_is_refused_tenant_tables_outright(seeded_workspaces):
     import pytest
+    from demoloop_core.models import Product
     from sqlalchemy import select
     from sqlalchemy.exc import ProgrammingError
-
-    from demoloop_core.models import Product
 
     with pytest.raises(ProgrammingError, match="permission denied for table product"):
         async with dispatch_session() as session:

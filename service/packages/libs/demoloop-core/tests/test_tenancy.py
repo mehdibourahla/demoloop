@@ -1,9 +1,8 @@
 import uuid
 
-from sqlalchemy import select
-
 from demoloop_core.db import workspace_session
 from demoloop_core.models import Product
+from sqlalchemy import select
 
 
 async def test_a_workspace_cannot_read_another_workspaces_products(seeded_workspaces):
