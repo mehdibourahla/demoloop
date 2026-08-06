@@ -200,6 +200,7 @@ async def advance(session: AsyncSession, job_id: uuid.UUID) -> uuid.UUID | None:
         "device": payload_now.get("device", "desktop"),
         "artifacts": artifacts,
         "estimated_credits": payload_now.get("estimated_credits", 0),
+        "quality": result.get("quality") or payload_now.get("quality"),
     })
     await session.execute(
         text("UPDATE job SET production_id = :production WHERE id = :id"),

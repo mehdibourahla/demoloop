@@ -34,6 +34,7 @@ async def test_evaluation_hands_the_video_to_a_reviewer(seeded_workspaces):
 
     assert review is not None
     assert review.payload["artifacts"]["video"] == "k/v"
+    assert review.payload["quality"] == PENDING, "the reviewer must receive the report it finalises"
 
 
 async def test_an_accepted_review_is_what_makes_a_video_publishable(seeded_workspaces):

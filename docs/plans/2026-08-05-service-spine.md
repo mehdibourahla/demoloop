@@ -1205,3 +1205,29 @@ with an injected reviewer. Treat the litellm call itself as untested until it ru
 A production now rests at `reviewing` rather than `complete`, and publication refuses it with
 "waiting for an agent to watch it". That is the honest state: the pipeline is finished, the master
 exists and its owner can watch it, and nothing may be shared until an agent has seen it.
+
+## The loop closes 2026-08-05
+
+`test_review_end_to_end.py` runs the whole product: a production captures, renders, evaluates,
+is **refused** publication with 409, is watched by a reviewer shown real frames cut from the
+actual master, and then publishes. One observed run:
+
+```
+capture → render → evaluate → review
+production complete · published · quality accepted
+agentReview {verdict: accept, score: 8.4, framesInspected: 2}
+```
+
+The review worker is Python because the reviewer is; it leases through the same protocol as the
+Node stages, so there is one job ledger and one lease contract across two languages.
+
+Frames come from the moments `evaluate` already chose — the cut positions and static spans it
+recorded — falling back to midpoints of equal segments across the duration. Sampling the moments
+the deterministic pass already found interesting is what makes a handful of frames worth more
+than a handful of arbitrary ones.
+
+**A wiring bug the worker's own tests hid.** `advance` built each follow-on payload without the
+quality report, so a real review job arrived with nothing to finalise. The worker's unit tests
+hand-built their payloads and passed anyway; only running the real chain exposed it. The pipeline
+now carries `quality` forward, and the assertion that a review job receives the report it
+finalises lives in the pipeline test where a hand-built payload cannot mask it again.
