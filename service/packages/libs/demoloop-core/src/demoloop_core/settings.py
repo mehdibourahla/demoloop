@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     storage_access_key: str = "demoloop"
     storage_secret_key: str = "demoloop123"
     storage_region: str = "us-east-1"
+    credits_per_minute: float = 6.5
+    seconds_per_scene: int = 15
+    review_model: str | None = None
 
 
 @lru_cache

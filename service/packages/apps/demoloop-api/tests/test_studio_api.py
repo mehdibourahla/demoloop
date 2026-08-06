@@ -73,10 +73,39 @@ async def test_a_production_is_invisible_from_another_workspace(member):
     async with client() as http:
         created = await http.post(
             "/v1/productions",
-            json={"scenario": {"id": "demo"}, "config": {"app": {"url": "http://127.0.0.1:4173"}}},
+            json={"scenario": {"id": "demo", "scenes": [1]}, "config": {"app": {"url": "http://127.0.0.1:4173"}}},
             headers=headers("ada", workspace),
         )
         stolen = await http.get(f"/v1/productions/{created.json()['id']}", headers=headers("grace", other))
 
     assert created.status_code == 201
     assert stolen.status_code == 404
+
+
+async def test_a_production_is_priced_from_its_scenario_when_no_estimate_is_given(member):
+    workspace, _ = member
+    scenario = {"id": "demo", "requestedDurationSeconds": 110, "scenes": [1, 2, 3, 4, 5, 6]}
+
+    async with client() as http:
+        created = await http.post(
+            "/v1/productions",
+            json={"scenario": scenario, "config": {"app": {"url": "http://127.0.0.1:4173"}}},
+            headers=headers("ada", workspace),
+        )
+
+    assert created.status_code == 201
+    assert created.json()["estimatedCredits"] == 12
+
+
+async def test_a_scenario_that_cannot_be_priced_is_refused(member):
+    workspace, _ = member
+
+    async with client() as http:
+        refused = await http.post(
+            "/v1/productions",
+            json={"scenario": {"id": "demo", "scenes": []}, "config": {"app": {"url": "http://x"}}},
+            headers=headers("ada", workspace),
+        )
+
+    assert refused.status_code == 400
+    assert "no scenes" in refused.json()["detail"]

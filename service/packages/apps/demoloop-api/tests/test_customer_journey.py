@@ -20,6 +20,10 @@ async def test_a_customer_goes_from_a_repository_to_a_playable_video(running_sta
             text("INSERT INTO membership (id, workspace_id, user_id, role) VALUES (:id, :w, 'ada', 'owner')"),
             {"id": uuid.uuid4(), "w": workspace},
         )
+        await connection.execute(
+            text("INSERT INTO credit_balance (workspace_id, granted) VALUES (:w, 1000)"),
+            {"w": workspace},
+        )
     who = {"X-Demoloop-User": "ada", "X-Demoloop-Workspace": str(workspace)}
     config = {
         "app": {"url": f"http://127.0.0.1:{APP_PORT}"},

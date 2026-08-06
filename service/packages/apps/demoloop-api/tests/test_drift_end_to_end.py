@@ -20,6 +20,10 @@ async def _workspace() -> uuid.UUID:
             text("INSERT INTO membership (id, workspace_id, user_id, role) VALUES (:id, :w, 'ada', 'owner')"),
             {"id": uuid.uuid4(), "w": workspace},
         )
+        await connection.execute(
+            text("INSERT INTO credit_balance (workspace_id, granted) VALUES (:w, 1000)"),
+            {"w": workspace},
+        )
     return workspace
 
 

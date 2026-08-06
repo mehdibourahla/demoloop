@@ -1,8 +1,11 @@
+import math
 import uuid
 from decimal import Decimal
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from demoloop_core.settings import settings
 
 
 async def grant(session: AsyncSession, workspace_id: uuid.UUID, amount: Decimal) -> None:
@@ -42,3 +45,16 @@ async def settle(session: AsyncSession, workspace_id: uuid.UUID, reserved: Decim
         """),
         {"workspace": workspace_id, "reserved": reserved, "actual": actual},
     )
+
+
+def estimate_credits(scenario: dict) -> int:
+    """Credits a production is expected to cost, from its running time.
+
+    The rate is recovered from the product spec rather than chosen: at 6.5 credits a
+    minute, the PRD's own worked example (1 min 50 s) prices at 12 credits.
+    """
+    scenes = scenario.get("scenes") or []
+    if not scenes:
+        raise ValueError("a scenario with no scenes cannot be priced")
+    seconds = scenario.get("requestedDurationSeconds") or len(scenes) * settings().seconds_per_scene
+    return max(1, math.ceil(seconds / 60 * settings().credits_per_minute))

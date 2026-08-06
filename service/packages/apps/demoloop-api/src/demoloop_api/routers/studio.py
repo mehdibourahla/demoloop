@@ -1,5 +1,6 @@
 import uuid
 
+from demoloop_core.credits import estimate_credits
 from demoloop_core.db import workspace_session
 from demoloop_core.pipeline import start_production, start_reconnaissance, start_verification
 from demoloop_core.publication import PublicationRefused, publish
@@ -20,7 +21,7 @@ class ReconnaissanceRequest(BaseModel):
 class ProductionRequest(BaseModel):
     scenario: dict
     config: dict
-    estimated_credits: float = 0
+    estimated_credits: float | None = None
 
 
 async def _row(who: Caller, table: str, identifier: uuid.UUID, columns: str) -> dict:
@@ -48,11 +49,19 @@ async def read_reconnaissance(recon_id: uuid.UUID, who: Caller = Depends(caller)
 
 @router.post("/productions", status_code=201)
 async def begin_production(request: ProductionRequest, who: Caller = Depends(caller)) -> dict:
+    try:
+        estimate = (
+            request.estimated_credits
+            if request.estimated_credits is not None
+            else estimate_credits(request.scenario)
+        )
+    except ValueError as unpriceable:
+        raise HTTPException(status_code=400, detail=str(unpriceable)) from unpriceable
     async with workspace_session(who.workspace_id) as session:
         production = await start_production(
-            session, who.workspace_id, request.scenario, request.config, request.estimated_credits
+            session, who.workspace_id, request.scenario, request.config, estimate
         )
-    return {"id": str(production), "status": "capturing"}
+    return {"id": str(production), "status": "capturing", "estimatedCredits": estimate}
 
 
 @router.get("/productions/{production_id}")

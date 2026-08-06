@@ -20,6 +20,10 @@ async def test_a_video_no_agent_watched_is_refused_publication(running_stack):  
             text("INSERT INTO membership (id, workspace_id, user_id, role) VALUES (:id, :w, 'ada', 'owner')"),
             {"id": uuid.uuid4(), "w": workspace},
         )
+        await connection.execute(
+            text("INSERT INTO credit_balance (workspace_id, granted) VALUES (:w, 1000)"),
+            {"w": workspace},
+        )
     who = {"X-Demoloop-User": "ada", "X-Demoloop-Workspace": str(workspace)}
     config = {"app": {"url": f"http://127.0.0.1:{APP_PORT}"}}
 
@@ -37,3 +41,29 @@ async def test_a_video_no_agent_watched_is_refused_publication(running_stack):  
     assert state["published"] is None
     assert refused.status_code == 409
     assert "waiting for an agent to watch it" in refused.json()["detail"]
+
+
+async def test_a_workspace_without_credits_never_starts_the_work(running_stack):  # noqa: F811
+    workspace = uuid.uuid4()
+    async with admin_engine().begin() as connection:
+        await connection.execute(text("TRUNCATE workspace CASCADE"))
+        await connection.execute(
+            text("INSERT INTO workspace (id, name) VALUES (:id, 'Broke')"), {"id": workspace}
+        )
+        await connection.execute(
+            text("INSERT INTO membership (id, workspace_id, user_id, role) VALUES (:id, :w, 'ada', 'owner')"),
+            {"id": uuid.uuid4(), "w": workspace},
+        )
+    who = {"X-Demoloop-User": "ada", "X-Demoloop-Workspace": str(workspace)}
+
+    production = httpx.post(
+        f"{BASE}/v1/productions",
+        json={"scenario": SCENARIO, "config": {"app": {"url": f"http://127.0.0.1:{APP_PORT}"}}},
+        headers=who, timeout=30,
+    ).json()
+    captured = run_worker("capture")
+    state = httpx.get(f"{BASE}/v1/productions/{production['id']}", headers=who, timeout=30).json()
+
+    assert production["estimatedCredits"] > 0
+    assert "idle" in captured.stdout, "the runner should find nothing it is allowed to run"
+    assert state["status"] == "capturing"

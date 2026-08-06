@@ -1231,3 +1231,23 @@ quality report, so a real review job arrived with nothing to finalise. The worke
 hand-built their payloads and passed anyway; only running the real chain exposed it. The pipeline
 now carries `quality` forward, and the assertion that a review job receives the report it
 finalises lives in the pipeline test where a hand-built payload cannot mask it again.
+
+## Pricing settled 2026-08-05
+
+The rate is **recovered from the PRD, not invented**. §5.4 shows a worked example — "Estimated
+1 min 50 s · 12 credits". At 6.5 credits a minute, 110 seconds prices at 11.92, which rounds to
+the 12 the product spec already states. A test asserts that correspondence, so a future change to
+the rate has to face the example it would contradict.
+
+A production is now priced from its scenario when the caller supplies no estimate: its requested
+duration, or fifteen seconds a scene as a fallback. Both the rate and the per-scene fallback are
+settings, not constants.
+
+Turning pricing on immediately broke four end-to-end tests, and that was the point: their
+workspaces had no credits, so no capture job was ever claimable. The ceiling had been vacuous
+while every estimate was zero, exactly as flagged when the mechanism landed. The tests now fund
+their workspaces, and a new one asserts the converse — an unfunded workspace gets `idle` from the
+runner and its production never leaves `capturing`.
+
+A scenario with no scenes cannot be priced and is refused with 400 rather than raising through as
+a 500.
