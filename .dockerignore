@@ -1,0 +1,11 @@
+node_modules
+dist
+artifacts
+web
+service
+docs
+.git
+.github
+tests
+fixtures
+*.log
