@@ -34,6 +34,23 @@ export interface MapSummary {
   counts: { capabilities: number; journeys: number; proofSurfaces: number; actors: number };
 }
 
+export interface AuditEvent {
+  actor: string;
+  action: string;
+  subject: { type: string; id: string };
+  at: string;
+}
+
+export interface Receipt {
+  title: string | null;
+  commit: string | null;
+  environment: string | null;
+  dirty: boolean | null;
+  recordedAt: string | null;
+  agentScore: number | null;
+  accepted: boolean;
+}
+
 export interface Identity {
   user: string;
   workspace: string;
@@ -65,9 +82,18 @@ export const api = {
     }),
   production: (who: Identity, id: string) => call<Production>(who, `/v1/productions/${id}`),
   library: (who: Identity) => call<{ productions: LibraryEntry[] }>(who, '/v1/productions'),
+  audit: (who: Identity) => call<{ events: AuditEvent[] }>(who, '/v1/audit'),
+  share: (who: Identity, id: string) =>
+    call<{ token: string; url: string }>(who, `/v1/productions/${id}/share`, { method: 'POST' }),
   publish: (who: Identity, id: string) =>
     call<{ published: boolean }>(who, `/v1/productions/${id}/publish`, { method: 'POST' }),
   startVerification: (who: Identity, productionId: string) =>
     call<{ id: string }>(who, `/v1/productions/${productionId}/verifications`, { method: 'POST' }),
   verification: (who: Identity, id: string) => call<Verification>(who, `/v1/verifications/${id}`)
 };
+
+export async function watch(token: string): Promise<{ video: string | null; receipt: Receipt }> {
+  const response = await fetch(`/public/watch/${token}`);
+  if (!response.ok) throw new Error('no shared demo at that link');
+  return await response.json() as { video: string | null; receipt: Receipt };
+}

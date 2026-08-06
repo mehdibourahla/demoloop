@@ -3,6 +3,7 @@ import type { Identity } from './api';
 import { Health } from './screens/Health';
 import { Library } from './screens/Library';
 import { ProductMap } from './screens/ProductMap';
+import { Audit } from './screens/Audit';
 import { Player } from './screens/Player';
 import { Reconnaissance } from './screens/Reconnaissance';
 
@@ -11,7 +12,8 @@ const SURFACES = [
   { id: 'library', label: 'Library' },
   { id: 'map', label: 'Product Map' },
   { id: 'productions', label: 'Productions' },
-  { id: 'health', label: 'Health' }
+  { id: 'health', label: 'Health' },
+  { id: 'audit', label: 'Audit' }
 ] as const;
 
 type Surface = (typeof SURFACES)[number]['id'];
@@ -66,6 +68,7 @@ export function App({ who }: { who: Identity }) {
         {surface === 'map' && <ProductMap who={who} />}
         {surface === 'productions' && <Player who={who} opened={opened} />}
         {surface === 'health' && <Health who={who} />}
+        {surface === 'audit' && <Audit who={who} />}
       </main>
     </div>
   );
