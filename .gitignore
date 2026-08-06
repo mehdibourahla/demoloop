@@ -5,3 +5,7 @@ test-results/
 playwright-report/
 .worktrees/
 .DS_Store
+product-demo.sanox-*.yaml
+scenarios/sanox-*.yaml
+docs/superpowers/
+demoloop.sanox-*.yaml

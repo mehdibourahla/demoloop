@@ -11,6 +11,17 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "remotion/**/*.tsx", "fixtures/**/*.ts", "tests/**/*.ts"],
-  "exclude": ["node_modules", "dist", "artifacts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "remotion/**/*.tsx",
+    "fixtures/**/*.ts",
+    "tests/**/*.ts",
+    "runner/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "artifacts"
+  ]
 }

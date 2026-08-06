@@ -14,6 +14,17 @@ describe('presentation layout', () => {
     expect(layout.obstructions).toEqual([]);
   });
 
+  test('describes the caption box Remotion actually draws', () => {
+    const layout = presentationLayout({
+      maxStaticHoldMs: 3_000, camera: { type: 'none' }, loading: 'cut', transitionWeight: 'light',
+      caption: { mode: 'lower-third', safeArea: 'bottom' },
+    }, 1440, 900);
+
+    expect(layout.caption!.x).toBe(Math.round(1440 * 0.04));
+    expect(layout.caption!.x + layout.caption!.width).toBe(Math.round(1440 * 0.8));
+    expect(layout.caption!.y + layout.caption!.height).toBeGreaterThanOrEqual(900 - Math.round(900 * 0.035));
+  });
+
   test('adds no overlay when captions are disabled', () => {
     const layout = presentationLayout({ maxStaticHoldMs: 3_000, camera: { type: 'none' }, loading: 'cut', transitionWeight: 'light', caption: { mode: 'none' } }, 390, 844);
     expect(layout.caption).toBeUndefined();

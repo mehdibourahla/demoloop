@@ -1,4 +1,6 @@
-# Product Demo architecture
+# Demoloop architecture
+
+This describes the engine. The hosted service that wraps it is in `docs/service-architecture.md`.
 
 ## Boundary
 
@@ -23,6 +25,8 @@ Claude Video is an Agent Skill environment dependency. It is deliberately absent
 
 The version 2 model represents audiences, actors and session contexts, capabilities, journeys, states, transitions, relationships, outcomes, proof surfaces, safe actions, and async behavior. Each claim carries source evidence, runtime observation, or explicit user confirmation. Unknown ownership remains unresolved.
 
+Discovery loads `app-model.json` from the repository root when present and confirms its claims against the running application; otherwise it can only scrape candidate routes from source. Authoring that file is the agent's job and the point where evidence is committed.
+
 Discovery can identify routes as candidate proof surfaces, but planning requires a meaningful action, actor ownership, observable outcome, and evidence. Missing facts produce `needs-authoring`; there is no route-slideshow fallback.
 
 ## Planning
@@ -31,21 +35,29 @@ The planner supports public masters, actor journeys, feature clips, release demo
 
 Every scene has a purpose: hook, context, interaction, exploration, state-change, handoff, result, proof, montage, or close. Cross-actor scenes carry a causal link instead of alternating contexts by convenience.
 
-Presentation is compiled with the scenario: region of interest, camera treatment, loading policy, transition weight, caption safe area, opening/closing treatment, cursor movement, settling, typing cadence, and dwell. Any presentation or audio edit invalidates the rehearsal receipt.
+Presentation is compiled with the scenario: region of interest, camera treatment, loading policy, transition weight, caption safe area, cursor movement, settling, typing cadence, and dwell. Any presentation or audio edit invalidates the rehearsal receipt.
 
 ## Runtime and render
 
-The runner uses isolated Playwright contexts, semantic locators, web-first waits, deterministic action order, and a smooth text-free cursor. It does not add click circles, action labels, chapter cards, or capture-time brand overlays.
+The runner uses isolated Playwright contexts, semantic locators, web-first waits, and a smooth text-free cursor.
 
-Remotion composes the approved scene controls. The product viewport occupies at least 70% of the frame; captions are optional and checked against the region of interest. FFmpeg normalizes H.264/yuv420p output. Raw WebM files are preserved.
+Applications whose wording or step count varies between runs are handled by deterministic control flow rather than improvisation. `choose` resolves declared intent against the options present at that moment using ordered preferences and a hard avoid list; `repeat` and `branch` bound the shape of the journey; `waitFor` settles on element state. No model runs during rehearsal or the final take: the same scenario always follows the same rules, even when it does not follow the same path. The digest therefore pins the program, and `executedPath` in the execution report records the path that actually ran. It does not add click circles, action labels, chapter cards, or capture-time brand overlays.
 
-Audio policies are explicit: silent, local music, voiceover, or voiceover plus music. ElevenLabs and macOS narration implement the same provider interface. Music must be a real local file and includes level and fades. Silent output has no audio stream.
+Rendering trims each clip before composition: with `loading: cut`, static spans longer than the scene's `maxStaticHoldMs` are cut back to that hold, so the evaluated master is the edited master. Remotion composes the approved scene controls. The product viewport occupies at least 70% of the frame; captions are optional and checked against the region of interest. FFmpeg normalizes H.264/yuv420p output. Raw WebM files are preserved.
+
+Narration is measured before the take: every scene is synthesized before the browser opens, and capture holds each scene open long enough to carry its narration. Text-to-speech is deterministic for a given text, voice, and model, so this measures rather than decides, and the final take still runs no model. Narration then also constrains the edit: trimming may not shorten a scene below its narration, and narration that outruns the recording holds the last frame, recorded and warned per scene. The final mux is loudness-normalized. Audio policies are explicit: silent, local music, voiceover, or voiceover plus music. ElevenLabs and macOS narration implement the same provider interface. Music must be a real local file and includes level and fades. Silent output has no audio stream.
+
+## Editing and post-production
+
+Rendering emits an edit decision list alongside the master. It names each scene's raw recording and the ranges kept from it, so the deterministic trim is auditable and can be re-rendered from the originals. Cut positions on the output timeline are recorded with it.
+
+That EDL is also the handoff to [video-use](https://github.com/browser-use/video-use), which the Agent Skill may use for treatment this pipeline deliberately does not implement: grading, burned subtitles, animated overlays, reordered beats. The CLI has no dependency on it, exactly as with Watch. An edited master re-enters the pipeline at `evaluate` and is accepted only on its own checksum-bound review, never by inheriting the verdict of the file it was derived from.
 
 ## Quality and acceptance
 
-Technical checks cover execution, requests, console errors, locators, encoding, viewport, duration, dead time, privacy, and audio policy. Deterministic editorial checks sample real frames and report distinct/discarded counts, static spans with timestamps, hook and close presence, product dominance, overlay obstruction, and montage balance.
+Technical checks cover execution, requests, console errors, locators, encoding, viewport, duration, dead time, privacy, and audio policy. Deterministic editorial checks additionally inspect every trimmed cut for a visible jump, and static spans are measured on the product with the caption band excluded, so the tool never mistakes its own overlay for product activity. Deterministic editorial checks sample real frames and report distinct/discarded counts, static spans with timestamps, hook and close presence, product dominance, overlay obstruction, and montage balance.
 
-These checks do not substitute for editorial judgment. Before Watch, an otherwise passing output is `pending-agent-review`. The Agent Skill runs Watch on the actual absolute MP4, reads every extracted frame and transcript when required, and writes the schema-defined review. Finalization accepts only a matching video, a score of at least 7, an accept verdict, deterministic passes, and an available transcript for voiced output.
+These checks do not substitute for editorial judgment. Before Watch, an otherwise passing output is `pending-agent-review`. The Agent Skill runs Watch on the actual absolute MP4, reads every extracted frame and transcript when required, and writes the schema-defined review. Finalization accepts only a video whose checksum matches the review, a score of at least 7, an accept verdict, deterministic passes, and an available transcript for voiced output.
 
 ## Safety
 

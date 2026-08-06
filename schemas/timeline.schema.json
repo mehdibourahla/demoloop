@@ -82,6 +82,28 @@
                   "value": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -101,6 +123,28 @@
                   "value": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -119,6 +163,28 @@
                   "value": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -137,11 +203,189 @@
                   "value": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "required": [
                   "by",
                   "value"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "const": "roleAny"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "button",
+                      "link",
+                      "textbox",
+                      "checkbox",
+                      "radio",
+                      "heading",
+                      "combobox",
+                      "listitem",
+                      "tab",
+                      "menuitem"
+                    ]
+                  },
+                  "values": {
+                    "minItems": 2,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "by",
+                  "role",
+                  "values"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "const": "rolePattern"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "button",
+                      "link",
+                      "textbox",
+                      "checkbox",
+                      "radio",
+                      "heading",
+                      "combobox",
+                      "listitem",
+                      "tab",
+                      "menuitem"
+                    ]
+                  },
+                  "pattern": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "by",
+                  "role",
+                  "pattern"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "by": {
+                    "type": "string",
+                    "const": "textPattern"
+                  },
+                  "pattern": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "within": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "dialog",
+                          "form",
+                          "region",
+                          "navigation",
+                          "main",
+                          "list",
+                          "table"
+                        ]
+                      },
+                      "testId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "by",
+                  "pattern"
                 ],
                 "additionalProperties": false
               }

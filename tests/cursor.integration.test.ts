@@ -20,7 +20,7 @@ describe('recording cursor', () => {
       await context.tracing.start({ screenshots: false, snapshots: true, sources: true });
       const page = await context.newPage();
       await installCapturedCursor(page, '#116b5a');
-      const directory = await mkdtemp(join(tmpdir(), 'product-demo-cursor-'));
+      const directory = await mkdtemp(join(tmpdir(), 'demoloop-cursor-'));
       await page.screencast.start({ path: join(directory, 'cursor.webm'), size: { width: 400, height: 300 } });
       await page.screencast.showChapter('Scene', { duration: 1_200 });
       await page.screencast.showOverlay('<div>Brand</div>', { duration: 1_200 });
@@ -29,7 +29,7 @@ describe('recording cursor', () => {
       const screenshot = join(directory, 'cursor.png');
       await page.screenshot({ path: screenshot });
       await page.screencast.stop();
-      const cursor = page.locator('[data-product-demo-cursor]');
+      const cursor = page.locator('[data-demoloop-cursor]');
       const state = await cursor.evaluate((element) => {
         const style = getComputedStyle(element);
         return { text: element.textContent, transform: style.transform, background: style.backgroundColor, borderRadius: style.borderRadius, boxShadow: style.boxShadow };

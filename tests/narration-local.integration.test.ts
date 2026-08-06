@@ -9,8 +9,9 @@ import { MacOSNarrationProvider } from '../src/narration.js';
 const execFileAsync = promisify(execFile);
 
 describe('macOS narration', () => {
-  test('produces measured audible English speech locally', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'product-demo-macos-narration-'));
+  // `say` ships with macOS only; on any other platform this provider cannot exist.
+  test.skipIf(process.platform !== 'darwin')('produces measured audible English speech locally', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'demoloop-macos-narration-'));
     const outputPath = join(directory, 'voice.mp3');
     const provider = new MacOSNarrationProvider({ voice: 'Samantha' });
 

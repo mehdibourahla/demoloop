@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { z } from 'zod';
 import {
   ActorOwnershipSchema,
   ConfigSchema,
@@ -74,9 +75,9 @@ describe('version 2 contracts', () => {
       branding: { name: 'Neutral Workspace', primary: '#2563eb', background: '#08111f' },
       actors: [{ id: 'workspace-owner', label: 'Workspace owner' }],
       scenes: [
-        { id: 'hook', title: 'See the signal', purpose: 'hook', actor: 'workspace-owner', presentation: { maxStaticHoldMs: 1800, caption: { mode: 'none' }, opening: 'product-promise' }, actions: [{ type: 'goto', path: '/workspace' }] },
+        { id: 'hook', title: 'See the signal', purpose: 'hook', actor: 'workspace-owner', presentation: { maxStaticHoldMs: 1800, caption: { mode: 'none' } }, actions: [{ type: 'goto', path: '/workspace' }] },
         { id: 'proof', title: 'Compare the result', purpose: 'proof', actor: 'workspace-owner', presentation: { regionOfInterest: { x: 0.4, y: 0.2, width: 0.5, height: 0.5 }, camera: { type: 'zoom', scale: 1.2 }, loading: 'cut', transitionWeight: 'meaningful', caption: { mode: 'lower-third', safeArea: 'bottom' } }, actions: [{ type: 'assert', target: { by: 'text', value: '42%' }, state: 'visible' }] },
-        { id: 'close', title: 'Make the decision', purpose: 'close', actor: 'workspace-owner', presentation: { closing: 'call-to-action' }, actions: [{ type: 'screenshot', name: 'close' }] }
+        { id: 'close', title: 'Make the decision', purpose: 'close', actor: 'workspace-owner', presentation: { maxStaticHoldMs: 2000 }, actions: [{ type: 'screenshot', name: 'close' }] }
       ]
     });
 
@@ -88,7 +89,7 @@ describe('version 2 contracts', () => {
     const review = EditorialReviewSchema.parse({
       version: 1,
       tool: 'watch',
-      videoPath: '/tmp/workspace.mp4',
+      videoPath: '/tmp/workspace.mp4', videoSha256: 'a'.repeat(64),
       detail: 'balanced',
       transcriptStatus: 'not-required',
       score: 8,
@@ -116,9 +117,22 @@ describe('version 2 contracts', () => {
     expect(report.agentReview.status).toBe('complete');
   });
 
+  test('exports shared and recursive definitions under stable names', () => {
+    const exported = z.toJSONSchema(PlanResultSchema, { target: 'draft-7' }) as { definitions?: Record<string, unknown> };
+
+    expect(Object.keys(exported.definitions ?? {})).toEqual(expect.arrayContaining(['Action', 'Scenario']));
+  });
+
+  test('references the scenario definition instead of inlining every copy', () => {
+    const exported = JSON.stringify(z.toJSONSchema(PlanResultSchema, { target: 'draft-7' }));
+
+    expect(exported).toContain('#/definitions/Scenario');
+    expect(exported).not.toContain('__schema');
+  });
+
   test('keeps local-first configuration defaults and configurable thresholds', () => {
     const config = ConfigSchema.parse({ app: { url: 'http://127.0.0.1:4173' } });
-    expect(config.privacy.syntheticData).toBe(true);
+    expect(config.privacy.scanArtifacts).toBe(true);
     expect(config.runtime.rehearsalPasses).toBe(2);
     expect(config.editorial.thresholds['public-master'].distinctWarnRatio).toBe(0.5);
     expect(config.editorial.thresholds['public-master'].distinctFailRatio).toBe(0.4);

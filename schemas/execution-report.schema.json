@@ -33,6 +33,26 @@
     "scenarioDigest": {
       "type": "string"
     },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "commit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dirty": {
+          "type": "boolean"
+        },
+        "appUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "appUrl"
+      ],
+      "additionalProperties": false
+    },
     "scenes": {
       "type": "array",
       "items": {
@@ -66,7 +86,100 @@
         "type": "string"
       }
     },
+    "ignoredConsoleErrors": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sensitiveFindings": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "count": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "kind",
+          "source",
+          "count"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "narrationSeconds": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "executedPath": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sceneId": {
+            "type": "string"
+          },
+          "actionIndex": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sceneId",
+          "actionIndex",
+          "detail"
+        ],
+        "additionalProperties": false
+      }
+    },
     "failedRequests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "status": {
+            "type": "number"
+          },
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "ignoredRequests": {
+      "default": [],
       "type": "array",
       "items": {
         "type": "object",
@@ -106,9 +219,15 @@
     "startedAt",
     "endedAt",
     "scenarioDigest",
+    "provenance",
     "scenes",
     "consoleErrors",
+    "ignoredConsoleErrors",
+    "sensitiveFindings",
+    "narrationSeconds",
+    "executedPath",
     "failedRequests",
+    "ignoredRequests",
     "artifacts"
   ],
   "additionalProperties": false

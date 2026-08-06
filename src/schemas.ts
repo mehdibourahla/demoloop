@@ -8,11 +8,17 @@ export const EvidenceSchema = z.discriminatedUnion('type', [
 
 const EvidenceArraySchema = z.array(EvidenceSchema).min(1);
 
+const RoleSchema = z.enum(['button', 'link', 'textbox', 'checkbox', 'radio', 'heading', 'combobox', 'listitem', 'tab', 'menuitem']);
+const WithinSchema = z.object({ role: z.enum(['dialog', 'form', 'region', 'navigation', 'main', 'list', 'table']).optional(), testId: z.string().min(1).optional() });
+
 export const TargetSchema = z.discriminatedUnion('by', [
-  z.object({ by: z.literal('role'), role: z.enum(['button', 'link', 'textbox', 'checkbox', 'radio', 'heading', 'combobox', 'listitem', 'tab', 'menuitem']), value: z.string().min(1) }),
-  z.object({ by: z.literal('label'), value: z.string().min(1) }),
-  z.object({ by: z.literal('testId'), value: z.string().min(1) }),
-  z.object({ by: z.literal('text'), value: z.string().min(1) })
+  z.object({ by: z.literal('role'), role: RoleSchema, value: z.string().min(1), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('label'), value: z.string().min(1), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('testId'), value: z.string().min(1), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('text'), value: z.string().min(1), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('roleAny'), role: RoleSchema, values: z.array(z.string().min(1)).min(2), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('rolePattern'), role: RoleSchema, pattern: z.string().min(1), within: WithinSchema.optional() }),
+  z.object({ by: z.literal('textPattern'), pattern: z.string().min(1), within: WithinSchema.optional() })
 ]);
 
 export const ActionTimingSchema = z.object({
@@ -22,17 +28,40 @@ export const ActionTimingSchema = z.object({
   pauseAfterMs: z.number().int().min(0).max(5_000).optional()
 });
 
-const ActionBase = z.object({ title: z.string().min(1).optional(), narration: z.string().min(1).optional(), timing: ActionTimingSchema.optional() });
+const ActionBase = z.object({
+  title: z.string().min(1).optional(),
+  narration: z.string().min(1).optional(),
+  timing: ActionTimingSchema.optional(),
+  optional: z.boolean().optional(),
+  timeoutMs: z.number().int().min(1).max(90_000).optional()
+});
 
-export const ActionSchema = z.discriminatedUnion('type', [
+export const ConditionSchema = z.object({ target: TargetSchema, state: z.enum(['visible', 'hidden']).default('visible') });
+
+const LeafActionSchema = z.discriminatedUnion('type', [
   ActionBase.extend({ type: z.literal('goto'), path: z.string().min(1) }),
   ActionBase.extend({ type: z.literal('click'), target: TargetSchema }),
   ActionBase.extend({ type: z.literal('fill'), target: TargetSchema, text: z.string() }),
   ActionBase.extend({ type: z.literal('select'), target: TargetSchema, value: z.string() }),
   ActionBase.extend({ type: z.literal('scroll'), target: TargetSchema.optional(), deltaY: z.number().optional() }),
   ActionBase.extend({ type: z.literal('assert'), target: TargetSchema, state: z.enum(['visible', 'hidden', 'checked']), text: z.string().optional() }),
+  ActionBase.extend({ type: z.literal('waitFor'), target: TargetSchema, state: z.enum(['visible', 'hidden', 'enabled', 'disabled']) }),
+  ActionBase.extend({ type: z.literal('choose'), target: TargetSchema, prefer: z.array(z.string().min(1)).default([]), avoid: z.array(z.string().min(1)).default([]), requirePreferred: z.boolean().default(false) }),
   ActionBase.extend({ type: z.literal('screenshot'), name: z.string().min(1) })
 ]);
+
+export type Condition = z.infer<typeof ConditionSchema>;
+export type LeafAction = z.infer<typeof LeafActionSchema>;
+export type ActionTiming = z.infer<typeof ActionTimingSchema>;
+export type RepeatAction = { type: 'repeat'; title?: string; narration?: string; optional?: boolean; timeoutMs?: number; timing?: ActionTiming; until: Condition; maxIterations: number; actions: Action[] };
+export type BranchAction = { type: 'branch'; title?: string; narration?: string; optional?: boolean; timeoutMs?: number; timing?: ActionTiming; when: Condition; then: Action[]; otherwise: Action[] };
+export type Action = LeafAction | RepeatAction | BranchAction;
+
+export const ActionSchema: z.ZodType<Action> = z.lazy(() => z.union([
+  LeafActionSchema,
+  ActionBase.extend({ type: z.literal('repeat'), until: ConditionSchema, maxIterations: z.number().int().min(1).max(50).default(10), actions: z.array(ActionSchema).min(1) }),
+  ActionBase.extend({ type: z.literal('branch'), when: ConditionSchema, then: z.array(ActionSchema).min(1), otherwise: z.array(ActionSchema).default([]) })
+]));
 
 export const ActorOwnershipSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('resolved'), actorId: z.string().min(1), evidence: EvidenceArraySchema }),
@@ -43,7 +72,7 @@ const ClaimSchema = z.object({ id: z.string().min(1), name: z.string().min(1), e
 
 const SafeActionSchema = z.object({
   id: z.string().min(1),
-  type: z.enum(['goto', 'click', 'fill', 'select', 'scroll', 'assert', 'screenshot']),
+  type: z.enum(['goto', 'click', 'fill', 'select', 'scroll', 'assert', 'waitFor', 'choose', 'screenshot']),
   target: TargetSchema.optional(),
   path: z.string().min(1).optional(),
   value: z.string().optional(),
@@ -86,12 +115,9 @@ export const ScenePresentationSchema = z.object({
   maxStaticHoldMs: z.number().int().min(250).max(15_000).default(3_000),
   regionOfInterest: RegionSchema.optional(),
   camera: z.object({ type: z.enum(['none', 'crop', 'pan', 'zoom']), scale: z.number().min(1).max(3).optional(), to: RegionSchema.optional() }).default({ type: 'none' }),
-  loading: z.enum(['preserve', 'cut', 'accelerate']).default('cut'),
+  loading: z.enum(['preserve', 'cut']).default('cut'),
   transitionWeight: z.enum(['light', 'meaningful', 'major']).default('light'),
-  caption: z.object({ mode: z.enum(['none', 'lower-third']), safeArea: z.enum(['top', 'bottom', 'left', 'right']).optional() }).default({ mode: 'none' }),
-  opening: z.enum(['product-promise', 'context-card', 'none']).optional(),
-  closing: z.enum(['call-to-action', 'outcome-recap', 'none']).optional(),
-  actorTransition: z.enum(['cut', 'context-card', 'split-causality']).optional()
+  caption: z.object({ mode: z.enum(['none', 'lower-third']), safeArea: z.enum(['top', 'bottom']).optional() }).default({ mode: 'none' })
 }).default({ maxStaticHoldMs: 3_000, camera: { type: 'none' }, loading: 'cut', transitionWeight: 'light', caption: { mode: 'none' } });
 
 const MusicSchema = z.object({ path: z.string().min(1), level: z.number().min(0).max(1).default(0.2), fadeInMs: z.number().int().min(0).max(10_000).default(500), fadeOutMs: z.number().int().min(0).max(10_000).default(500) });
@@ -108,9 +134,13 @@ export const ScenarioSchema = z.object({
   locale: z.string().min(2).default('en'),
   requestedDurationSeconds: z.number().positive().optional(),
   audio: AudioPolicySchema.default({ policy: 'silent' }),
-  branding: z.object({ name: z.string().min(1), primary: z.string().min(1), background: z.string().min(1) }).default({ name: 'Product Demo', primary: '#2563eb', background: '#08111f' }),
+  subtitles: z.enum(['none', 'sidecar', 'embedded', 'burned']).default('sidecar'),
+  branding: z.object({ name: z.string().min(1), primary: z.string().min(1), background: z.string().min(1) }).default({ name: 'Demoloop', primary: '#2563eb', background: '#08111f' }),
   preconditions: z.object({ resetCommand: z.string().min(1).optional(), seedCommand: z.string().min(1).optional() }).default({}),
-  actors: z.array(z.object({ id: z.string().min(1), label: z.string().min(1), storageState: z.string().min(1).optional() })).min(1),
+  actors: z.array(z.object({
+    id: z.string().min(1), label: z.string().min(1), storageState: z.string().min(1).optional(),
+    preflight: z.object({ path: z.string().min(1).default('/'), target: TargetSchema, state: z.enum(['visible', 'hidden']).default('visible'), timeoutMs: z.number().int().min(100).max(120_000).default(10_000) }).optional()
+  })).min(1),
   scenes: z.array(z.object({
     id: z.string().regex(/^[a-z0-9-]+$/), title: z.string().min(1), description: z.string().min(1).optional(), purpose: ScenePurposeSchema,
     capabilityId: z.string().min(1).optional(), proofSurfaceId: z.string().min(1).optional(),
@@ -121,10 +151,16 @@ export const ScenarioSchema = z.object({
   const actors = new Set(scenario.actors.map((actor) => actor.id));
   scenario.scenes.forEach((scene, index) => {
     if (!actors.has(scene.actor)) context.addIssue({ code: 'custom', path: ['scenes', index, 'actor'], message: 'scene actor must be declared' });
+    if (scenario.subtitles === 'burned' && scene.presentation.caption.mode === 'lower-third') {
+      context.addIssue({ code: 'custom', path: ['scenes', index, 'presentation', 'caption'], message: 'use one caption mechanism: burned subtitles cannot share the frame with a lower-third caption' });
+    }
   });
 });
 
-const CoverageSchema = z.object({ capabilityId: z.string().min(1), outputIds: z.array(z.string()), omissionReason: z.string().min(1).optional() });
+z.globalRegistry.add(ActionSchema, { id: 'Action' });
+z.globalRegistry.add(ScenarioSchema, { id: 'Scenario' });
+
+const CoverageSchema = z.object({ capabilityId: z.string().min(1), outputIds: z.array(z.string()), demonstrated: z.boolean().default(false), omissionReason: z.string().min(1).optional() });
 const OmissionSchema = z.object({ id: z.string().min(1), reason: z.string().min(1), evidence: z.array(EvidenceSchema).default([]) });
 
 export const PlanResultSchema = z.discriminatedUnion('status', [
@@ -140,8 +176,12 @@ export const PlanResultSchema = z.discriminatedUnion('status', [
 
 const CheckSchema = z.object({ id: z.string().min(1), passed: z.boolean(), value: z.union([z.string(), z.number(), z.boolean()]), detail: z.string().min(1).optional(), timestamps: z.array(z.number().nonnegative()).optional() });
 
+export const SensitiveFindingSchema = z.object({ kind: z.string().min(1), source: z.string().min(1), count: z.number().int().positive() });
+
+export const CaptureProvenanceSchema = z.object({ commit: z.string().min(1).optional(), dirty: z.boolean().optional(), appUrl: z.string().url() });
+
 export const EditorialReviewSchema = z.object({
-  version: z.literal(1), tool: z.literal('watch'), videoPath: z.string().startsWith('/'), detail: z.enum(['balanced', 'token-burner']), resolution: z.number().int().positive().optional(),
+  version: z.literal(1), tool: z.literal('watch'), videoPath: z.string().startsWith('/'), videoSha256: z.string().regex(/^[a-f0-9]{64}$/), detail: z.enum(['balanced', 'token-burner']), resolution: z.number().int().positive().optional(),
   transcriptStatus: z.enum(['available', 'not-required', 'unavailable']), score: z.number().min(0).max(10),
   frames: z.object({ distinct: z.number().int().nonnegative(), discarded: z.number().int().nonnegative(), inspected: z.number().int().nonnegative() }),
   assessments: z.object({ hook: z.string().min(1), narrativeContinuity: z.string().min(1), staticSections: z.string().min(1), readability: z.string().min(1), attentionGuidance: z.string().min(1), overlayObstruction: z.string().min(1), transitions: z.string().min(1), audioTreatment: z.string().min(1), outcome: z.string().min(1), closing: z.string().min(1) }),
@@ -158,28 +198,34 @@ export const QualityReportSchema = z.object({
     z.object({ status: z.literal('missing'), reason: z.string().min(1) }),
     z.object({ status: z.literal('complete'), review: EditorialReviewSchema })
   ]),
-  sensitiveFindings: z.array(z.object({ kind: z.string(), match: z.string() })),
+  sensitiveFindings: z.array(SensitiveFindingSchema),
+  review: z.object({ contactSheet: z.string().min(1), moments: z.array(z.number().nonnegative()) }).optional(),
   omittedScenes: z.array(z.object({ id: z.string(), reason: z.string() })),
   encoding: z.object({ codec: z.string(), width: z.number(), height: z.number(), durationSeconds: z.number(), pixelFormat: z.string() }).optional()
 });
 
-const ThresholdSchema = z.object({ distinctWarnRatio: z.number().min(0).max(1), distinctFailRatio: z.number().min(0).max(1), staticWarnSeconds: z.number().positive(), repeatedStaticFailCount: z.number().int().positive(), montageMaxRatio: z.number().min(0).max(1) });
-const defaultThreshold = { distinctWarnRatio: 0.5, distinctFailRatio: 0.4, staticWarnSeconds: 3, repeatedStaticFailCount: 2, montageMaxRatio: 0.25 };
+const captureNoise = ['Vector Map', '^ResizeObserver loop', 'WebGL', 'Failed to load resource: net::ERR_ABORTED'];
+
+const ThresholdSchema = z.object({ distinctWarnRatio: z.number().min(0).max(1), distinctFailRatio: z.number().min(0).max(1), staticWarnSeconds: z.number().positive(), repeatedStaticFailCount: z.number().int().positive(), montageMaxRatio: z.number().min(0).max(1), seamChangeMax: z.number().min(0).max(1).default(0.05) });
+const defaultThreshold = { distinctWarnRatio: 0.5, distinctFailRatio: 0.4, staticWarnSeconds: 3, repeatedStaticFailCount: 2, montageMaxRatio: 0.25, seamChangeMax: 0.05 };
 const defaultThresholds = { 'public-master': defaultThreshold, 'actor-journey': defaultThreshold, 'feature-clip': defaultThreshold, 'release-demo': defaultThreshold, montage: { ...defaultThreshold, montageMaxRatio: 1 } };
 
 export const ConfigSchema = z.object({
   app: z.object({ url: z.string().url(), startCommand: z.string().optional(), commandCwd: z.string().optional(), healthcheck: z.string().url().optional(), production: z.boolean().default(false) }),
   repository: z.object({ root: z.string().default('.') }).default({ root: '.' }),
   output: z.object({ directory: z.string().default('artifacts') }).default({ directory: 'artifacts' }),
-  privacy: z.object({ syntheticData: z.boolean().default(true), allowProduction: z.boolean().default(false), scanArtifacts: z.boolean().default(true), redactions: z.array(z.object({ sourceEnv: z.string().min(1), replacement: z.string().min(1) })).default([]) }).default({ syntheticData: true, allowProduction: false, scanArtifacts: true, redactions: [] }),
-  runtime: z.object({ rehearsalPasses: z.number().int().min(2).default(2), headless: z.boolean().default(true) }).default({ rehearsalPasses: 2, headless: true }),
+  privacy: z.object({ allowProduction: z.boolean().default(false), scanArtifacts: z.boolean().default(true), redactions: z.array(z.object({ sourceEnv: z.string().min(1), replacement: z.string().min(1) })).default([]) }).default({ allowProduction: false, scanArtifacts: true, redactions: [] }),
+  runtime: z.object({ rehearsalPasses: z.number().int().min(2).default(2), headless: z.boolean().default(true), startTimeoutMs: z.number().int().min(1_000).max(600_000).default(60_000), actionTimeoutMs: z.number().int().min(100).max(300_000).default(10_000), ignoreRequestPatterns: z.array(z.string().min(1)).default([]), ignoreConsolePatterns: z.array(z.string().min(1)).default(captureNoise) }).default({ rehearsalPasses: 2, headless: true, startTimeoutMs: 60_000, actionTimeoutMs: 10_000, ignoreRequestPatterns: [], ignoreConsolePatterns: captureNoise }),
   narration: z.object({
     provider: z.enum(['none', 'elevenlabs', 'macos']).default('none'),
-    elevenlabs: z.object({ voiceId: z.string().min(1).optional(), modelId: z.string().min(1).default('eleven_multilingual_v2'), outputFormat: z.string().min(1).default('mp3_44100_128'), apiKeyEnv: z.string().min(1).default('ELEVENLABS_API_KEY') }).default({ modelId: 'eleven_multilingual_v2', outputFormat: 'mp3_44100_128', apiKeyEnv: 'ELEVENLABS_API_KEY' }),
+    elevenlabs: z.object({
+      voiceId: z.string().min(1).optional(), modelId: z.string().min(1).default('eleven_multilingual_v2'), outputFormat: z.string().min(1).default('mp3_44100_128'), apiKeyEnv: z.string().min(1).default('ELEVENLABS_API_KEY'),
+      seed: z.number().int().min(0).max(4_294_967_295).default(1),
+      voiceSettings: z.object({ stability: z.number().min(0).max(1).default(0.45), similarityBoost: z.number().min(0).max(1).default(0.75), style: z.number().min(0).max(1).default(0), useSpeakerBoost: z.boolean().default(true), speed: z.number().min(0.7).max(1.2).default(1) }).default({ stability: 0.45, similarityBoost: 0.75, style: 0, useSpeakerBoost: true, speed: 1 })
+    }).default({ modelId: 'eleven_multilingual_v2', outputFormat: 'mp3_44100_128', apiKeyEnv: 'ELEVENLABS_API_KEY', seed: 1, voiceSettings: { stability: 0.45, similarityBoost: 0.75, style: 0, useSpeakerBoost: true, speed: 1 } }),
     macos: z.object({ voice: z.string().min(1).default('Samantha') }).default({ voice: 'Samantha' })
-  }).default({ provider: 'none', elevenlabs: { modelId: 'eleven_multilingual_v2', outputFormat: 'mp3_44100_128', apiKeyEnv: 'ELEVENLABS_API_KEY' }, macos: { voice: 'Samantha' } }),
+  }).default({ provider: 'none', elevenlabs: { modelId: 'eleven_multilingual_v2', outputFormat: 'mp3_44100_128', apiKeyEnv: 'ELEVENLABS_API_KEY', seed: 1, voiceSettings: { stability: 0.45, similarityBoost: 0.75, style: 0, useSpeakerBoost: true, speed: 1 } }, macos: { voice: 'Samantha' } }),
   editorial: z.object({ thresholds: z.record(OutputTypeSchema, ThresholdSchema).default(defaultThresholds) }).default({ thresholds: defaultThresholds }),
-  upload: z.object({ enabled: z.boolean().default(false) }).default({ enabled: false }),
   devices: z.record(z.string(), z.object({ width: z.number().int().positive(), height: z.number().int().positive(), device: z.string().optional(), isMobile: z.boolean().default(false) })).default({ desktop: { width: 1440, height: 900, isMobile: false }, mobile: { width: 390, height: 844, device: 'iPhone 13', isMobile: true } })
 });
 
@@ -190,9 +236,14 @@ export const TimelineEventSchema = z.object({
 export const TimelineSchema = z.object({ version: z.literal(2), scenarioId: z.string(), viewport: z.object({ width: z.number(), height: z.number() }), events: z.array(TimelineEventSchema) });
 export const ExecutionReportSchema = z.object({
   version: z.literal(2), scenarioId: z.string(), mode: z.enum(['rehearse', 'record']), passed: z.boolean(), consecutivePasses: z.number().int().nonnegative(), startedAt: z.string(), endedAt: z.string(),
-  scenarioDigest: z.string(), scenes: z.array(z.object({ id: z.string(), status: z.enum(['passed', 'failed', 'omitted']), failure: z.string().optional() })),
-  consoleErrors: z.array(z.string()), failedRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })), artifacts: z.record(z.string(), z.string())
+  scenarioDigest: z.string(), provenance: CaptureProvenanceSchema, scenes: z.array(z.object({ id: z.string(), status: z.enum(['passed', 'failed', 'omitted']), failure: z.string().optional() })),
+  consoleErrors: z.array(z.string()), ignoredConsoleErrors: z.array(z.string()).default([]), sensitiveFindings: z.array(SensitiveFindingSchema).default([]), narrationSeconds: z.record(z.string(), z.number()).default({}), executedPath: z.array(z.object({ sceneId: z.string(), actionIndex: z.number().int().nonnegative(), detail: z.string() })).default([]), failedRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })), ignoredRequests: z.array(z.object({ url: z.string(), status: z.number().optional(), error: z.string().optional() })).default([]), artifacts: z.record(z.string(), z.string())
 });
+
+export const contractSchemas = {
+  config: ConfigSchema, 'product-model': ProductModelSchema, 'plan-result': PlanResultSchema, scenario: ScenarioSchema,
+  timeline: TimelineSchema, 'execution-report': ExecutionReportSchema, 'quality-report': QualityReportSchema, 'editorial-review': EditorialReviewSchema
+} as const;
 
 export type Evidence = z.infer<typeof EvidenceSchema>;
 export type ProductModel = z.infer<typeof ProductModelSchema>;
@@ -200,7 +251,6 @@ export type PlanResult = z.infer<typeof PlanResultSchema>;
 export type Scenario = z.infer<typeof ScenarioSchema>;
 export type DemoConfig = z.infer<typeof ConfigSchema>;
 export type Target = z.infer<typeof TargetSchema>;
-export type Action = z.infer<typeof ActionSchema>;
 export type TimelineEvent = z.infer<typeof TimelineEventSchema>;
 export type EditorialReview = z.infer<typeof EditorialReviewSchema>;
 export type QualityReport = z.infer<typeof QualityReportSchema>;

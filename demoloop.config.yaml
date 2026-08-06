@@ -1,0 +1,27 @@
+app:
+  url: http://127.0.0.1:4173
+  healthcheck: http://127.0.0.1:4173/health
+  startCommand: npm run fixture
+  commandCwd: .
+repository:
+  root: fixtures/neutral/handoff
+output:
+  directory: artifacts
+privacy:
+  allowProduction: false
+  scanArtifacts: true
+runtime:
+  rehearsalPasses: 2
+  headless: true
+narration:
+  provider: none
+devices:
+  desktop:
+    width: 1440
+    height: 900
+    isMobile: false
+  mobile:
+    width: 390
+    height: 844
+    device: iPhone 13
+    isMobile: true

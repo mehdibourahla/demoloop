@@ -24,6 +24,10 @@ function presentation(overrides: Partial<Scenario['scenes'][number]['presentatio
   };
 }
 
+export function demonstrates(scene: { actions: Action[] }): boolean {
+  return scene.actions.some((action) => ['click', 'fill', 'select', 'choose'].includes(action.type));
+}
+
 function title(value: string): string {
   return value.replace(/[-_]+/g, ' ').replace(/^./, (character) => character.toUpperCase());
 }
@@ -65,6 +69,16 @@ function unresolvedForJourney(model: ProductModel, journey: ProductModel['journe
   return unresolved;
 }
 
+// Each actor gets its own browser context, so a master may only drop navigation
+// for an actor whose page has already been sent somewhere.
+function sceneActions(outputType: Scenario['outputType'], item: { actorId: string; actions: Action[] }, navigated: Set<string>): Action[] {
+  if (outputType !== 'public-master' || !navigated.has(item.actorId)) {
+    if (item.actions.some((action) => action.type === 'goto')) navigated.add(item.actorId);
+    return item.actions;
+  }
+  return item.actions.filter((action) => action.type !== 'goto');
+}
+
 function actorFor(model: ProductModel, actorId: string) {
   const actor = model.actors.find((candidate) => candidate.id === actorId);
   if (!actor) throw new Error(`Actor ${actorId} is not present in the product model`);
@@ -82,10 +96,12 @@ function scenarioForJourney(model: ProductModel, journey: ProductModel['journeys
   });
   const actorIds = [...new Set(resolved.map((item) => item.actorId))];
   const scenes: Scenario['scenes'] = [];
+  const navigated = new Set<string>();
   if (outputType === 'public-master') {
     const first = resolved[0];
     const goto = first.actions.find((action) => action.type === 'goto');
-    scenes.push({ id: 'opening-hook', title: model.product, description: journey.name, purpose: 'hook', actor: first.actorId, presentation: presentation({ opening: 'product-promise', maxStaticHoldMs: 1_800 }), actions: goto ? [goto] : [{ type: 'screenshot', name: 'opening-hook' }] });
+    if (goto) navigated.add(first.actorId);
+    scenes.push({ id: 'opening-hook', title: model.product, description: journey.name, purpose: 'hook', actor: first.actorId, presentation: presentation({ maxStaticHoldMs: 1_800 }), actions: goto ? [goto] : [{ type: 'screenshot', name: 'opening-hook' }] });
     scenes.push({ id: 'usage-context', title: journey.name, purpose: 'context', actor: first.actorId, presentation: presentation({ maxStaticHoldMs: 1_500, caption: { mode: 'lower-third', safeArea: 'bottom' } }), actions: [{ type: 'screenshot', name: 'usage-context' }] });
   }
   resolved.forEach((item, index) => {
@@ -98,13 +114,13 @@ function scenarioForJourney(model: ProductModel, journey: ProductModel['journeys
       id: item.step.id, title: item.capability.name, purpose, capabilityId: item.capability.id, proofSurfaceId: item.step.proofSurfaceId,
       actor: item.actorId,
       causalLink: actorChanged ? { fromSceneId: previous.step.id, relationshipId: relationship?.id, transitionId: item.step.transitionId, evidence: relationship?.evidence ?? item.step.ownership.evidence } : undefined,
-      presentation: presentation({ transitionWeight: actorChanged ? 'major' : purpose === 'proof' ? 'meaningful' : 'light', actorTransition: actorChanged ? 'split-causality' : undefined }),
-      actions: outputType === 'public-master' ? item.actions.filter((action) => action.type !== 'goto') : item.actions
+      presentation: presentation({ transitionWeight: actorChanged ? 'major' : purpose === 'proof' ? 'meaningful' : 'light' }),
+      actions: sceneActions(outputType, item, navigated)
     });
   });
   if (outputType === 'public-master') {
     const last = resolved.at(-1)!;
-    scenes.push({ id: 'deliberate-close', title: model.product, description: model.outcomes.find((outcome) => journey.outcomeIds.includes(outcome.id))?.name, purpose: 'close', actor: last.actorId, presentation: presentation({ closing: 'call-to-action', maxStaticHoldMs: 2_000, caption: { mode: 'lower-third', safeArea: 'bottom' } }), actions: [{ type: 'screenshot', name: 'deliberate-close' }] });
+    scenes.push({ id: 'deliberate-close', title: model.product, description: model.outcomes.find((outcome) => journey.outcomeIds.includes(outcome.id))?.name, purpose: 'close', actor: last.actorId, presentation: presentation({ maxStaticHoldMs: 2_000, caption: { mode: 'lower-third', safeArea: 'bottom' } }), actions: [{ type: 'screenshot', name: 'deliberate-close' }] });
   }
   const scenario = ScenarioSchema.parse({
     version: 2, id: outputType === 'public-master' ? `${journey.id}-master` : journey.id, title: journey.name, outputType,
@@ -131,8 +147,9 @@ export function planDemo(model: ProductModel, options: PlanOptions): PlanResult 
     ? [scenarioForJourney(model, journeys[0], 'public-master', options), ...journeys.map((journey) => scenarioForJourney(model, journey, 'actor-journey', options))]
     : journeys.map((journey) => scenarioForJourney(model, journey, outputType, options));
   const coverage = model.capabilities.map((capability) => {
-    const matching = outputs.filter((output) => output.scenes.some((scene) => scene.capabilityId === capability.id)).map((output) => output.id);
-    return { capabilityId: capability.id, outputIds: matching, omissionReason: matching.length ? undefined : 'Not selected for this output set' };
+    const scenes = outputs.flatMap((output) => output.scenes.filter((scene) => scene.capabilityId === capability.id));
+    const matching = [...new Set(outputs.filter((output) => output.scenes.some((scene) => scene.capabilityId === capability.id)).map((output) => output.id))];
+    return { capabilityId: capability.id, outputIds: matching, demonstrated: scenes.some(demonstrates), omissionReason: matching.length ? undefined : 'Not selected for this output set' };
   });
   return PlanResultSchema.parse({ version: 2, status: 'planned', outputs, coverage, omissions: coverage.filter((entry) => !entry.outputIds.length).map((entry) => ({ id: entry.capabilityId, reason: entry.omissionReason })) });
 }

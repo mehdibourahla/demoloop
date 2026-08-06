@@ -10,14 +10,9 @@ export function presentationLayout(presentation: Scenario['scenes'][number]['pre
   const viewport: PixelRegion = { x: 0, y: 0, width, height };
   if (presentation.caption.mode === 'none') return { viewport, obstructions: [] as PixelRegion[] };
   const railHeight = Math.min(96, Math.round(height * 0.12));
-  const safeArea = presentation.caption.safeArea ?? 'bottom';
-  const caption: PixelRegion = safeArea === 'top'
-    ? { x: Math.round(width * 0.04), y: Math.round(height * 0.03), width: Math.round(width * 0.72), height: railHeight }
-    : safeArea === 'left'
-      ? { x: Math.round(width * 0.03), y: Math.round(height * 0.7), width: Math.round(width * 0.42), height: railHeight }
-      : safeArea === 'right'
-        ? { x: Math.round(width * 0.55), y: Math.round(height * 0.7), width: Math.round(width * 0.42), height: railHeight }
-        : { x: Math.round(width * 0.04), y: height - railHeight - Math.round(height * 0.03), width: Math.round(width * 0.72), height: railHeight };
+  const inset = Math.round(height * 0.035);
+  const left = Math.round(width * 0.04);
+  const caption: PixelRegion = { x: left, y: presentation.caption.safeArea === 'top' ? inset : height - railHeight - inset, width: Math.round(width * 0.8) - left, height: railHeight };
   const roi = presentation.regionOfInterest ? {
     x: presentation.regionOfInterest.x * width, y: presentation.regionOfInterest.y * height,
     width: presentation.regionOfInterest.width * width, height: presentation.regionOfInterest.height * height,
