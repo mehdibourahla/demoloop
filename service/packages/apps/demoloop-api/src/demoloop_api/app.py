@@ -1,6 +1,7 @@
 from demoloop_core.settings import settings
 from fastapi import FastAPI
 
+from demoloop_api.admin import mount_admin
 from demoloop_api.routers import public, runner, studio
 
 
@@ -14,4 +15,5 @@ def create_app() -> FastAPI:
     app.include_router(runner.router)
     app.include_router(studio.router)
     app.include_router(public.router)
+    mount_admin(app)
     return app
