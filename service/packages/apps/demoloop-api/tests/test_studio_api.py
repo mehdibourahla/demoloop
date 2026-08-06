@@ -158,6 +158,41 @@ async def test_an_empty_library_is_an_empty_list_not_an_error(member):
     assert listed.json()["productions"] == []
 
 
+async def test_a_shared_link_is_watchable_without_any_session(member):
+    workspace, _ = member
+    production = uuid.uuid4()
+    async with admin_engine().begin() as connection:
+        await connection.execute(
+            text("""
+                INSERT INTO production
+                    (id, workspace_id, scenario, config, status, video_key, quality, provenance, published_at)
+                VALUES (:id, :w, CAST(:s AS JSONB), '{}'::jsonb, 'complete', 'k/v',
+                        CAST(:q AS JSONB), CAST(:p AS JSONB), now())
+            """),
+            {"id": production, "w": workspace, "s": '{"title": "Deliver an item"}',
+             "q": '{"status": "accepted", "passed": true, "agentReview": {"score": 8.4}}',
+             "p": '{"commit": "8f2c1a9", "appUrl": "https://staging.example.com"}'},
+        )
+
+    async with client() as http:
+        shared = await http.post(
+            f"/v1/productions/{production}/share", headers=headers("ada", workspace)
+        )
+        token = shared.json()["token"]
+        watched = await http.get(f"/public/watch/{token}")
+
+    assert shared.status_code == 201
+    assert watched.status_code == 200
+    assert watched.json()["receipt"]["commit"] == "8f2c1a9"
+    assert watched.json()["video"], "a shared demo must actually be playable"
+
+
+async def test_an_unknown_share_link_is_not_found():
+    async with client() as http:
+        missing = await http.get("/public/watch/nope")
+
+    assert missing.status_code == 404
+
 async def test_the_map_index_lists_this_workspaces_reconnaissances(member):
     workspace, other = member
     config = {"app": {"url": "http://127.0.0.1:4173"}}

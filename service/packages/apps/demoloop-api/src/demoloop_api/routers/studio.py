@@ -4,6 +4,7 @@ from demoloop_core.credits import estimate_credits
 from demoloop_core.db import workspace_session
 from demoloop_core.pipeline import start_production, start_reconnaissance, start_verification
 from demoloop_core.publication import PublicationRefused, publish
+from demoloop_core.sharing import SharingRefused, share
 from demoloop_core.storage import presign_get
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -148,3 +149,14 @@ async def publish_production(production_id: uuid.UUID, who: Caller = Depends(cal
         except PublicationRefused as refusal:
             raise HTTPException(status_code=409, detail=str(refusal)) from refusal
     return {"published": True}
+
+
+@router.post("/productions/{production_id}/share", status_code=201)
+async def share_production(production_id: uuid.UUID, who: Caller = Depends(caller)) -> dict:
+    await _row(who, "production", production_id, "id")
+    async with workspace_session(who.workspace_id) as session:
+        try:
+            token = await share(session, who.workspace_id, production_id)
+        except SharingRefused as refusal:
+            raise HTTPException(status_code=409, detail=str(refusal)) from refusal
+    return {"token": token, "url": f"/watch/{token}"}
