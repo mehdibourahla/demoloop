@@ -159,6 +159,12 @@ async def advance(session: AsyncSession, job_id: uuid.UUID) -> uuid.UUID | None:
     )).mappings().one()
     result = row["result"] if isinstance(row["result"], dict) else json.loads(row["result"] or "{}")
 
+    if row["production_id"] is not None and result.get("provenance") is not None:
+        await session.execute(
+            text("UPDATE production SET provenance = CAST(:p AS JSONB) WHERE id = :id"),
+            {"p": json.dumps(result["provenance"]), "id": row["production_id"]},
+        )
+
     if row["production_id"] is not None and result.get("quality") is not None:
         await session.execute(
             text("UPDATE production SET quality = CAST(:quality AS JSONB) WHERE id = :id"),
