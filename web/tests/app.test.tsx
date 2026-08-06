@@ -120,3 +120,29 @@ test('an empty library says what to do next', async () => {
 
   await waitFor(() => expect(screen.getByText(/Explore a product/)).toBeInTheDocument());
 });
+
+test('the product map counts what discovery found', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({
+    reconnaissances: [{
+      id: 'r1', status: 'complete', product: 'Delivery Board',
+      counts: { capabilities: 2, journeys: 1, proofSurfaces: 3, actors: 2 }
+    }]
+  }));
+  render(<App who={who} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Product Map' }));
+
+  await waitFor(() => expect(screen.getByText('Delivery Board')).toBeInTheDocument());
+  const row = screen.getByText('Delivery Board').closest('tr')!;
+  expect(row).toHaveTextContent('2');
+  expect(row).toHaveTextContent('3');
+});
+
+test('an unmapped workspace is told how a map gets built', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ reconnaissances: [] }));
+  render(<App who={who} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Product Map' }));
+
+  await waitFor(() => expect(screen.getByText(/built from evidence/)).toBeInTheDocument());
+});

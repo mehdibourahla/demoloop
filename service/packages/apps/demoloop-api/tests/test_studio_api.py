@@ -1,3 +1,4 @@
+import json
 import uuid
 
 import httpx
@@ -191,3 +192,43 @@ async def test_an_unknown_share_link_is_not_found():
         missing = await http.get("/public/watch/nope")
 
     assert missing.status_code == 404
+
+async def test_the_map_index_lists_this_workspaces_reconnaissances(member):
+    workspace, other = member
+    config = {"app": {"url": "http://127.0.0.1:4173"}}
+
+    async with client() as http:
+        await http.post("/v1/reconnaissance", json={"config": config}, headers=headers("ada", workspace))
+        await http.post("/v1/reconnaissance", json={"config": config}, headers=headers("grace", other))
+
+        mine = await http.get("/v1/reconnaissance", headers=headers("ada", workspace))
+
+    assert mine.status_code == 200
+    assert len(mine.json()["reconnaissances"]) == 1
+    assert mine.json()["reconnaissances"][0]["status"] == "discovering"
+
+
+async def test_a_map_reports_what_it_found_without_shipping_the_whole_model(member):
+    workspace, _ = member
+    async with admin_engine().begin() as connection:
+        await connection.execute(
+            text("""
+                INSERT INTO reconnaissance (id, workspace_id, config, status, model)
+                VALUES (:id, :w, '{}'::jsonb, 'complete', CAST(:m AS JSONB))
+            """),
+            {"id": uuid.uuid4(), "w": workspace, "m": json.dumps({
+                "product": "Delivery Board",
+                "capabilities": [{"id": "send"}, {"id": "receive"}],
+                "journeys": [{"id": "deliver"}],
+                "proofSurfaces": [{"id": "status"}],
+                "actors": [{"id": "origin"}],
+            })},
+        )
+
+    async with client() as http:
+        listed = (await http.get("/v1/reconnaissance", headers=headers("ada", workspace))).json()
+
+    entry = listed["reconnaissances"][0]
+    assert entry["product"] == "Delivery Board"
+    assert entry["counts"] == {"capabilities": 2, "journeys": 1, "proofSurfaces": 1, "actors": 1}
+    assert "model" not in entry

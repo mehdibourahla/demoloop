@@ -42,6 +42,28 @@ async def begin_reconnaissance(request: ReconnaissanceRequest, who: Caller = Dep
     return {"id": str(recon), "status": "discovering"}
 
 
+@router.get("/reconnaissance")
+async def list_reconnaissance(who: Caller = Depends(caller)) -> dict:
+    async with workspace_session(who.workspace_id) as session:
+        rows = (await session.execute(
+            text("SELECT id, status, model, created_at FROM reconnaissance ORDER BY created_at DESC")
+        )).mappings().all()
+    return {"reconnaissances": [_map_summary(row) for row in rows]}
+
+
+def _map_summary(row: dict) -> dict:
+    model = row["model"] or {}
+    return {
+        "id": str(row["id"]),
+        "status": row["status"],
+        "product": model.get("product"),
+        "counts": {
+            name: len(model.get(name) or [])
+            for name in ("capabilities", "journeys", "proofSurfaces", "actors")
+        },
+    }
+
+
 @router.get("/reconnaissance/{recon_id}")
 async def read_reconnaissance(recon_id: uuid.UUID, who: Caller = Depends(caller)) -> dict:
     row = await _row(who, "reconnaissance", recon_id, "id, status, model, plan")
