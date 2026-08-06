@@ -88,19 +88,21 @@ visitor and be cacheable at the edge, while the studio is a session-bound applic
 
 ## 3. Decision register
 
-| # | Decision | Choice |
-|---|---|---|
-| 1 | Service boundary | capture in the runner, post-production in our fleet (§1) |
-| 2 | Schema consumption | generated Pydantic, two-stage drift gate, Node owns validity (§4) |
-| 3 | Job transport | one Postgres job ledger, HTTP lease protocol for every worker (§5) |
-| 4 | Tenancy | `workspace_id` on every row, enforced by Postgres RLS (§6) |
-| 5 | Auth, orgs, roles | WorkOS for identity and SCIM; product roles in our database (§8) |
-| 6 | Object storage | GCS, lifecycle by plan, signed URLs only (§9) |
-| 7 | Metering | Stripe, credits reserved at lease time with a hard ceiling (§10) |
-| 8 | Frontend | React 19, Vite, TypeScript, the handoff's own CSS (§11) |
-| 9 | Admin | SQLAdmin over the existing models, plus a few operational pages (§12) |
-| 10 | Observability | OpenTelemetry across both languages, Sentry for errors (§13) |
-| 11 | Hosting | GCP throughout (§2, §14) |
+Status column added 2026-08-06 as the service was built out.
+
+| # | Decision | Choice | Built |
+|---|---|---|---|
+| 1 | Service boundary | capture in the runner, post-production in our fleet (§1) | yes |
+| 2 | Schema consumption | generated Pydantic, two-stage drift gate, Node owns validity (§4) | partly |
+| 3 | Job transport | one Postgres job ledger, HTTP lease protocol for every worker (§5) | yes |
+| 4 | Tenancy | `workspace_id` on every row, enforced by Postgres RLS (§6) | yes |
+| 5 | Auth, orgs, roles | WorkOS for identity and SCIM; product roles in our database (§8) | partly |
+| 6 | Object storage | GCS, lifecycle by plan, signed URLs only (§9) | yes |
+| 7 | Metering | Stripe, credits reserved at lease time with a hard ceiling (§10) | yes |
+| 8 | Frontend | React 19, Vite, TypeScript, the handoff's own CSS (§11) | partly |
+| 9 | Admin | SQLAdmin over the existing models, plus a few operational pages (§12) | yes |
+| 10 | Observability | OpenTelemetry across both languages, Sentry for errors (§13) | partly |
+| 11 | Hosting | GCP throughout (§2, §14) | no |
 
 Google ADK is adopted with the rest of the reference foundation. The agent layer — narrow
 roles, tools, sessions, evals — is commodity by the standard this project sets, and it already
@@ -394,3 +396,30 @@ Provenance records the commit, the target URL, and whether the working tree was 
 matters because a receipt claiming a demo was recorded from a given commit is false if
 uncommitted changes were on disk at capture time. Absence of a commit is represented as absence,
 never as a default, so a receipt can say the commit is unknown rather than assert a wrong one.
+
+
+---
+
+## 17. What exists, 2026-08-06
+
+The service spine, the production pipeline and the surfaces around them are built and gated by
+CI across three suites. What follows is the honest state, so nobody reads an architecture
+document as a description of running software.
+
+**Built and proven end to end.** Reconnaissance through discovery and planning; capture, render,
+evaluation and agent review; publication behind the review gate; sharing behind a public receipt;
+drift detection; the credit ceiling; the audit log; roles; retention; the operator console.
+
+**Built but unproven against reality.** `ModelReviewer` routes frames to a vision model through
+litellm and has never run with a key. Every review property is proven with an injected reviewer.
+
+**Designed and not built.** The reconnaissance agent that authors a Product Map rather than
+scraping routes; the director agent that edits scenarios by chat; the maintainer agent that
+proposes locator repairs. Hosting is designed and nothing is deployed. Twenty of the twenty-six
+screens are unbuilt, including the storyboard, which is the product's editing surface.
+
+**A rule worth keeping.** Two engine bugs were found by running the whole system rather than by
+reading it: a full-scope master stripped navigation from second-actor scenes, and the sensitive
+scan copied literal secrets into a customer-facing report. Neither was visible to the engine's own
+suite. End-to-end tests that read the database and object storage — not a worker's own output —
+are what caught them.
