@@ -27,6 +27,13 @@ export interface Verification {
   checkedAt: string | null;
 }
 
+export interface MapSummary {
+  id: string;
+  status: string;
+  product: string | null;
+  counts: { capabilities: number; journeys: number; proofSurfaces: number; actors: number };
+}
+
 export interface Identity {
   user: string;
   workspace: string;
@@ -50,6 +57,7 @@ export const api = {
   startReconnaissance: (who: Identity, config: unknown) =>
     call<{ id: string }>(who, '/v1/reconnaissance', { method: 'POST', body: JSON.stringify({ config }) }),
   reconnaissance: (who: Identity, id: string) => call<Reconnaissance>(who, `/v1/reconnaissance/${id}`),
+  maps: (who: Identity) => call<{ reconnaissances: MapSummary[] }>(who, '/v1/reconnaissance'),
   startProduction: (who: Identity, scenario: unknown, config: unknown, estimatedCredits = 0) =>
     call<{ id: string }>(who, '/v1/productions', {
       method: 'POST',

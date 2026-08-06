@@ -2,12 +2,14 @@ import { useState } from 'react';
 import type { Identity } from './api';
 import { Health } from './screens/Health';
 import { Library } from './screens/Library';
+import { ProductMap } from './screens/ProductMap';
 import { Player } from './screens/Player';
 import { Reconnaissance } from './screens/Reconnaissance';
 
 const SURFACES = [
   { id: 'reconnaissance', label: 'Reconnaissance' },
   { id: 'library', label: 'Library' },
+  { id: 'map', label: 'Product Map' },
   { id: 'productions', label: 'Productions' },
   { id: 'health', label: 'Health' }
 ] as const;
@@ -61,6 +63,7 @@ export function App({ who }: { who: Identity }) {
         </div>
         {surface === 'reconnaissance' && <Reconnaissance who={who} />}
         {surface === 'library' && <Library who={who} onOpen={(id) => { setOpened(id); setSurface('productions'); }} />}
+        {surface === 'map' && <ProductMap who={who} />}
         {surface === 'productions' && <Player who={who} opened={opened} />}
         {surface === 'health' && <Health who={who} />}
       </main>
