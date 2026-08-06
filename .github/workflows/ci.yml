@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  verify:
+  engine:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,3 +24,64 @@ jobs:
         run: |
           npm run schemas
           git diff --exit-code schemas
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npx tsc -b
+        working-directory: web
+      - run: npx vitest run
+        working-directory: web
+      - run: npx vite build
+        working-directory: web
+
+  service:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: demoloop
+          POSTGRES_PASSWORD: demoloop
+          POSTGRES_DB: demoloop
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U demoloop"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Start object storage
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=demoloop -e MINIO_ROOT_PASSWORD=demoloop123 \
+            minio/minio:latest server /data
+          for _ in $(seq 1 40); do
+            curl -sf http://127.0.0.1:9000/minio/health/live && break || sleep 1
+          done
+      # The service's end-to-end tests drive the real Node runner against the fixture app.
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: uv sync
+        working-directory: service
+      - run: uv run alembic upgrade head
+        working-directory: service
+      - run: uv run ruff check packages
+        working-directory: service
+      - run: uv run pytest
+        working-directory: service
