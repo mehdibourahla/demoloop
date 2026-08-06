@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     credits_per_minute: float = 6.5
     seconds_per_scene: int = 15
     review_model: str | None = None
+    admin_token: str = ""
 
 
 @lru_cache
