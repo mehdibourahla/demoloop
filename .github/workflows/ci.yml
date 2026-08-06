@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   engine:
     runs-on: ubuntu-latest
@@ -72,8 +75,11 @@ jobs:
             -e MINIO_ROOT_USER=demoloop -e MINIO_ROOT_PASSWORD=demoloop123 \
             minio/minio:latest server /data
           for _ in $(seq 1 40); do
-            curl -sf http://127.0.0.1:9000/minio/health/live && break || sleep 1
+            curl -sf http://127.0.0.1:9000/minio/health/live && exit 0
+            sleep 1
           done
+          echo "object storage never became ready" >&2
+          exit 1
       # The service's end-to-end tests drive the real Node runner against the fixture app.
       - run: npm ci
       - run: npx playwright install --with-deps chromium
