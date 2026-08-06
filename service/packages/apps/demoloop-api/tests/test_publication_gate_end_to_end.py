@@ -32,8 +32,8 @@ async def test_a_video_no_agent_watched_is_refused_publication(running_stack):  
     state = httpx.get(f"{BASE}/v1/productions/{production['id']}", headers=who, timeout=30).json()
     refused = httpx.post(f"{BASE}/v1/productions/{production['id']}/publish", headers=who, timeout=30)
 
-    assert state["status"] == "complete"
+    assert state["status"] == "reviewing"
     assert state["video"], "the master should exist even though it may not be published"
     assert state["published"] is None
     assert refused.status_code == 409
-    assert "not been reviewed" in refused.json()["detail"]
+    assert "waiting for an agent to watch it" in refused.json()["detail"]

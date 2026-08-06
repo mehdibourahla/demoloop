@@ -6,8 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from demoloop_core.jobs import enqueue
 
-NEXT_STAGE = {"capture": "render", "render": "evaluate", "evaluate": None, "discover": "plan", "plan": None}
-STATUS_FOR = {"render": "rendering", "evaluate": "evaluating"}
+NEXT_STAGE = {
+    "capture": "render", "render": "evaluate", "evaluate": "review", "review": None,
+    "discover": "plan", "plan": None,
+}
+STATUS_FOR = {"render": "rendering", "evaluate": "evaluating", "review": "reviewing"}
 
 
 async def start_production(
@@ -156,6 +159,12 @@ async def advance(session: AsyncSession, job_id: uuid.UUID) -> uuid.UUID | None:
     )).mappings().one()
     result = row["result"] if isinstance(row["result"], dict) else json.loads(row["result"] or "{}")
 
+    if row["production_id"] is not None and result.get("quality") is not None:
+        await session.execute(
+            text("UPDATE production SET quality = CAST(:quality AS JSONB) WHERE id = :id"),
+            {"quality": json.dumps(result["quality"]), "id": row["production_id"]},
+        )
+
     if row["verification_id"] is not None:
         await _advance_verification(session, row["verification_id"], result)
         return None
@@ -181,11 +190,6 @@ async def advance(session: AsyncSession, job_id: uuid.UUID) -> uuid.UUID | None:
 
     stage = NEXT_STAGE.get(row["kind"])
     if stage is None:
-        if result.get("quality") is not None:
-            await session.execute(
-                text("UPDATE production SET quality = CAST(:quality AS JSONB) WHERE id = :id"),
-                {"quality": json.dumps(result["quality"]), "id": production_id},
-            )
         await _set_status(session, production_id, "complete")
         return None
 

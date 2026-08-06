@@ -15,6 +15,8 @@ async def publish(session: AsyncSession, production_id: uuid.UUID) -> None:
     )).mappings().one_or_none()
     if row is None:
         raise PublicationRefused("that production does not exist")
+    if row["status"] == "reviewing":
+        raise PublicationRefused("this video is waiting for an agent to watch it")
     if row["status"] != "complete" or not row["video_key"]:
         raise PublicationRefused("the production is not complete")
 

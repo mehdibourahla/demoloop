@@ -58,20 +58,20 @@ async def test_a_failed_capture_stops_the_production(seeded_workspaces):
     assert await production_status(production) == "failed"
 
 
-async def test_the_pipeline_runs_capture_then_render_then_evaluate(seeded_workspaces):
+async def test_the_pipeline_runs_capture_render_evaluate_then_review(seeded_workspaces):
     workspace, _ = seeded_workspaces
     async with workspace_session(workspace) as session:
         production = await start_production(session, workspace, {"id": "demo"}, {"app": {"url": "http://127.0.0.1:4173"}})
 
     kinds = []
     async with dispatch_session() as session:
-        for _ in range(3):
-            job = await claim(session, ["capture", "render", "evaluate"], 60)
+        for _ in range(4):
+            job = await claim(session, ["capture", "render", "evaluate", "review"], 60)
             if job is None:
                 break
             kinds.append(job.kind)
             await finish(session, job.id, job.lease_token, {"passed": True, "artifacts": {}, "video": "key/video.mp4"})
             await advance(session, job.id)
 
-    assert kinds == ["capture", "render", "evaluate"]
+    assert kinds == ["capture", "render", "evaluate", "review"]
     assert await production_status(production) == "complete"

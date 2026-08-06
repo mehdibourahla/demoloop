@@ -43,7 +43,7 @@ async def test_a_customer_goes_from_a_repository_to_a_playable_video(running_sta
 
     finished = httpx.get(f"{BASE}/v1/productions/{production['id']}", headers=who, timeout=30).json()
 
-    assert finished["status"] == "complete"
+    assert finished["status"] == "reviewing"
     assert finished["video"], "no playable video was offered"
     playable = httpx.get(finished["video"], timeout=60)
     assert playable.status_code == 200

@@ -1179,3 +1179,29 @@ while remaining unpublishable, which is what the storyboard-and-approve loop nee
 
 This is the gate the agent editorial review will satisfy. Until a reviewer exists, every
 production is correctly stuck at `pending-agent-review` — the honest state, not a bypass.
+
+## Review agent landed 2026-08-05
+
+The model-provider question was answered by reading `agentic-bot` rather than by choosing: it
+routes every provider through litellm by name string and ships an offline `echo` model that needs
+no key. Provider is configuration, not architecture. Demoloop adopts the same shape —
+`DEMOLOOP_REVIEW_MODEL` takes `anthropic/claude-*`, `openai/*`, `gemini-*` or anything litellm
+routes.
+
+`review` is now a pipeline stage between evaluation and completion, and an accepted review is
+what makes a video publishable. Four properties are held by tests:
+
+- a reviewer is given the actual frames, and reviewing with none raises rather than claiming a
+  verdict it did not reach;
+- a score below 7 cannot accept, however the verdict reads;
+- a video that failed its deterministic checks cannot be rescued by a good review;
+- an unconfigured model raises `NoReviewerConfigured` rather than abstaining quietly, because a
+  silent abstention looks identical to a review that happened.
+
+**The live model path is written but unverified.** `ModelReviewer` sends frames to a vision model
+through litellm; with no key present I have not run it against one. Everything above is proven
+with an injected reviewer. Treat the litellm call itself as untested until it runs with a key.
+
+A production now rests at `reviewing` rather than `complete`, and publication refuses it with
+"waiting for an agent to watch it". That is the honest state: the pipeline is finished, the master
+exists and its owner can watch it, and nothing may be shared until an agent has seen it.

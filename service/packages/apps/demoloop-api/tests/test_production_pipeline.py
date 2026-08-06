@@ -45,7 +45,7 @@ async def test_a_production_captures_then_renders_a_real_video(running_stack):  
         )).mappings().one()
         status, video_key = row["status"], row["video_key"]
 
-    assert status == "complete"
+    assert status == "reviewing"
     assert video_key.startswith(f"workspace/{workspace}/")
     head = storage_client().head_object(Bucket=settings().storage_bucket, Key=video_key)
     assert head["ContentLength"] > 10_000
