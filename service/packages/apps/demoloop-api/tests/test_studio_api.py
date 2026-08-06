@@ -254,3 +254,44 @@ async def test_a_map_reports_what_it_found_without_shipping_the_whole_model(memb
     assert entry["product"] == "Delivery Board"
     assert entry["counts"] == {"capabilities": 2, "journeys": 1, "proofSurfaces": 1, "actors": 1}
     assert "model" not in entry
+
+
+async def test_a_reviewer_cannot_start_a_production(member):
+    workspace, _ = member
+    async with admin_engine().begin() as connection:
+        await connection.execute(
+            text("UPDATE membership SET role = 'reviewer' WHERE workspace_id = :w AND user_id = 'ada'"),
+            {"w": workspace},
+        )
+
+    async with client() as http:
+        refused = await http.post(
+            "/v1/productions",
+            json={"scenario": {"id": "d", "scenes": [1]}, "config": {"app": {"url": "http://x"}}},
+            headers=headers("ada", workspace),
+        )
+
+    assert refused.status_code == 403
+    assert "may not produce" in refused.json()["detail"]
+
+
+async def test_a_viewer_cannot_share(member):
+    workspace, _ = member
+    production = uuid.uuid4()
+    async with admin_engine().begin() as connection:
+        await connection.execute(
+            text("UPDATE membership SET role = 'viewer' WHERE workspace_id = :w AND user_id = 'ada'"),
+            {"w": workspace},
+        )
+        await connection.execute(
+            text("""
+                INSERT INTO production (id, workspace_id, scenario, config, status, video_key, published_at)
+                VALUES (:id, :w, '{}'::jsonb, '{}'::jsonb, 'complete', 'k/v', now())
+            """),
+            {"id": production, "w": workspace},
+        )
+
+    async with client() as http:
+        refused = await http.post(f"/v1/productions/{production}/share", headers=headers("ada", workspace))
+
+    assert refused.status_code == 403
