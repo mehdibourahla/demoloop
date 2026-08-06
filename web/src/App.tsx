@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import type { Identity } from './api';
 import { Health } from './screens/Health';
+import { Library } from './screens/Library';
 import { Player } from './screens/Player';
 import { Reconnaissance } from './screens/Reconnaissance';
 
 const SURFACES = [
   { id: 'reconnaissance', label: 'Reconnaissance' },
+  { id: 'library', label: 'Library' },
   { id: 'productions', label: 'Productions' },
   { id: 'health', label: 'Health' }
 ] as const;
@@ -15,6 +17,7 @@ type Surface = (typeof SURFACES)[number]['id'];
 export function App({ who }: { who: Identity }) {
   const [surface, setSurface] = useState<Surface>('reconnaissance');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [opened, setOpened] = useState<string | undefined>();
 
   return (
     <div className="app" data-theme={theme}>
@@ -57,7 +60,8 @@ export function App({ who }: { who: Identity }) {
           </div>
         </div>
         {surface === 'reconnaissance' && <Reconnaissance who={who} />}
-        {surface === 'productions' && <Player who={who} />}
+        {surface === 'library' && <Library who={who} onOpen={(id) => { setOpened(id); setSurface('productions'); }} />}
+        {surface === 'productions' && <Player who={who} opened={opened} />}
         {surface === 'health' && <Health who={who} />}
       </main>
     </div>

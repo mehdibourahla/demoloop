@@ -64,6 +64,29 @@ async def begin_production(request: ProductionRequest, who: Caller = Depends(cal
     return {"id": str(production), "status": "capturing", "estimatedCredits": estimate}
 
 
+@router.get("/productions")
+async def list_productions(who: Caller = Depends(caller)) -> dict:
+    async with workspace_session(who.workspace_id) as session:
+        rows = (await session.execute(
+            text("""
+                SELECT id, status, scenario->>'title' AS title, video_key, published_at, created_at
+                FROM production ORDER BY created_at DESC
+            """)
+        )).mappings().all()
+    return {
+        "productions": [
+            {
+                "id": str(row["id"]),
+                "title": row["title"],
+                "status": row["status"],
+                "hasVideo": row["video_key"] is not None,
+                "published": row["published_at"].isoformat() if row["published_at"] else None,
+            }
+            for row in rows
+        ]
+    }
+
+
 @router.get("/productions/{production_id}")
 async def read_production(production_id: uuid.UUID, who: Caller = Depends(caller)) -> dict:
     row = await _row(who, "production", production_id, "id, status, video_key, published_at")

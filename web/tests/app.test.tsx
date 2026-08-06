@@ -78,3 +78,45 @@ test('drift names the scene and the target that moved', async () => {
   await waitFor(() => expect(screen.getByText('Create record')).toBeInTheDocument());
   expect(screen.getByText('create')).toBeInTheDocument();
 });
+
+test('the library lists demos and opens one in the player', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const url = String(input);
+    if (url.endsWith('/v1/productions')) {
+      return Response.json({
+        productions: [
+          { id: 'p1', title: 'Deliver an item', status: 'complete', hasVideo: true, published: null },
+          { id: 'p2', title: null, status: 'capturing', hasVideo: false, published: null }
+        ]
+      });
+    }
+    return Response.json({ id: 'p1', status: 'complete', video: 'https://store/p1.mp4', published: null });
+  });
+  render(<App who={who} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Library' }));
+  await waitFor(() => expect(screen.getByText('Deliver an item')).toBeInTheDocument());
+  await userEvent.click(screen.getAllByRole('button', { name: 'Open' })[0]);
+
+  await waitFor(() => expect(document.querySelector('video')).toBeInTheDocument());
+});
+
+test('an untitled demo is marked rather than left blank', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    Response.json({ productions: [{ id: 'p2', title: null, status: 'capturing', hasVideo: false, published: null }] })
+  );
+  render(<App who={who} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Library' }));
+
+  await waitFor(() => expect(screen.getByText('untitled')).toBeInTheDocument());
+});
+
+test('an empty library says what to do next', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ productions: [] }));
+  render(<App who={who} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Library' }));
+
+  await waitFor(() => expect(screen.getByText(/Explore a product/)).toBeInTheDocument());
+});

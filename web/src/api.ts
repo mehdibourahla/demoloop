@@ -9,6 +9,15 @@ export interface Production {
   id: string;
   status: string;
   video: string | null;
+  published?: string | null;
+}
+
+export interface LibraryEntry {
+  id: string;
+  title: string | null;
+  status: string;
+  hasVideo: boolean;
+  published: string | null;
 }
 
 export interface Verification {
@@ -47,6 +56,9 @@ export const api = {
       body: JSON.stringify({ scenario, config, estimated_credits: estimatedCredits })
     }),
   production: (who: Identity, id: string) => call<Production>(who, `/v1/productions/${id}`),
+  library: (who: Identity) => call<{ productions: LibraryEntry[] }>(who, '/v1/productions'),
+  publish: (who: Identity, id: string) =>
+    call<{ published: boolean }>(who, `/v1/productions/${id}/publish`, { method: 'POST' }),
   startVerification: (who: Identity, productionId: string) =>
     call<{ id: string }>(who, `/v1/productions/${productionId}/verifications`, { method: 'POST' }),
   verification: (who: Identity, id: string) => call<Verification>(who, `/v1/verifications/${id}`)
