@@ -5,6 +5,7 @@ from demoloop_core.credits import estimate_credits
 from demoloop_core.db import workspace_session
 from demoloop_core.pipeline import start_production, start_reconnaissance, start_verification
 from demoloop_core.publication import PublicationRefused, publish
+from demoloop_core.roles import Forbidden, require
 from demoloop_core.sharing import SharingRefused, share
 from demoloop_core.storage import presign_get
 from fastapi import APIRouter, Depends, HTTPException
@@ -26,6 +27,13 @@ class ProductionRequest(BaseModel):
     estimated_credits: float | None = None
 
 
+def _permit(who: Caller, action: str) -> None:
+    try:
+        require(who.role, action)
+    except Forbidden as refusal:
+        raise HTTPException(status_code=403, detail=str(refusal)) from refusal
+
+
 async def _row(who: Caller, table: str, identifier: uuid.UUID, columns: str) -> dict:
     async with workspace_session(who.workspace_id) as session:
         row = (await session.execute(
@@ -38,6 +46,7 @@ async def _row(who: Caller, table: str, identifier: uuid.UUID, columns: str) -> 
 
 @router.post("/reconnaissance", status_code=201)
 async def begin_reconnaissance(request: ReconnaissanceRequest, who: Caller = Depends(caller)) -> dict:
+    _permit(who, "produce")
     async with workspace_session(who.workspace_id) as session:
         recon = await start_reconnaissance(session, who.workspace_id, request.config)
     return {"id": str(recon), "status": "discovering"}
@@ -73,6 +82,7 @@ async def read_reconnaissance(recon_id: uuid.UUID, who: Caller = Depends(caller)
 
 @router.post("/productions", status_code=201)
 async def begin_production(request: ProductionRequest, who: Caller = Depends(caller)) -> dict:
+    _permit(who, "produce")
     try:
         estimate = (
             request.estimated_credits
@@ -143,6 +153,7 @@ async def read_verification(verification_id: uuid.UUID, who: Caller = Depends(ca
 
 @router.post("/productions/{production_id}/publish")
 async def publish_production(production_id: uuid.UUID, who: Caller = Depends(caller)) -> dict:
+    _permit(who, "publish")
     await _row(who, "production", production_id, "id")
     async with workspace_session(who.workspace_id) as session:
         try:
@@ -155,6 +166,7 @@ async def publish_production(production_id: uuid.UUID, who: Caller = Depends(cal
 
 @router.post("/productions/{production_id}/share", status_code=201)
 async def share_production(production_id: uuid.UUID, who: Caller = Depends(caller)) -> dict:
+    _permit(who, "share")
     await _row(who, "production", production_id, "id")
     async with workspace_session(who.workspace_id) as session:
         try:
