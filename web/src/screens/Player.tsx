@@ -6,6 +6,7 @@ export function Player({ who, opened }: { who: Identity; opened?: string }) {
   const [productionId, setProductionId] = useState(opened ?? '');
   const [shown, setShown] = useState<Production | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [link, setLink] = useState<string | null>(null);
 
   useEffect(() => { if (opened) { setProductionId(opened); void open(opened); } }, [opened]);
 
@@ -40,6 +41,12 @@ export function Player({ who, opened }: { who: Identity; opened?: string }) {
           {shown.video
             ? <video controls src={shown.video} style={{ width: '100%', maxWidth: 860, border: '1px solid var(--line)' }} />
             : <div style={{ maxWidth: 860 }}><Shot label="the recorded master appears here once production completes" /></div>}
+          {shown.published && (
+            <div className="fx ac gap13" style={{ marginTop: 16 }}>
+              <button className="btn sm" onClick={async () => setLink((await api.share(who, shown.id)).url)}>Share</button>
+              {link && <span className="mono dim3">{link}</span>}
+            </div>
+          )}
         </>
       )}
 

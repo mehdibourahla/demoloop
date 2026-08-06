@@ -146,3 +146,47 @@ test('an unmapped workspace is told how a map gets built', async () => {
 
   await waitFor(() => expect(screen.getByText(/built from evidence/)).toBeInTheDocument());
 });
+
+test('the audit view shows who did what', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({
+    events: [{ actor: 'ada', action: 'published', subject: { type: 'production', id: 'p1' }, at: '2026-08-05T12:00:00' }]
+  }));
+  render(<App who={who} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Audit' }));
+
+  await waitFor(() => expect(screen.getByText('published')).toBeInTheDocument());
+  const row = screen.getByText('published').closest('tr')!;
+  expect(row).toHaveTextContent('ada');
+  expect(row).toHaveTextContent('production');
+});
+
+test('a published demo offers a share link', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    if (String(init?.method) === 'POST') return Response.json({ token: 'tok', url: '/watch/tok' });
+    return Response.json({ id: 'p1', status: 'complete', video: 'https://s/v.mp4', published: '2026-08-05' });
+  });
+  render(<App who={who} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Productions' }));
+  await userEvent.type(screen.getByLabelText('Production'), 'p1');
+  await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument());
+
+  await userEvent.click(screen.getByRole('button', { name: 'Share' }));
+
+  await waitFor(() => expect(screen.getByText('/watch/tok')).toBeInTheDocument());
+});
+
+test('an unpublished demo offers no share link', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    Response.json({ id: 'p1', status: 'reviewing', video: 'https://s/v.mp4', published: null })
+  );
+  render(<App who={who} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Productions' }));
+  await userEvent.type(screen.getByLabelText('Production'), 'p1');
+
+  await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+
+  await waitFor(() => expect(document.querySelector('video')).toBeInTheDocument());
+  expect(screen.queryByRole('button', { name: 'Share' })).toBeNull();
+});
