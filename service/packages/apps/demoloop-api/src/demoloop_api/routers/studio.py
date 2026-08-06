@@ -1,5 +1,6 @@
 import uuid
 
+from demoloop_core.audit import record, timeline
 from demoloop_core.credits import estimate_credits
 from demoloop_core.db import workspace_session
 from demoloop_core.pipeline import start_production, start_reconnaissance, start_verification
@@ -148,6 +149,7 @@ async def publish_production(production_id: uuid.UUID, who: Caller = Depends(cal
             await publish(session, production_id)
         except PublicationRefused as refusal:
             raise HTTPException(status_code=409, detail=str(refusal)) from refusal
+        await record(session, who.workspace_id, who.user_id, "published", "production", production_id)
     return {"published": True}
 
 
@@ -159,4 +161,22 @@ async def share_production(production_id: uuid.UUID, who: Caller = Depends(calle
             token = await share(session, who.workspace_id, production_id)
         except SharingRefused as refusal:
             raise HTTPException(status_code=409, detail=str(refusal)) from refusal
+        await record(session, who.workspace_id, who.user_id, "shared", "production", production_id)
     return {"token": token, "url": f"/watch/{token}"}
+
+
+@router.get("/audit")
+async def read_audit(who: Caller = Depends(caller)) -> dict:
+    async with workspace_session(who.workspace_id) as session:
+        events = await timeline(session)
+    return {
+        "events": [
+            {
+                "actor": event["actor"],
+                "action": event["action"],
+                "subject": {"type": event["subject_type"], "id": str(event["subject_id"] or "")},
+                "at": event["created_at"].isoformat(),
+            }
+            for event in events
+        ]
+    }

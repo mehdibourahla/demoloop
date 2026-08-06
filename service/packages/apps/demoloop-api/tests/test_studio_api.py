@@ -193,6 +193,28 @@ async def test_an_unknown_share_link_is_not_found():
 
     assert missing.status_code == 404
 
+
+async def test_publishing_and_sharing_are_both_written_to_the_audit_log(member):
+    workspace, _ = member
+    production = uuid.uuid4()
+    async with admin_engine().begin() as connection:
+        await connection.execute(
+            text("""
+                INSERT INTO production
+                    (id, workspace_id, scenario, config, status, video_key, quality, published_at)
+                VALUES (:id, :w, '{}'::jsonb, '{}'::jsonb, 'complete', 'k/v', CAST(:q AS JSONB), now())
+            """),
+            {"id": production, "w": workspace, "q": '{"status": "accepted", "passed": true}'},
+        )
+
+    async with client() as http:
+        await http.post(f"/v1/productions/{production}/share", headers=headers("ada", workspace))
+        audit = await http.get("/v1/audit", headers=headers("ada", workspace))
+
+    actions = [event["action"] for event in audit.json()["events"]]
+    assert "shared" in actions
+    assert audit.json()["events"][0]["actor"] == "ada"
+
 async def test_the_map_index_lists_this_workspaces_reconnaissances(member):
     workspace, other = member
     config = {"app": {"url": "http://127.0.0.1:4173"}}
