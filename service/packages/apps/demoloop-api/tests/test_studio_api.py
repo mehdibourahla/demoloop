@@ -109,3 +109,49 @@ async def test_a_scenario_that_cannot_be_priced_is_refused(member):
 
     assert refused.status_code == 400
     assert "no scenes" in refused.json()["detail"]
+
+
+async def test_the_library_lists_only_this_workspaces_productions(member):
+    workspace, other = member
+    config = {"app": {"url": "http://127.0.0.1:4173"}}
+    scenario = {"id": "demo", "title": "Deliver an item", "scenes": [1, 2]}
+
+    async with client() as http:
+        await http.post("/v1/productions", json={"scenario": scenario, "config": config},
+                        headers=headers("ada", workspace))
+        await http.post("/v1/productions", json={"scenario": scenario, "config": config},
+                        headers=headers("grace", other))
+
+        mine = await http.get("/v1/productions", headers=headers("ada", workspace))
+
+    assert mine.status_code == 200
+    listed = mine.json()["productions"]
+    assert len(listed) == 1
+    assert listed[0]["title"] == "Deliver an item"
+    assert listed[0]["status"] == "capturing"
+
+
+async def test_the_library_is_newest_first(member):
+    workspace, _ = member
+    config = {"app": {"url": "http://127.0.0.1:4173"}}
+
+    async with client() as http:
+        for title in ("First", "Second"):
+            await http.post(
+                "/v1/productions",
+                json={"scenario": {"id": "d", "title": title, "scenes": [1]}, "config": config},
+                headers=headers("ada", workspace),
+            )
+        listed = (await http.get("/v1/productions", headers=headers("ada", workspace))).json()["productions"]
+
+    assert [entry["title"] for entry in listed] == ["Second", "First"]
+
+
+async def test_an_empty_library_is_an_empty_list_not_an_error(member):
+    workspace, _ = member
+
+    async with client() as http:
+        listed = await http.get("/v1/productions", headers=headers("ada", workspace))
+
+    assert listed.status_code == 200
+    assert listed.json()["productions"] == []

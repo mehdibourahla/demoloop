@@ -1,11 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, type Identity, type Production } from '../api';
 import { Empty, SectionHeader, Shot, Status } from '../components';
 
-export function Player({ who }: { who: Identity }) {
-  const [productionId, setProductionId] = useState('');
+export function Player({ who, opened }: { who: Identity; opened?: string }) {
+  const [productionId, setProductionId] = useState(opened ?? '');
   const [shown, setShown] = useState<Production | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => { if (opened) { setProductionId(opened); void open(opened); } }, [opened]);
+
+  async function open(id: string) {
+    setError(null);
+    try { setShown(await api.production(who, id)); }
+    catch (failure) { setError(failure instanceof Error ? failure.message : String(failure)); }
+  }
 
   async function load() {
     setError(null);
