@@ -10,6 +10,8 @@ dependencies = [
     "alembic>=1.14,<2",
     "boto3>=1.35,<2",
     "litellm>=1.81,<2",
+    "opentelemetry-api>=1.29,<2",
+    "opentelemetry-sdk>=1.29,<2",
 ]
 
 [build-system]
