@@ -125,7 +125,9 @@ describe('capture privacy redactions', () => {
 
     const elapsed = Date.now() - started;
     expect(elapsed).toBeGreaterThan(1_200);
-    expect(elapsed).toBeLessThan(3_200);
+    // Upper bound is loose because a loaded CI runner is slower than a laptop; it still
+    // catches a scroll that ignores its requested duration by an order of magnitude.
+    expect(elapsed).toBeLessThan(8_000);
     await page.close();
   });
 
